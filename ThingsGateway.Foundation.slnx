@@ -1,0 +1,29 @@
+<Solution>
+  <Folder Name="/benchmark/">
+    <Project Path="benchmark/ThingsGateway.Foundation.Benchmark/ThingsGateway.Foundation.Benchmark.csproj" />
+  </Folder>
+  <Folder Name="/sample/">
+    <Project Path="sample/ThingsGateway.Foundation.Sample/ThingsGateway.Foundation.Sample.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ThingsGateway.CSScript/ThingsGateway.CSScript.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.Common/ThingsGateway.Foundation.Common.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.Dlt645/ThingsGateway.Foundation.Dlt645.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.Modbus/ThingsGateway.Foundation.Modbus.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.OpcDa/ThingsGateway.Foundation.OpcDa.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.OpcUa/ThingsGateway.Foundation.OpcUa.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.SiemensS7/ThingsGateway.Foundation.SiemensS7.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.SourceGenerator/ThingsGateway.Foundation.SourceGenerator.csproj" />
+    <Project Path="src/ThingsGateway.Foundation.Variable/ThingsGateway.Foundation.Variable.csproj" />
+    <Project Path="src/ThingsGateway.Foundation/ThingsGateway.Foundation.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/ThingsGateway.Foundation.Test/ThingsGateway.Foundation.Test.csproj" />
+  </Folder>
+  <Folder Name="/解决方案项/">
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="PackNuget.props" />
+    <File Path="README.md" />
+  </Folder>
+</Solution>

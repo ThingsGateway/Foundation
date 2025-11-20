@@ -1,0 +1,22 @@
+﻿<Project Sdk="MSTest.Sdk/4.0.2">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;$(OtherTargetFrameworks);</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<NoWarn> CA1812; CA1852;CA1515;$(NoWarn)</NoWarn>
+		<IsAotCompatible>false</IsAotCompatible>
+		<UseVSTest>true</UseVSTest>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\ThingsGateway.Foundation.Dlt645\ThingsGateway.Foundation.Dlt645.csproj" />
+		<ProjectReference Include="..\..\src\ThingsGateway.Foundation.Modbus\ThingsGateway.Foundation.Modbus.csproj" />
+		<ProjectReference Include="..\..\src\ThingsGateway.Foundation.SiemensS7\ThingsGateway.Foundation.SiemensS7.csproj" />
+	</ItemGroup>
+
+
+</Project>

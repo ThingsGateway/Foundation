@@ -1,0 +1,49 @@
+﻿{
+  "ThingsGateway.Foundation.ChannelOptions": {
+    "BaudRate": "波特率",
+    "BindUrl": "本地url",
+    "CacheTimeout": "接收缓存超时",
+    "ChannelType": "通道类型",
+    "CheckClearTime": "客户端连接滑动过期时间",
+    "ConnectTimeout": "连接超时",
+    "DataBits": "数据位",
+    "DtrEnable": "Dtr",
+    "DtuId": "Dtu终端注册包",
+    "DtuSeviceType": "DTU服务类型",
+    "Heartbeat": "心跳内容",
+    "DtuIdHex": "Dtu终端注册包是否Hex",
+    "HeartbeatHex": "心跳内容是否Hex",
+    "HeartbeatTime": "心跳间隔",
+    "MaxClientCount": "最大连接数",
+    "MaxConcurrentCount": "最大并发数",
+    "Name": "名称",
+    "Name.Required": " {0} 不可为空",
+    "Parity": "校验位",
+    "PortName": "COM口",
+    "RemoteUrl": "远程url",
+    "RtsEnable": "Rts",
+    "StreamAsync": "流读写",
+    "Handshake": "Handshake",
+    "StopBits": "停止位"
+  },
+  "ThingsGateway.Foundation.ConverterConfig": {
+    "BcdFormat": "BCD格式",
+    "DataFormat": "字节顺序",
+    "Encoding": "字符串编码",
+    "EncodingName": "字符串编码",
+    "Stringlength": "字符串长度",
+    "VariableStringLength": "变长字符串"
+  },
+  "ThingsGateway.Foundation.DeviceBase": {
+    "DataFormat": "解析规则",
+    "IsStringReverseByteWord": "字符串反转",
+    "SendDelayTime": "发送延时",
+    "Timeout": "读写超时"
+  },
+  "ThingsGateway.Foundation.DtuDeviceBase": {
+    "DtuId": "Dtu注册包"
+  },
+  "ThingsGateway.Foundation.VariableClass": {
+    "RegisterAddress": "寄存器地址"
+  }
+}

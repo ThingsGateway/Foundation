@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\..\PackNuget.props" />
+	<PropertyGroup>
+		<TargetFrameworks>net462;netstandard2.0;net6.0;net8.0;$(OtherTargetFrameworks);</TargetFrameworks>
+		<Description>工业设备通讯协议-OpcDa协议</Description>
+		<IsAotCompatible>false</IsAotCompatible>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Remove="Locales\*.json" />
+		<EmbeddedResource Include="Locales\*.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
+
+
+</Project>

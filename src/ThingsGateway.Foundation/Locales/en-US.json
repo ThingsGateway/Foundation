@@ -1,0 +1,49 @@
+﻿{
+  "ThingsGateway.Foundation.ChannelOptions": {
+    "BaudRate": "BaudRate",
+    "BindUrl": "BindUrl",
+    "CacheTimeout": "CacheTimeout",
+    "ChannelType": "ChannelType",
+    "CheckClearTime": "CheckClearTime",
+    "ConnectTimeout": "ConnectTimeout",
+    "DataBits": "DataBits",
+    "DtrEnable": "DtrEnable",
+    "DtuId": "DtuId",
+    "DtuSeviceType": "DtuSeviceType",
+    "Heartbeat": "Heartbeat",
+    "HeartbeatTime": "HeartbeatTime",
+    "DtuIdHex": "DtuIdHex",
+    "HeartbeatHex": "HeartbeatHex",
+    "MaxClientCount": "MaxClientCount",
+    "MaxConcurrentCount": "MaxConcurrentCount",
+    "Name": "Name",
+    "Name.Required": "{0} cannot be empty",
+    "Parity": "Parity",
+    "PortName": "PortName",
+    "RemoteUrl": "RemoteUrl",
+    "RtsEnable": "RtsEnable",
+    "StreamAsync": "StreamAsync",
+    "Handshake": "Handshake",
+    "StopBits": "StopBits"
+  },
+  "ThingsGateway.Foundation.ConverterConfig": {
+    "BcdFormat": "BcdFormat",
+    "DataFormat": "DataFormat",
+    "Encoding": "Encoding",
+    "EncodingName": "EncodingName",
+    "Stringlength": "Stringlength",
+    "VariableStringLength": "VariableStringLength"
+  },
+  "ThingsGateway.Foundation.DeviceBase": {
+    "DataFormat": "DataFormat",
+    "IsStringReverseByteWord": "IsStringReverseByteWord",
+    "SendDelayTime": "SendDelayTime",
+    "Timeout": "Timeout"
+  },
+  "ThingsGateway.Foundation.DtuDeviceBase": {
+    "DtuId": "DtuId"
+  },
+  "ThingsGateway.Foundation.VariableClass": {
+    "RegisterAddress": "RegisterAddress"
+  }
+}
