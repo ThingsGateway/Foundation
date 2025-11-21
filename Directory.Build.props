@@ -20,7 +20,7 @@
 
 		</NoWarn>
 		<TouchSocketVersion>4.0.0-rc.49</TouchSocketVersion>
-		<Version>12.2.1</Version>
+		<Version>12.4.4</Version>
 		
 		<LangVersion>preview</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>

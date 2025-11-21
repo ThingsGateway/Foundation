@@ -44,13 +44,13 @@ public static class XTrace
     {
         if (!InitLog()) return;
 
-        Log.Error("{0}", ex);
+        Log.Error("{0}", ex.GetStackTrace());
     }
     public static void WriteException(Exception ex, string message)
     {
         if (!InitLog()) return;
 
-        Log.Error("{0}, {1}", message, ex);
+        Log.Error("{0}, {1}", message, ex.GetStackTrace());
     }
     #endregion 写日志
 
