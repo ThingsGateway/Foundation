@@ -23,7 +23,7 @@ public static class StringHelper
     {
         if (value == null)
         {
-            if (propertyType.IsNullable())
+            if (propertyType.IsNullable() || !propertyType.IsValueType)
             {
                 objResult = null;
                 return true;

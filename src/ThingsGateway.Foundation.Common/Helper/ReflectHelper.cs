@@ -73,6 +73,18 @@ public static class ReflectHelper
     /// <returns></returns>
     public static Boolean IsNullable(this Type type) => type.IsGenericType && !type.IsGenericTypeDefinition && type.GetGenericTypeDefinition() == typeof(Nullable<>);
 
+    private static Type NullableType = typeof(Nullable<>);
+    /// <summary>
+    /// 判断该类型是否为可空类型
+    /// </summary>
+    /// <param name="propertyInfo"></param>
+    /// <returns></returns>
+    public static bool IsNullableType(PropertyInfo propertyInfo)
+    {
+        var att = propertyInfo.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.CompilerServices.NullableAttribute");
+        return att != null || propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.
+          GetGenericTypeDefinition().Equals(NullableType);
+    }
 
     /// <summary>根据名称获取类型</summary>
     /// <param name="typeName">类型名</param>

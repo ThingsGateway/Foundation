@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
 
-using Opc.Ua.Buffers;
-
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Globalization;
@@ -110,15 +108,14 @@ namespace ThingsGateway.Foundation.OpcUa
         internal static string BuildSimpleValueJson(JsonNode body)
         {
 
-            using var ms = new ArrayPoolBufferWriter<byte>();
+            using var ms = new SimpleBufferWriter<byte>();
             using var writer = new Utf8JsonWriter(ms);
             writer.WriteStartObject();
             writer.WritePropertyName("Value");
             body.WriteTo(writer);
             writer.WriteEndObject();
             writer.Flush();
-
-            var data = ms.GetSpan();
+            var data = ms.WrittenSpan;
             return JsonHelper.GetString(Encoding.UTF8, data);
 
         }
@@ -126,7 +123,7 @@ namespace ThingsGateway.Foundation.OpcUa
 
         internal static string BuildVariantJson(NodeId typeId, JsonNode body)
         {
-            using var ms = new ArrayPoolBufferWriter<byte>();
+            using var ms = new SimpleBufferWriter<byte>();
             using var writer = new Utf8JsonWriter(ms);
             writer.WriteStartObject();
             writer.WritePropertyName("Value");
@@ -141,14 +138,14 @@ namespace ThingsGateway.Foundation.OpcUa
             writer.WriteEndObject();
             writer.WriteEndObject();
             writer.Flush();
-            var data = ms.GetSpan();
+            var data = ms.WrittenSpan;
             return JsonHelper.GetString(Encoding.UTF8, data);
 
         }
 
         internal static string BuildExtensionObjectJson(NodeId dataTypeId, JsonNode body)
         {
-            using var ms = new ArrayPoolBufferWriter<byte>();
+            using var ms = new SimpleBufferWriter<byte>();
             using var writer = new Utf8JsonWriter(ms);
             writer.WriteStartObject();
             writer.WritePropertyName("Value");
@@ -168,28 +165,22 @@ namespace ThingsGateway.Foundation.OpcUa
             writer.WriteEndObject();
             writer.WriteEndObject();
             writer.Flush();
-            var data = ms.GetSpan();
+            var data = ms.WrittenSpan;
             return JsonHelper.GetString(Encoding.UTF8, data);
 
         }
 
         #endregion
 
-
-
         /// <summary>获取字节数组的字符串</summary>
         public static unsafe String GetString(Encoding encoding, ReadOnlySpan<Byte> bytes)
         {
             if (bytes.IsEmpty) return String.Empty;
 
-#if NET452
-        return encoding.GetString(bytes.ToArray());
-#else
             fixed (Byte* bytes2 = &MemoryMarshal.GetReference(bytes))
             {
                 return encoding.GetString(bytes2, bytes.Length);
             }
-#endif
         }
         internal static object DecodeRawData(JsonDecoder decoder, BuiltInType builtInType, int ValueRank, string fieldName)
         {
