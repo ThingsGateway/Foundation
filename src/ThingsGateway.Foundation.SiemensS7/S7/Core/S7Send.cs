@@ -180,9 +180,9 @@ public class S7Send : ISendMessage
             WriterExtension.WriteValue(ref byteBlock, (ushort)len, EndianType.Big);//长度
             WriterExtension.WriteValue(ref byteBlock, (ushort)address.DbBlock, EndianType.Big);//DB编号
             WriterExtension.WriteValue(ref byteBlock, (byte)address.DataCode);//数据块类型
-            WriterExtension.WriteValue(ref byteBlock, (byte)((address.AddressStart + address.BitCode ?? 0) / 256 / 256));//数据块偏移量
-            WriterExtension.WriteValue(ref byteBlock, (byte)((address.AddressStart + address.BitCode ?? 0) / 256));//数据块偏移量
-            WriterExtension.WriteValue(ref byteBlock, (byte)((address.AddressStart + address.BitCode ?? 0) % 256));//数据块偏移量
+            WriterExtension.WriteValue(ref byteBlock, (byte)((address.AddressStart + (address.BitCode ?? 0)) / 256 / 256));//数据块偏移量
+            WriterExtension.WriteValue(ref byteBlock, (byte)((address.AddressStart + (address.BitCode ?? 0)) / 256));//数据块偏移量
+            WriterExtension.WriteValue(ref byteBlock, (byte)((address.AddressStart + (address.BitCode ?? 0)) % 256));//数据块偏移量
         }
         ushort dataLen = 0;
         //data
