@@ -220,7 +220,7 @@ public static class ChannelOptionsExtensions
     /// <param name="channelOptions">通道配置</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    private static IChannel GetTcpService(this TouchSocketConfig config, IChannelOptions channelOptions)
+    public static IChannel GetTcpService(this TouchSocketConfig config, IChannelOptions channelOptions)
     {
         var bindUrl = channelOptions.BindUrl;
         ArgumentNullExceptionEx.ThrowIfNull(bindUrl, nameof(bindUrl));

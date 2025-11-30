@@ -171,7 +171,11 @@ public abstract class DeviceBase : AsyncAndSyncDisposableObject, IDevice
 
     /// <inheritdoc/>
     public abstract DataHandlingAdapter GetDataAdapter();
-
+    /// <inheritdoc/>
+    public virtual IChannel CreateChannel(TouchSocketConfig config, IChannelOptions channelOptions)
+    {
+        return config.GetChannel(channelOptions);
+    }
     /// <summary>
     /// 通道连接成功时，如果通道存在其他设备并且不希望其他设备处理时，返回true
     /// </summary>
@@ -492,6 +496,39 @@ public abstract class DeviceBase : AsyncAndSyncDisposableObject, IDevice
 
 
                     await @this.SendAsync(sendMessage, channelResult.Content, cancellationToken).ConfigureAwait(false);
+                    return OperResult.Success;
+                }
+                finally
+                {
+                    waitLock.Release();
+                }
+            }
+            catch (Exception ex)
+            {
+                return new(ex);
+            }
+        }
+    }
+    /// <inheritdoc/>
+    public virtual ValueTask<OperResult> SendAsync(IClientChannel channel, ISendMessage sendMessage, CancellationToken cancellationToken)
+    {
+        return SendAsync(this, channel, sendMessage, cancellationToken);
+
+        static async PooledValueTask<OperResult> SendAsync(DeviceBase @this, IClientChannel channel, ISendMessage sendMessage, CancellationToken cancellationToken)
+        {
+            try
+            {
+                WaitLock? waitLock = @this.GetWaitLock(channel);
+
+                try
+                {
+                    await @this.BeforeSendAsync(channel, cancellationToken).ConfigureAwait(false);
+
+                    await waitLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    channel.SetDataHandlingAdapterLogger(@this.Logger);
+
+
+                    await @this.SendAsync(sendMessage, channel, cancellationToken).ConfigureAwait(false);
                     return OperResult.Success;
                 }
                 finally

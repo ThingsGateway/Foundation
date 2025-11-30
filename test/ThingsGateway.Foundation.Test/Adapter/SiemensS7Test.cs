@@ -11,6 +11,7 @@
 using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
 using ThingsGateway.Foundation.Common.StringExtension;
+using ThingsGateway.Foundation.Modbus;
 using ThingsGateway.Foundation.SiemensS7;
 
 using TouchSocket.Core;
@@ -27,10 +28,9 @@ public class SiemensS7Test
     [DataRow("M100", false, "03 00 00 16 02 F0 80 32 03 00 00 00 02 00 02 00 01 00 00 05 01 FF", "1", DataTypeEnum.UInt16)]
     public async Task SiemensS7_ReadWrite_OK(string address, bool read, string data, string writeData = null, DataTypeEnum dataTypeEnum = DataTypeEnum.UInt16)
     {
-        var siemensS7Channel = new TouchSocketConfig().GetChannel(new ChannelOptions()
-        {
-            ChannelType = ChannelTypeEnum.Other
-        }) as IClientChannel;
+        var siemensS7Master = new SiemensS7Master() { SiemensS7Type = SiemensTypeEnum.S1200, Timeout = 10000 };
+        var siemensS7Channel = siemensS7Master.CreateChannel(new TouchSocketConfig(), new ChannelOptions() { ChannelType = ChannelTypeEnum.Other }) as IClientChannel;
+
         siemensS7Channel.Config.ConfigureContainer(a =>
         {
             a.AddEasyLogger((a, b, c, d) =>
@@ -39,7 +39,6 @@ public class SiemensS7Test
             }, LogLevel.Trace);
         });
 
-        var siemensS7Master = new SiemensS7Master() { SiemensS7Type = SiemensTypeEnum.S1200, Timeout = 10000 };
         siemensS7Master.InitChannel(siemensS7Channel);
         await siemensS7Channel.SetupAsync(siemensS7Channel.Config).ConfigureAwait(false);
         await siemensS7Master.ConnectAsync(CancellationToken.None).ConfigureAwait(false);

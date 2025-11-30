@@ -202,4 +202,5 @@ public interface IDevice : IDisposable, IDisposable2, IAsyncDisposable
     ValueTask<OperResult> WriteAsync(string address, string value, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
     ValueTask<OperResult<string>> ReadStringAsync(string address, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
     ValueTask<OperResult<string[]>> ReadStringAsync(string address, int length, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
+    IChannel CreateChannel(TouchSocketConfig config, IChannelOptions channelOptions);
 }

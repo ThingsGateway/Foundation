@@ -33,10 +33,9 @@ public class ModbusTest
     [DataRow("000045;w=15", false, "000200000008010F002C00010101", "true", DataTypeEnum.Boolean)]
     public async Task ModbusTcp_ReadWrite_OK(string address, bool read, string data, string writeData = null, DataTypeEnum dataTypeEnum = DataTypeEnum.UInt16)
     {
-        var modbusChannel = new TouchSocketConfig().GetChannel(new ChannelOptions()
-        {
-            ChannelType = ChannelTypeEnum.Other
-        }) as IClientChannel;
+        var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusTcp, Timeout = 10000 };
+        var modbusChannel = modbusMaster.CreateChannel(new TouchSocketConfig(), new ChannelOptions() { ChannelType = ChannelTypeEnum.Other }) as IClientChannel;
+
         modbusChannel.Config.ConfigureContainer(a =>
         {
             a.AddEasyLogger((a, b, c, d) =>
@@ -44,7 +43,6 @@ public class ModbusTest
                 TestContext.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
             }, LogLevel.Trace);
         });
-        var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusTcp, Timeout = 10000 };
         modbusMaster.InitChannel(modbusChannel);
         await modbusChannel.SetupAsync(modbusChannel.Config).ConfigureAwait(false);
         await modbusMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
@@ -81,10 +79,9 @@ public class ModbusTest
     [DataRow("000045", false, "0105002CFF004DF3", "true", DataTypeEnum.Boolean)]
     public async Task ModbusRtu_ReadWrite_OK(string address, bool read, string data, string writeData = null, DataTypeEnum dataTypeEnum = DataTypeEnum.UInt16)
     {
-        var modbusChannel = new TouchSocketConfig().GetChannel(new ChannelOptions()
-        {
-            ChannelType = ChannelTypeEnum.Other
-        }) as IClientChannel;
+        var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusRtu, Timeout = 10000, Station = 1 };
+        var modbusChannel = modbusMaster.CreateChannel(new TouchSocketConfig(), new ChannelOptions() { ChannelType = ChannelTypeEnum.Other }) as IClientChannel;
+
         modbusChannel.Config.ConfigureContainer(a =>
         {
             a.AddEasyLogger((a, b, c, d) =>
@@ -92,7 +89,6 @@ public class ModbusTest
                TestContext.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
            }, LogLevel.Trace);
         });
-        var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusRtu, Timeout = 10000, Station = 1 };
         modbusMaster.InitChannel(modbusChannel);
         await modbusChannel.SetupAsync(modbusChannel.Config).ConfigureAwait(false);
         await modbusMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);

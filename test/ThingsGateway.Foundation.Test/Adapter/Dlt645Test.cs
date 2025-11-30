@@ -29,10 +29,9 @@ public class Dlt645Test
     [DataRow("02010100", "FE FE FE FE 68 11 11 11 11 11 11 68 91 07 33 34 34 35 33 59 36 60 16 ")]
     public async Task Dlt645_Read_OK(string address, string data)
     {
-        var dltChannel = new TouchSocketConfig().GetChannel(new ChannelOptions()
-        {
-            ChannelType = ChannelTypeEnum.Other
-        }) as IClientChannel;
+        var dltMaster = new Dlt645_2007Master() { Timeout = 30000, Station = "111111111111" };
+        var dltChannel = dltMaster.CreateChannel(new TouchSocketConfig(), new ChannelOptions() { ChannelType = ChannelTypeEnum.Other }) as IClientChannel;
+
         dltChannel.Config.ConfigureContainer(a =>
         {
             a.AddEasyLogger((a, b, c, d) =>
@@ -41,7 +40,6 @@ public class Dlt645Test
             }, LogLevel.Trace);
         });
 
-        var dltMaster = new Dlt645_2007Master() { Timeout = 30000, Station = "111111111111" };
         dltMaster.InitChannel(dltChannel);
         await dltChannel.SetupAsync(dltChannel.Config).ConfigureAwait(false);
         await dltMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
