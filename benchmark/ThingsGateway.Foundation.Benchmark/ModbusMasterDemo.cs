@@ -58,7 +58,7 @@ public class ModbusBenchmark : IDisposable
                     //modbus协议格式
                     ModbusType = ModbusTypeEnum.ModbusTcp,
                 };
-                var clientChannel = thingsgatewaymodbus.CreateChannel(clientConfig,new ChannelOptions() { ChannelType = ChannelTypeEnum.TcpClient, RemoteUrl = "127.0.0.1:502", MaxConcurrentCount = 10 });
+                var clientChannel = thingsgatewaymodbus.CreateChannel(clientConfig, new ChannelOptions() { ChannelType = ChannelTypeEnum.TcpClient, RemoteUrl = "127.0.0.1:502", MaxConcurrentCount = 10 });
                 thingsgatewaymodbus.InitChannel(clientChannel);
                 await clientChannel.SetupAsync(clientChannel.Config).ConfigureAwait(false);
                 clientChannel.Logger.LogLevel = LogLevel.Warning;

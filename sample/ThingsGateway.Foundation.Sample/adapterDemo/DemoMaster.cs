@@ -39,29 +39,29 @@ public partial class DemoMaster : DeviceBase
     public override DataHandlingAdapter GetDataAdapter()
     {
         ArgumentNullExceptionEx.ThrowIfNull(Channel?.ChannelOptions, nameof(IChannel.ChannelOptions));
-        
-                switch (Channel.ChannelType)
-                {
-                    case ChannelTypeEnum.TcpClient:
-                    case ChannelTypeEnum.TcpService:
-                    case ChannelTypeEnum.SerialPort:
-                        return new DeviceSingleStreamDataHandleAdapter<DemoMessage>()
-                        {
-                            CacheTimeout = TimeSpan.FromMilliseconds(Channel.ChannelOptions.CacheTimeout),
-                            IsSingleThread = false
-                        };
 
-                    case ChannelTypeEnum.UdpSession:
-                        return new DeviceUdpDataHandleAdapter<DemoMessage>()
-                        {
-                            IsSingleThread = false
-                        };
-                }
+        switch (Channel.ChannelType)
+        {
+            case ChannelTypeEnum.TcpClient:
+            case ChannelTypeEnum.TcpService:
+            case ChannelTypeEnum.SerialPort:
                 return new DeviceSingleStreamDataHandleAdapter<DemoMessage>()
                 {
                     CacheTimeout = TimeSpan.FromMilliseconds(Channel.ChannelOptions.CacheTimeout),
                     IsSingleThread = false
                 };
+
+            case ChannelTypeEnum.UdpSession:
+                return new DeviceUdpDataHandleAdapter<DemoMessage>()
+                {
+                    IsSingleThread = false
+                };
+        }
+        return new DeviceSingleStreamDataHandleAdapter<DemoMessage>()
+        {
+            CacheTimeout = TimeSpan.FromMilliseconds(Channel.ChannelOptions.CacheTimeout),
+            IsSingleThread = false
+        };
 
     }
 
@@ -98,8 +98,8 @@ public partial class DemoMaster : DeviceBase
         {
             //解析自己的地址字符串，转换成起始地址等信息
             ushort startAddress = (ushort)address.ToInt();
-            var send =new DemoSend(Station, startAddress, (ushort)length);
-            return  SendThenReturnAsync(send, cancellationToken);
+            var send = new DemoSend(Station, startAddress, (ushort)length);
+            return SendThenReturnAsync(send, cancellationToken);
         }
         catch (Exception ex)
         {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 namespace ThingsGateway.Foundation.OpcUa;
 
 public sealed class SimpleBufferWriter<T> : IBufferWriter<T>, IDisposable

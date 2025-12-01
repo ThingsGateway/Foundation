@@ -11,7 +11,6 @@
 using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
 using ThingsGateway.Foundation.Common.StringExtension;
-using ThingsGateway.Foundation.Modbus;
 using ThingsGateway.Foundation.SiemensS7;
 
 using TouchSocket.Core;
