@@ -33,11 +33,11 @@ public interface IChannel : ISetupConfigObject, IDisposable, IClosableClient, IC
     /// </summary>
     ChannelTypeEnum ChannelType { get; }
 
-    internal List<IDevice> Collects { get; }
+    internal List<IReceivedDevice> Collects { get; }
     /// <summary>
     /// 通道下的所有设备
     /// </summary>
-    public IReadOnlyCollection<IDevice> ReadOnlyCollects { get; }
+    public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects { get; }
 
     /// <summary>
     /// 通道启动成功后

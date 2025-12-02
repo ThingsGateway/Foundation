@@ -78,7 +78,7 @@ public static class CSharpScriptEngineExtension
     /// <summary>
     /// 执行脚本获取返回值
     /// </summary>
-    public static T Do<T>(string source, params Assembly[] assemblies) where T : class
+    public static T Do<T>(string source, TimeSpan timeSpan, params Assembly[] assemblies) where T : class
     {
         if (source.IsNullOrEmpty()) return null;
         var field = $"{CacheKey}-{source}";
@@ -139,7 +139,7 @@ public static class CSharpScriptEngineExtension
                     catch (NullReferenceException)
                     {
                         //如果编译失败，应该不重复编译，避免oom
-                        Instance.Set<T>(field, null, TimeSpan.FromHours(1));
+                        Instance.Set<T>(field, null, timeSpan);
 
                         string exString = string.Format(CSScriptResource.CSScriptResource.Error1, typeof(T).FullName);
                         throw new(exString);
@@ -147,20 +147,27 @@ public static class CSharpScriptEngineExtension
                     catch (Exception ex)
                     {
                         //如果编译失败，应该不重复编译，避免oom
-                        Instance.Set<T>(field, null, TimeSpan.FromHours(1));
-                        Instance.Set(exfield, ex, TimeSpan.FromHours(1));
+                        Instance.Set<T>(field, null, timeSpan);
+                        Instance.Set(exfield, ex, timeSpan);
                         throw;
                     }
                 }
             }
         }
-        Instance.SetExpire(field, TimeSpan.FromHours(1));
-        Instance.SetExpire(exfield, TimeSpan.FromHours(1));
+        Instance.SetExpire(field, timeSpan);
+        Instance.SetExpire(exfield, timeSpan);
         if (runScript == null)
         {
             throw (Instance.Get<Exception>(exfield) ?? new Exception("compilation error"));
         }
         return runScript;
+    }
+    /// <summary>
+    /// 执行脚本获取返回值
+    /// </summary>
+    public static T Do<T>(string source, params Assembly[] assemblies) where T : class
+    {
+        return Do<T>(source, TimeSpan.Zero, assemblies);
     }
 
     public static void SetExpire(string source, TimeSpan? timeSpan = null)

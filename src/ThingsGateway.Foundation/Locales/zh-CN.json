@@ -34,7 +34,7 @@
     "Stringlength": "字符串长度",
     "VariableStringLength": "变长字符串"
   },
-  "ThingsGateway.Foundation.DeviceBase": {
+  "ThingsGateway.Foundation.ReceivedDeviceBase": {
     "DataFormat": "解析规则",
     "IsStringReverseByteWord": "字符串反转",
     "SendDelayTime": "发送延时",

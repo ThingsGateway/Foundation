@@ -34,7 +34,7 @@
     "Stringlength": "Stringlength",
     "VariableStringLength": "VariableStringLength"
   },
-  "ThingsGateway.Foundation.DeviceBase": {
+  "ThingsGateway.Foundation.ReceivedDeviceBase": {
     "DataFormat": "DataFormat",
     "IsStringReverseByteWord": "IsStringReverseByteWord",
     "SendDelayTime": "SendDelayTime",

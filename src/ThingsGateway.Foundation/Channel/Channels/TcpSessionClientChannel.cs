@@ -57,11 +57,11 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     /// <inheritdoc/>
     public ChannelTypeEnum ChannelType => ChannelOptions?.ChannelType ?? ChannelTypeEnum.TcpService;
 
-    internal List<IDevice> Collects { get; } = new();
-    List<IDevice> IChannel.Collects => Collects;
+    internal List<IReceivedDevice> Collects { get; } = new();
+    List<IReceivedDevice> IChannel.Collects => Collects;
 
     /// <inheritdoc/>
-    public IReadOnlyCollection<IDevice> ReadOnlyCollects => Collects;
+    public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects => Collects;
 
 
     /// <inheritdoc/>

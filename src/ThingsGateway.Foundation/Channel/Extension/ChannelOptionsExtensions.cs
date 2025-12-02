@@ -100,7 +100,65 @@ public static class ChannelOptionsExtensions
     /// <param name="channelOptions">通道配置</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
+    public static IChannel GetChannel<T>(this TouchSocketConfig config, IChannelOptions channelOptions) where T : TcpSessionClientChannel, new()
+    {
+        ChannelTypeEnum channelType = VaildChannel(config, channelOptions);
+
+        switch (channelType)
+        {
+            case ChannelTypeEnum.TcpClient:
+                return config.GetTcpClient(channelOptions);
+
+            case ChannelTypeEnum.TcpService:
+                return config.GetTcpService<T>(channelOptions);
+
+            case ChannelTypeEnum.SerialPort:
+                return config.GetSerialPort(channelOptions);
+
+            case ChannelTypeEnum.UdpSession:
+                return config.GetUdpSession(channelOptions);
+            case ChannelTypeEnum.Other:
+                channelOptions.Config = config;
+                OtherChannel otherChannel = new OtherChannel(channelOptions);
+                return otherChannel;
+        }
+        channelOptions.Config = config;
+        return new OtherChannel(channelOptions);
+    }
+    /// <summary>
+    /// 获取一个新的通道。传入通道类型，远程服务端地址，绑定地址，串口配置信息
+    /// </summary>
+    /// <param name="config">配置</param>
+    /// <param name="channelOptions">通道配置</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
     public static IChannel GetChannel(this TouchSocketConfig config, IChannelOptions channelOptions)
+    {
+        ChannelTypeEnum channelType = VaildChannel(config, channelOptions);
+
+        switch (channelType)
+        {
+            case ChannelTypeEnum.TcpClient:
+                return config.GetTcpClient(channelOptions);
+
+            case ChannelTypeEnum.TcpService:
+                return config.GetTcpService<TcpSessionClientChannel>(channelOptions);
+
+            case ChannelTypeEnum.SerialPort:
+                return config.GetSerialPort(channelOptions);
+
+            case ChannelTypeEnum.UdpSession:
+                return config.GetUdpSession(channelOptions);
+            case ChannelTypeEnum.Other:
+                channelOptions.Config = config;
+                OtherChannel otherChannel = new OtherChannel(channelOptions);
+                return otherChannel;
+        }
+        channelOptions.Config = config;
+        return new OtherChannel(channelOptions);
+    }
+
+    private static ChannelTypeEnum VaildChannel(TouchSocketConfig config, IChannelOptions channelOptions)
     {
         ArgumentNullExceptionEx.ThrowIfNull(config, nameof(config));
         ArgumentNullExceptionEx.ThrowIfNull(channelOptions, nameof(channelOptions));
@@ -109,22 +167,6 @@ public static class ChannelOptionsExtensions
 
         if (channelOptions.MaxClientCount > 0)
             config.SetMaxCount(channelOptions.MaxClientCount);
-
-        //    config.SetTransportOption(new TransportOption()
-        //    {
-        //        MaxBufferSize = 1024,
-        //        MinBufferSize = 512,
-        //        SendPipeOptions = new System.IO.Pipelines.PipeOptions(
-        // minimumSegmentSize: 512,
-        // pauseWriterThreshold: 1024,
-        // resumeWriterThreshold: 512,
-        // useSynchronizationContext: false),
-        //        ReceivePipeOptions = new System.IO.Pipelines.PipeOptions(
-        //minimumSegmentSize: 512,
-        // pauseWriterThreshold: 1024,
-        // resumeWriterThreshold: 512,
-        //    useSynchronizationContext: false),
-        //    });
 
         config.SetTransportOption(a =>
         {
@@ -141,27 +183,7 @@ public static class ChannelOptionsExtensions
              resumeWriterThreshold: 512,
                 useSynchronizationContext: false);
         });
-
-        switch (channelType)
-        {
-            case ChannelTypeEnum.TcpClient:
-                return config.GetTcpClient(channelOptions);
-
-            case ChannelTypeEnum.TcpService:
-                return config.GetTcpService(channelOptions);
-
-            case ChannelTypeEnum.SerialPort:
-                return config.GetSerialPort(channelOptions);
-
-            case ChannelTypeEnum.UdpSession:
-                return config.GetUdpSession(channelOptions);
-            case ChannelTypeEnum.Other:
-                channelOptions.Config = config;
-                OtherChannel otherChannel = new OtherChannel(channelOptions);
-                return otherChannel;
-        }
-        channelOptions.Config = config;
-        return new OtherChannel(channelOptions);
+        return channelType;
     }
 
     /// <summary>
@@ -220,7 +242,7 @@ public static class ChannelOptionsExtensions
     /// <param name="channelOptions">通道配置</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static IChannel GetTcpService(this TouchSocketConfig config, IChannelOptions channelOptions)
+    public static IChannel GetTcpService<T>(this TouchSocketConfig config, IChannelOptions channelOptions) where T : TcpSessionClientChannel, new()
     {
         var bindUrl = channelOptions.BindUrl;
         ArgumentNullExceptionEx.ThrowIfNull(bindUrl, nameof(bindUrl));
@@ -237,7 +259,7 @@ public static class ChannelOptionsExtensions
 
             case DtuSeviceType.Default:
             default:
-                return new TcpServiceChannel<TcpSessionClientChannel>(channelOptions);
+                return new TcpServiceChannel<T>(channelOptions);
         }
     }
 

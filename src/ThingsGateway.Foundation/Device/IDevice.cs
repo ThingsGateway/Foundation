@@ -10,69 +10,13 @@
 
 using System.Text.Json.Nodes;
 
-using TouchSocket.Core;
-
 namespace ThingsGateway.Foundation;
 
 /// <summary>
 /// 协议设备接口
 /// </summary>
-public interface IDevice : IDisposable, IDisposable2, IAsyncDisposable
+public interface IDevice : IReceivedDevice, IDisposable, IDisposable2, IAsyncDisposable
 {
-    #region 属性
-
-    /// <summary>
-    /// 通道
-    /// </summary>
-    IChannel? Channel { get; }
-
-    /// <summary>
-    /// 日志
-    /// </summary>
-    ILog? Logger { get; }
-
-    /// <inheritdoc/>
-    bool OnLine { get; }
-
-    /// <summary>
-    /// 一个寄存器所占的字节长度
-    /// </summary>
-    int RegisterByteLength { get; }
-
-    /// <summary>
-    /// 发送前延时
-    /// </summary>
-    int SendDelayTime { get; set; }
-
-    /// <summary>
-    /// 数据解析规则
-    /// </summary>
-    IThingsGatewayBitConverter BitConverter { get; }
-
-    /// <summary>
-    /// 读写超时时间
-    /// </summary>
-    int Timeout { get; set; }
-
-    /// <summary>
-    /// 字节顺序
-    /// </summary>
-    DataFormatEnum DataFormat { get; set; }
-
-    /// <summary>
-    /// 字符串翻转
-    /// </summary>
-    bool IsStringReverseByteWord { get; set; }
-    bool AutoConnect { get; }
-
-    #endregion 属性
-
-
-    /// <summary>
-    /// 获取新的适配器实例
-    /// </summary>
-    DataHandlingAdapter GetDataAdapter();
-
 
     #region 变量地址解析
 
@@ -140,7 +84,6 @@ public interface IDevice : IDisposable, IDisposable2, IAsyncDisposable
     /// <returns></returns>
     ValueTask<OperResult<ReadOnlyMemory<byte>>> ReadAsync(string address, int length, DataTypeEnum dataType, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
 
-    ValueTask ConnectAsync(CancellationToken token = default);
 
     /// <summary>
     /// 根据数据类型，写入类型值
@@ -158,49 +101,9 @@ public interface IDevice : IDisposable, IDisposable2, IAsyncDisposable
     /// </summary>
     ValueTask<OperResult> WriteAsync(string address, ReadOnlyMemory<byte> value, DataTypeEnum dataType, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 配置IPluginManager
-    /// </summary>
-    Action<IPluginManager> ConfigurePlugins(TouchSocketConfig config);
 
-    /// <summary>
-    /// 获取通道
-    /// </summary>
-    /// <returns></returns>
-    OperResult<IClientChannel> GetChannel();
-
-    /// <summary>
-    /// 发送，会经过适配器
-    /// </summary>
-    /// <param name="sendMessage">发送字节数组</param>
-    /// <param name="cancellationToken">取消令箭</param>
-    /// <returns>返回消息体</returns>
-    ValueTask<OperResult> SendAsync(ISendMessage sendMessage, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// 发送并等待返回，会经过适配器，可传入<see cref="IClientChannel"/>，如果为空，则默认通道必须为<see cref="IClientChannel"/>类型
-    /// </summary>
-    /// <param name="command">发送字节数组</param>
-    /// <param name="cancellationToken">取消令箭</param>
-    /// <param name="channel">通道</param>
-    /// <returns>返回消息体</returns>
-    ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(ISendMessage command, IClientChannel? channel, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 支持通道多设备
-    /// </summary>
-    /// <returns></returns>
-    bool SupportMultipleDevice();
-
-    /// <summary>
-    /// 初始化通道信息
-    /// </summary>
-    /// <param name="channel">通道</param>
-    /// <param name="deviceLog">单独设备日志</param>
-    void InitChannel(IChannel channel, ILog? deviceLog = null);
     ValueTask<OperResult> WriteAsync(string address, ReadOnlyMemory<string> value, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
     ValueTask<OperResult> WriteAsync(string address, string value, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
     ValueTask<OperResult<string>> ReadStringAsync(string address, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
     ValueTask<OperResult<string[]>> ReadStringAsync(string address, int length, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default);
-    IChannel CreateChannel(TouchSocketConfig config, IChannelOptions channelOptions);
 }

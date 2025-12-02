@@ -153,11 +153,11 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
 /// </summary>
 public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChannel, ITcpServiceChannel where TClient : TcpSessionClientChannel, IClientChannel, IChannel, new()
 {
-    internal List<IDevice> Collects { get; } = new();
-    List<IDevice> IChannel.Collects => Collects;
+    internal List<IReceivedDevice> Collects { get; } = new();
+    List<IReceivedDevice> IChannel.Collects => Collects;
 
     /// <inheritdoc/>
-    public IReadOnlyCollection<IDevice> ReadOnlyCollects => Collects;
+    public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects => Collects;
 
     /// <inheritdoc/>
     public TcpServiceChannel(IChannelOptions channelOptions)
