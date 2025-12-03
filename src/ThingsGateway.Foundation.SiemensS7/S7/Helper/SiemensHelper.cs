@@ -73,7 +73,7 @@ internal sealed partial class SiemensHelper
         //先读取一次获取长度，再读取实际值
         if (plc.SiemensS7Type != SiemensTypeEnum.S200Smart)
         {
-            var result1 = await plc.ReadByteAsync(address, 2, bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result1 = await plc.ReadAsync(address, 2, bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!result1.IsSuccess)
             {
                 return new OperResult<string>(result1);
@@ -83,7 +83,7 @@ internal sealed partial class SiemensHelper
             {
                 return new OperResult<string>(AppResource.NotString);
             }
-            var result2 = await plc.ReadByteAsync(address, 2 + span[1], bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result2 = await plc.ReadAsync(address, 2 + span[1], bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!result2.IsSuccess)
             {
                 return new OperResult<string>(result2);
@@ -95,11 +95,11 @@ internal sealed partial class SiemensHelper
         }
         else
         {
-            var result1 = await plc.ReadByteAsync(address, 1, bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result1 = await plc.ReadAsync(address, 1, bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!result1.IsSuccess)
                 return new OperResult<string>(result1);
             var span = result1.Content.Span;
-            var result2 = await plc.ReadByteAsync(address, 1 + span[0], bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result2 = await plc.ReadAsync(address, 1 + span[0], bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!result2.IsSuccess)
             {
                 return new OperResult<string>(result2);
@@ -117,7 +117,7 @@ internal sealed partial class SiemensHelper
         byte[] inBytes = encoding.GetBytes(value);
         if (plc.SiemensS7Type != SiemensTypeEnum.S200Smart)
         {
-            var result = await plc.ReadByteAsync(address, 2, bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result = await plc.ReadAsync(address, 2, bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (!result.IsSuccess) return result;
             var span = result.Content.Span;
             var len = span[0];
@@ -139,7 +139,7 @@ internal sealed partial class SiemensHelper
         if (plc.SiemensS7Type != SiemensTypeEnum.S200Smart)
         {
             encoding ??= Encoding.BigEndianUnicode;
-            var result1 = await plc.ReadByteAsync(address, 4, bitConverter, cancellationToken).ConfigureAwait(false);
+            var result1 = await plc.ReadAsync(address, 4, bitConverter, cancellationToken).ConfigureAwait(false);
             if (!result1.IsSuccess)
             {
                 return new OperResult<string>(result1);
@@ -149,7 +149,7 @@ internal sealed partial class SiemensHelper
             {
                 return new OperResult<string>(AppResource.NotString);
             }
-            var result2 = await plc.ReadByteAsync(address, 4 + (plc.BitConverter.ToUInt16(span, 2) * 2), bitConverter, cancellationToken).ConfigureAwait(false);
+            var result2 = await plc.ReadAsync(address, 4 + (plc.BitConverter.ToUInt16(span, 2) * 2), bitConverter, cancellationToken).ConfigureAwait(false);
             if (!result2.IsSuccess)
             {
                 return new OperResult<string>(result2);
@@ -162,10 +162,10 @@ internal sealed partial class SiemensHelper
         else
         {
             encoding ??= Encoding.Unicode;
-            var result1 = await plc.ReadByteAsync(address, 1, bitConverter, cancellationToken).ConfigureAwait(false);
+            var result1 = await plc.ReadAsync(address, 1, bitConverter, cancellationToken).ConfigureAwait(false);
             if (!result1.IsSuccess)
                 return new OperResult<string>(result1);
-            var result2 = await plc.ReadByteAsync(address, 1 + (result1.Content.Span[0] * 2), bitConverter, cancellationToken).ConfigureAwait(false);
+            var result2 = await plc.ReadAsync(address, 1 + (result1.Content.Span[0] * 2), bitConverter, cancellationToken).ConfigureAwait(false);
             if (!result2.IsSuccess)
             {
                 return new OperResult<string>(result2);
@@ -183,7 +183,7 @@ internal sealed partial class SiemensHelper
         if (plc.SiemensS7Type != SiemensTypeEnum.S200Smart)
         {
             byte[] inBytes1 = (encoding ?? Encoding.BigEndianUnicode).GetBytes(value);
-            var result = await plc.ReadByteAsync(address, 4, bitConverter, cancellationToken).ConfigureAwait(false);
+            var result = await plc.ReadAsync(address, 4, bitConverter, cancellationToken).ConfigureAwait(false);
             if (!result.IsSuccess) return result;
             var num = plc.BitConverter.ToUInt16(result.Content.Span, 0);
             if (num == 0)

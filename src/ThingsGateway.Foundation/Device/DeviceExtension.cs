@@ -66,7 +66,7 @@ public static partial class DeviceExtension
                 case DataTypeEnum.Boolean:
                     return (await ReadBooleanAsync(device, address, length, bitConverter, cancellationToken).ConfigureAwait(false)).OperResultFrom(a => a.ToJsonArray());
                 case DataTypeEnum.Byte:
-                    return (await ReadByteAsync(device, address, length, bitConverter, cancellationToken).ConfigureAwait(false)).OperResultFrom(a => a.Span.ToJsonArray());
+                    return (await ReadAsync(device, address, length, bitConverter, cancellationToken).ConfigureAwait(false)).OperResultFrom(a => a.Span.ToJsonArray());
                 case DataTypeEnum.Int16:
                     return (await ReadInt16Async(device, address, length, bitConverter, cancellationToken).ConfigureAwait(false)).OperResultFrom(a => a.ToJsonArray());
                 case DataTypeEnum.UInt16:
@@ -152,11 +152,11 @@ public static partial class DeviceExtension
         return device.ReadAsync(address, DataTypeEnum.Byte, null!, cancellationToken);
     }
     /// <inheritdoc/>
-    public static ValueTask<OperResult<ReadOnlyMemory<byte>>> ReadByteAsync(this IDevice device, string address, int length, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default)
+    public static ValueTask<OperResult<ReadOnlyMemory<byte>>> ReadAsync(this IDevice device, string address, int length, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default)
     {
         bitConverter ??= device.BitConverter.GetTransByAddress(address);
 
-        return device.ReadAsync(address, device.GetLength(address, length, device.RegisterByteLength, true), DataTypeEnum.Byte, bitConverter, cancellationToken);
+        return device.ReadAsync(address, length, DataTypeEnum.Byte, bitConverter, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -400,13 +400,13 @@ public static partial class DeviceExtension
     #endregion 写入数组
 
     #region 读取
-
     /// <inheritdoc/>
     public static async ValueTask<OperResult<byte>> ReadByteAsync(this IDevice device, string address, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default)
     {
-        var result = await device.ReadByteAsync(address, 1, bitConverter, cancellationToken).ConfigureAwait(false);
+        var result = await device.ReadAsync(address, 1, bitConverter, cancellationToken).ConfigureAwait(false);
         return result.OperResultFrom(() => result.Content!.Span[0]);
     }
+
     /// <inheritdoc/>
     public static async ValueTask<OperResult<Boolean>> ReadBooleanAsync(this IDevice device, string address, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default)
     {

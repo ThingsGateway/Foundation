@@ -157,7 +157,7 @@ public abstract class VariableObject
         {
             foreach (var item in @this.DeviceVariableSourceReads)
             {
-                var result = await @this.Device.ReadByteAsync(item.RegisterAddress, item.Length, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var result = await @this.Device.ReadAsync(item.RegisterAddress, item.Length, cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (result.IsSuccess)
                 {
                     var result1 = item.Variables.PraseStructContent(@this.Device, result.Content, exWhenAny: true);

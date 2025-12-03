@@ -566,7 +566,7 @@ public partial class SiemensS7Master : DeviceBase
     /// <returns></returns>
     public async ValueTask<OperResult<System.DateTime>> ReadDateAsync(string address, CancellationToken cancellationToken)
     {
-        return (await this.ReadByteAsync(address, 2, cancellationToken: cancellationToken).ConfigureAwait(false)).
+        return (await this.ReadAsync(address, 2, cancellationToken: cancellationToken).ConfigureAwait(false)).
              Then(m => OperResult.CreateSuccessResult(S7DateTime.SpecMinimumDateTime.AddDays(
                  BitConverter.ToUInt16(m.Span, 0)))
              );
@@ -578,7 +578,7 @@ public partial class SiemensS7Master : DeviceBase
     /// <returns></returns>
     public async ValueTask<OperResult<System.DateTime>> ReadDateTimeAsync(string address, CancellationToken cancellationToken)
     {
-        return OperResultExtension.GetResultFromBytes(await this.ReadByteAsync(address, 8, cancellationToken: cancellationToken).ConfigureAwait(false), (a) => S7DateTime.FromByteArray(a.Span));
+        return OperResultExtension.GetResultFromBytes(await this.ReadAsync(address, 8, cancellationToken: cancellationToken).ConfigureAwait(false), (a) => S7DateTime.FromByteArray(a.Span));
     }
 
     /// <summary>
