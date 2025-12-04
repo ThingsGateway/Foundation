@@ -40,6 +40,71 @@ public static class PluginUtil
                 action += a => a.UseReconnection<IClientChannel>(a =>
                 {
                     a.PollingInterval = TimeSpan.FromSeconds(5);
+                    a.ConnectAction = async (client, cancellationToken) =>
+                    {
+                        var attempts = 0;
+                        var currentInterval = a.BaseInterval;
+
+                        while (a.MaxRetryCount < 0 || attempts < a.MaxRetryCount)
+                        {
+                            if(cancellationToken.IsCancellationRequested)
+                            {
+                                return;
+                            }
+                            if (client.PauseReconnection)
+                            {
+                                continue;
+                            }
+
+                            attempts++;
+
+                            try
+                            {
+                                if (client.Online)
+                                {
+                                    a.OnSuccessed?.Invoke(client);
+                                    return;
+                                }
+
+                                await client.ConnectAsync(cancellationToken).ConfigureAwait(EasyTask.ContinueOnCapturedContext);
+                                a.OnSuccessed?.Invoke(client);
+
+                                if (a.LogReconnection)
+                                {
+                                    client.Logger?.Info(a, $"重连成功，尝试次数: {attempts}");
+                                }
+                                return;
+                            }
+                            catch (Exception ex)
+                            {
+                                if (cancellationToken.IsCancellationRequested)
+                                {
+                                    return;
+                                }
+                                a.OnFailed?.Invoke(client, attempts, ex);
+
+                                if (a.LogReconnection)
+                                {
+                                    client.Logger?.Warning(a, $"重连失败，尝试次数: {attempts}，错误: {ex.Message}");
+                                }
+
+                                if (a.MaxRetryCount > 0 && attempts >= a.MaxRetryCount)
+                                {
+                                    a.OnGiveUp?.Invoke(client, attempts);
+                                    if (a.LogReconnection)
+                                    {
+                                        client.Logger?.Error(a, $"达到最大重连次数 {a.MaxRetryCount}，放弃重连");
+                                    }
+                                    return;
+                                }
+
+                                // 计算下次重连间隔
+                                currentInterval = CalculateNextInterval(a,attempts, currentInterval);
+
+                                await Task.Delay(currentInterval, CancellationToken.None).ConfigureAwait(EasyTask.ContinueOnCapturedContext);
+                            }
+                        }
+                    };
                 }
                 );
             }
@@ -47,7 +112,27 @@ public static class PluginUtil
         }
         return a => { };
     }
-
+    /// <summary>
+    /// 计算下次重连间隔
+    /// </summary>
+    /// <param name="reconnectionOption">option</param>
+    /// <param name="attemptCount">当前尝试次数</param>
+    /// <param name="currentInterval">当前间隔</param>
+    /// <returns>下次重连间隔</returns>
+    private static TimeSpan CalculateNextInterval(ReconnectionOption<IClientChannel> reconnectionOption, int attemptCount, TimeSpan currentInterval)
+    {
+        return reconnectionOption.Strategy switch
+        {
+            ReconnectionStrategy.Simple => reconnectionOption.BaseInterval,
+            ReconnectionStrategy.ExponentialBackoff => TimeSpan.FromMilliseconds(Math.Min(
+                reconnectionOption.BaseInterval.TotalMilliseconds * Math.Pow(reconnectionOption.BackoffMultiplier, attemptCount - 1),
+                reconnectionOption.MaxInterval.TotalMilliseconds)),
+            ReconnectionStrategy.LinearBackoff => TimeSpan.FromMilliseconds(Math.Min(
+                reconnectionOption.BaseInterval.TotalMilliseconds + (attemptCount - 1) * reconnectionOption.BackoffMultiplier,
+                reconnectionOption.MaxInterval.TotalMilliseconds)),
+            _ => reconnectionOption.BaseInterval
+        };
+    }
     /// <summary>
     /// 作为DTU服务
     /// </summary>
