@@ -147,7 +147,7 @@ public partial class ModbusMaster : DtuDeviceBase, IModbusAddress
         return mAddress;
     }
 
-    protected ISendMessage GetSendMessage(ModbusAddress modbusAddress, bool read)
+    protected virtual ISendMessage GetSendMessage(ModbusAddress modbusAddress, bool read)
     {
         if (ModbusType == ModbusTypeEnum.ModbusRtu)
         {

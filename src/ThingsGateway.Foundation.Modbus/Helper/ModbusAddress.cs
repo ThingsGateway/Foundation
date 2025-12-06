@@ -82,6 +82,7 @@ public class ModbusAddress : ModbusRequest
         else
         {
             string[] strArray = address.SplitStringBySemicolon()!;
+            string addressStr = null;
             for (int index = 0; index < strArray.Length; ++index)
             {
                 if (strArray[index].StartsWith("S=", StringComparison.OrdinalIgnoreCase))
@@ -94,11 +95,18 @@ public class ModbusAddress : ModbusRequest
                     if (strArray[index].Substring(2).ToInt() > 0)
                         modbusAddress.WriteFunctionCode = byte.Parse(strArray[index].Substring(2));
                 }
+                else if (strArray[index].StartsWith("F=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var f = strArray[index].Substring(2).ToInt();
+                    if (f > 0)
+                        modbusAddress.FunctionCode = (byte)f;
+                }
                 else if (!strArray[index].Contains('='))
                 {
-                    Address(strArray[index]);
+                    addressStr = strArray[index];
                 }
             }
+            Address(addressStr);
         }
 
         //if (isCache)
@@ -109,33 +117,47 @@ public class ModbusAddress : ModbusRequest
 
         void Address(string address)
         {
-            var readF = ushort.Parse(address.Substring(0, 1));
-            if (readF > 4)
-                throw new(AppResource.FunctionError);
-            switch (readF)
+            if (modbusAddress.FunctionCode <= 0)
             {
-                case 0:
-                    modbusAddress.FunctionCode = 1;
-                    break;
+                var readF = ushort.Parse(address.Substring(0, 1));
+                if (readF > 4)
+                    throw new(AppResource.FunctionError);
+                switch (readF)
+                {
+                    case 0:
+                        modbusAddress.FunctionCode = 1;
+                        break;
 
-                case 1:
-                    modbusAddress.FunctionCode = 2;
-                    break;
+                    case 1:
+                        modbusAddress.FunctionCode = 2;
+                        break;
 
-                case 3:
-                    modbusAddress.FunctionCode = 4;
-                    break;
+                    case 3:
+                        modbusAddress.FunctionCode = 4;
+                        break;
 
-                case 4:
-                    modbusAddress.FunctionCode = 3;
-                    break;
+                    case 4:
+                        modbusAddress.FunctionCode = 3;
+                        break;
+                }
+
+                string[] strArray = address.SplitStringByDelimiter()!;
+                modbusAddress.StartAddress = (ushort)(int.Parse(strArray[0].Substring(1)) - 1);
+                if (strArray.Length > 1)
+                {
+                    modbusAddress.BitIndex = int.Parse(strArray[1]);
+                }
             }
-            string[] strArray = address.SplitStringByDelimiter()!;
-            modbusAddress.StartAddress = (ushort)(int.Parse(strArray[0].Substring(1)) - 1);
-            if (strArray.Length > 1)
+            else
             {
-                modbusAddress.BitIndex = int.Parse(strArray[1]);
+                string[] strArray = address.SplitStringByDelimiter()!;
+                modbusAddress.StartAddress = ushort.Parse(strArray[0]);
+                if (strArray.Length > 1)
+                {
+                    modbusAddress.BitIndex = int.Parse(strArray[1]);
+                }
             }
+
         }
     }
 
@@ -152,19 +174,13 @@ public class ModbusAddress : ModbusRequest
         {
             stringGeter.Append($"W={WriteFunctionCode};");
         }
-        stringGeter.Append($"{GetFunctionString(FunctionCode)}{StartAddress + 1}{(BitIndex != null ? $".{BitIndex}" : null)}");
+        if (FunctionCode > 0)
+        {
+            stringGeter.Append($"F={FunctionCode};");
+        }
+        stringGeter.Append($"{StartAddress}{(BitIndex != null ? $".{BitIndex}" : null)}");
         return stringGeter.ToString();
     }
 
-    private static string GetFunctionString(byte readF)
-    {
-        return readF switch
-        {
-            1 => "0",
-            2 => "1",
-            3 => "4",
-            4 => "3",
-            _ => "4",
-        };
-    }
+
 }
