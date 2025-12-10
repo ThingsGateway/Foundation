@@ -553,7 +553,7 @@ namespace ThingsGateway.Foundation.OpcUa
             RegisterScalar(BuiltInType.String, (d, f) =>
             {
                 if (d.ReadField(f, out var v))
-                    return v is string ? v : v?.ToString();
+                    return v is string ? v : GetStringFromObj(v);
                 return null;
             });
             RegisterScalar(BuiltInType.DateTime, (d, f) => d.ReadDateTime(f));
@@ -684,5 +684,37 @@ namespace ThingsGateway.Foundation.OpcUa
         }
 
         #endregion
+
+
+
+        public static string GetStringFromObj(object? value, bool parseBoolNumber = false)
+        {
+            if (value == null)
+                return string.Empty;
+
+            switch (value)
+            {
+                case string node:
+                    return node;
+                case bool boolValue:
+                    return boolValue ? parseBoolNumber ? "1" : "True" : parseBoolNumber ? "0" : "False";
+
+                case JsonElement elem: // System.Text.Json.JsonElement
+                    return elem.ValueKind switch
+                    {
+                        JsonValueKind.String => elem.GetString(),
+                        JsonValueKind.Number => elem.GetRawText(),  // 或 elem.GetDecimal().ToString()
+                        JsonValueKind.True => "1",
+                        JsonValueKind.False => "0",
+                        JsonValueKind.Null => string.Empty,
+                        _ => elem.GetRawText(), // 对象、数组等直接输出 JSON
+                    };
+                case JToken jToken:
+                    return jToken.ToString();
+
+                default:
+                    return System.Text.Json.JsonSerializer.Serialize(value);
+            }
+        }
     }
 }
