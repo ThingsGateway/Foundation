@@ -47,7 +47,7 @@ public static class PluginUtil
 
                         while (a.MaxRetryCount < 0 || attempts < a.MaxRetryCount)
                         {
-                            if(cancellationToken.IsCancellationRequested)
+                            if (cancellationToken.IsCancellationRequested)
                             {
                                 return;
                             }
@@ -99,7 +99,7 @@ public static class PluginUtil
                                 }
 
                                 // 计算下次重连间隔
-                                currentInterval = CalculateNextInterval(a,attempts, currentInterval);
+                                currentInterval = CalculateNextInterval(a, attempts, currentInterval);
 
                                 await Task.Delay(currentInterval, CancellationToken.None).ConfigureAwait(EasyTask.ContinueOnCapturedContext);
                             }
