@@ -10,6 +10,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace ThingsGateway.Foundation.Common.Json.Extension;
 
@@ -58,6 +59,7 @@ public class SystemTextJsonService
         options.Converters.Add(new JValueSystemTextJsonConverter());
         options.Converters.Add(new JObjectSystemTextJsonConverter());
         options.Converters.Add(new JArraySystemTextJsonConverter());
+        options.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
 
         return options;
     }
