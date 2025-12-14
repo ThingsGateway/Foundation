@@ -111,30 +111,30 @@ public class UdpSessionChannel : UdpSession, IClientChannel
     {
         if (token.IsCancellationRequested)
             return EasyTask.CompletedTask; ;
-        return StartAsync();
+        return StartAsync(token);
     }
 
 
     public CancellationToken ClosedToken => this.m_transport == null ? new CancellationToken(true) : this.m_transport.Token;
     private CancellationTokenSource? m_transport;
     /// <inheritdoc/>
-    public override async Task StartAsync()
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         if (ServerState != ServerState.Running)
         {
             try
             {
-                await _connectLock.WaitAsync().ConfigureAwait(false);
+                await _connectLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 if (ServerState != ServerState.Running)
                 {
                     if (ServerState != ServerState.Stopped)
                     {
-                        await base.StopAsync().ConfigureAwait(false);
+                        await base.StopAsync(cancellationToken).ConfigureAwait(false);
                     }
                     //await SetupAsync(Config.Clone()).ConfigureAwait(false);
                     await this.OnChannelEvent(Starting).ConfigureAwait(false);
-                    await base.StartAsync().ConfigureAwait(false);
+                    await base.StartAsync(cancellationToken).ConfigureAwait(false);
                     if (ServerState == ServerState.Running)
                     {
                         Logger?.Info($"{Monitor.IPHost}{AppResource.ServiceStarted}");

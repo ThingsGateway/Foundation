@@ -15,7 +15,7 @@ public class TextFileReadService : ITextFileReadService
 {
     public Task<OperResult<string[]>> GetLogFilesAsync(string directoryPath) => Task.FromResult(TextFileReader.GetLogFiles(directoryPath));
 
-    public Task<OperResult<LogData[]>> LastLogDataAsync(string file, int lineCount = 200) => Task.FromResult(TextFileReader.LastLogData(file, lineCount));
+    public Task<OperResult<LogData[]>> LastLogDataAsync(string file, TouchSocket.Core.LogLevel logLevel, int lineCount = 200) => Task.FromResult(TextFileReader.LastLogData(file, logLevel, lineCount));
 
 
     public async Task DeleteLogDataAsync(string path)

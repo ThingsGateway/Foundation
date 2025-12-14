@@ -22,5 +22,5 @@ public interface ITextFileReadService
     /// <returns>包含文件信息的列表</returns>
     public Task<OperResult<string[]>> GetLogFilesAsync(string directoryPath);
 
-    public Task<OperResult<LogData[]>> LastLogDataAsync(string file, int lineCount = 200);
+    public Task<OperResult<LogData[]>> LastLogDataAsync(string file, TouchSocket.Core.LogLevel logLevel, int lineCount = 200);
 }

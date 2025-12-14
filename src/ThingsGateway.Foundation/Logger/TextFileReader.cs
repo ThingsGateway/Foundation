@@ -51,7 +51,7 @@ sealed class LogDataCache
 /// <summary>高性能日志文件读取器（支持倒序读取）</summary>
 public static class TextFileReader
 {
-    private static readonly ExpiringDictionary<string, LogDataCache> _cache = new(comparer: StringComparer.OrdinalIgnoreCase, tryDispose: false);
+    private static readonly ExpiringDictionary<(string, TouchSocket.Core.LogLevel), LogDataCache> _cache = new(tryDispose: false);
     private static readonly ExpiringDictionary<string, object> _fileLocks = new(comparer: StringComparer.OrdinalIgnoreCase, tryDispose: false);
     private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
     /// <summary>
@@ -100,7 +100,7 @@ public static class TextFileReader
         return result;
     }
 
-    public static OperResult<LogData[]> LastLogData(string file, int lineCount = 200)
+    public static OperResult<LogData[]> LastLogData(string file, TouchSocket.Core.LogLevel logLevel, int lineCount = 200)
     {
         if (!File.Exists(file))
             return new OperResult<LogData[]>("The file path is invalid");
@@ -112,8 +112,7 @@ public static class TextFileReader
             {
                 var fileInfo = new FileInfo(file);
                 var length = fileInfo.Length;
-                var cacheKey = $"{nameof(TextFileReader)}_{nameof(LastLogData)}_{file})";
-                if (_cache.TryGetValue(cacheKey, out var cachedData))
+                if (_cache.TryGetValue((file, logLevel), out var cachedData))
                 {
                     if (cachedData != null && cachedData.Length == length)
                     {
@@ -121,14 +120,14 @@ public static class TextFileReader
                     }
                     else
                     {
-                        _cache.TryRemove(cacheKey);
+                        _cache.TryRemove((file, logLevel));
                     }
                 }
 
                 using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
-                var result = ReadLogsInverse(fs, lineCount, length);
+                var result = ReadLogsInverse(fs, logLevel, lineCount, length);
 
-                _cache.TryAdd(cacheKey, new LogDataCache
+                _cache.TryAdd((file, logLevel), new LogDataCache
                 {
                     LogDatas = result,
                     Length = length,
@@ -143,42 +142,46 @@ public static class TextFileReader
         }
     }
 
-    private static LogData[] ReadLogsInverse(FileStream fs, int lineCount, long length)
+    private static LogData[] ReadLogsInverse(FileStream fs, TouchSocket.Core.LogLevel logLevel, int lineCount, long length)
     {
         long ps = 0; // 保存起始位置
-        using ValueListBuilder<string> txt = new(); // 存储读取的文本内容
         using ValueListBuilder<LogData> result = new(); // 存储读取的文本内容
 
         if (ps <= 0) // 如果起始位置小于等于0，将起始位置设置为文件长度
             ps = length - 1;
 
+        int rCount = 0;
         // 循环读取指定行数的文本内容
-        for (int i = 0; i < lineCount; i++)
+        while (true)
         {
             ps = InverseReadRow(fs, ps, out var value); // 使用逆序读取
-            txt.Add(value);
-            if (ps <= 0) // 如果已经读取到文件开头则跳出循环
-                break;
-        }
 
-        // 使用单次 LINQ 操作进行过滤和解析
-        var data = txt.AsSpan();
-        for (int i = 0; i < data.Length; i++)
-        {
-            var str = ParseCSV(data[i]);
+            var str = ParseCSV(value);
             if (str?.Length >= 3)
             {
-                var log = new LogData
+                var logLv = Enum.TryParse(str[1], out LogLevel level) ? level : LogLevel.Info;
+                if (logLv >= logLevel)
                 {
-                    LogTime = str[0].Trim(),
-                    LogLevel = Enum.TryParse(str[1].Trim(), out LogLevel level) ? level : LogLevel.Info,
-                    Message = str[2].Trim(),
-                    ExceptionString = str.Length > 3 ? str[3].Trim() : null
-                };
-                result.Add(log);
+                    var log = new LogData
+                    {
+                        LogTime = str[0],
+                        LogLevel = logLv,
+                        Message = str[2],
+                        ExceptionString = str.Length > 3 ? str[3] : null
+                    };
+                    rCount++;
+                    result.Add(log);
+                }
+            }
+            if (rCount >= lineCount)
+            {
+                break;
+            }
+            if (ps <= 0) // 如果已经读取到文件开头则跳出循环
+            {
+                break;
             }
         }
-
 
         return result.AsSpan().ToArray(); // 返回解析结果
     }

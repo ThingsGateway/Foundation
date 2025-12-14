@@ -40,23 +40,23 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
 
     private readonly WaitLock _connectLock = new WaitLock(nameof(TcpServiceChannelBase<TClient>));
     /// <inheritdoc/>
-    public override async Task StartAsync()
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
         if (ServerState != ServerState.Running)
         {
             try
             {
-                await _connectLock.WaitAsync().ConfigureAwait(false);
+                await _connectLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 if (ServerState != ServerState.Running)
                 {
                     if (ServerState != ServerState.Stopped)
                     {
-                        await base.StopAsync().ConfigureAwait(false);
+                        await base.StopAsync(cancellationToken).ConfigureAwait(false);
                     }
 
                     //await SetupAsync(Config.Clone()).ConfigureAwait(false);
-                    await base.StartAsync().ConfigureAwait(false);
+                    await base.StartAsync(cancellationToken).ConfigureAwait(false);
                     if (ServerState == ServerState.Running)
                     {
                         Logger?.Info($"{Monitors.FirstOrDefault()?.Option.IpHost}{AppResource.ServiceStarted}");
@@ -201,7 +201,7 @@ public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChann
         if (token.IsCancellationRequested)
             return EasyTask.CompletedTask;
 
-        return StartAsync();
+        return StartAsync(token);
     }
     /// <inheritdoc/>
     public override string? ToString()
