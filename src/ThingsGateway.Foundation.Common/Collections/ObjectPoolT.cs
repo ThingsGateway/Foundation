@@ -90,14 +90,14 @@ public class ObjectPoolT<T> : DisposeBase where T : class
         if (value == null) return false;
         lock (lockThis)
         {
-            _ = _busy.Remove(value);
+            if (_busy.Remove(value))
+                _BusyCount--;
             // 从繁忙队列找到并移除缓存项
             //if (!_busy.Remove(value))
             //{
             //    return false;
             //}
 
-            _BusyCount--;
         }
 
         // 是否可用

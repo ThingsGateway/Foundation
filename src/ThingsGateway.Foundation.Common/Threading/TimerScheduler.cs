@@ -262,7 +262,7 @@ public class TimerScheduler : IDisposable
                         // 必须在主线程设置状态，否则可能异步线程还没来得及设置开始状态，主线程又开始了新的一轮调度
                         timer.Calling = true;
                         if (timer.IsAsyncTask)
-                            _ = ExecuteAsync(timer);
+                            Task.Factory.StartNew(ExecuteAsync, timer, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
                         //Task.Factory.StartNew(ExecuteAsync, timer, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
                         else if (!timer.Async)
                             Execute(timer);
@@ -434,7 +434,12 @@ public class TimerScheduler : IDisposable
     {
         timer.Cost = timer.Cost == 0 ? ms : (timer.Cost + ms) / 2;
 
-        if (ms > MaxCost && !timer.Async && !timer.IsAsyncTask) XTrace.WriteLine("任务 {0} 耗时过长 {1:n0}ms，建议使用异步任务Async=true", timer, ms);
+        if (ms > MaxCost)
+        {
+            if (!timer.Async && !timer.IsAsyncTask)
+                XTrace.WriteLine("任务 {0} 耗时过长 {1:n0}ms，建议使用异步任务Async=true", timer, ms);
+
+        }
 
         timer.Timers++;
         OnFinish(timer);

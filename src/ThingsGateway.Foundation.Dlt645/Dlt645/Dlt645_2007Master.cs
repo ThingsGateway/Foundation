@@ -133,7 +133,7 @@ public class Dlt645_2007Master : DtuDeviceBase
     /// <inheritdoc/>
     public override List<T> LoadSourceRead<T, T2>(IEnumerable<T2> deviceVariables, int maxPack, string defaultIntervalTime)
     {
-        return PackHelper.LoadSourceRead<T, T2>(this, deviceVariables, maxPack, Station, defaultIntervalTime);
+        return PackHelper.LoadSourceRead<T, T2>(this, deviceVariables, maxPack, defaultIntervalTime, Station);
     }
 
 
