@@ -390,7 +390,7 @@ public static class ThingsGatewayBitConverterExtension
                 case DataTypeEnum.Boolean:
                     return byteConverter.GetBytes(value.GetValue<bool>());
                 case DataTypeEnum.Byte:
-                    return byteConverter.GetBytes(value.GetValue<byte>());
+                    return new byte[1] { value.GetValue<byte>() };
                 case DataTypeEnum.Int16:
                     return byteConverter.GetBytes(value.GetValue<short>());
                 case DataTypeEnum.UInt16:
