@@ -36,12 +36,12 @@ public static class OpcUaUtils
         var endpointConfiguration = EndpointConfiguration.Create();
         endpointConfiguration.OperationTimeout = discoverTimeout;
 
-        using (var client = DiscoveryClient.Create(application, uri, endpointConfiguration))
+        using (var client = await DiscoveryClient.CreateAsync(application, uri, endpointConfiguration).ConfigureAwait(false))
         {
             // Connect to the server's discovery endpoint and find the available configuration.
             Uri url = new Uri(client.Endpoint.EndpointUrl);
             var endpoints = await client.GetEndpointsAsync(null).ConfigureAwait(false);
-            var selectedEndpoint = CoreClientUtils.SelectEndpoint(application, url, endpoints, useSecurity);
+            var selectedEndpoint = CoreClientUtils.SelectEndpoint(application, url, endpoints, useSecurity, NullTelemetryContext.Default);
 
             Uri endpointUrl = Utils.ParseUri(selectedEndpoint.EndpointUrl);
             if (endpointUrl != null && endpointUrl.Scheme == uri.Scheme)

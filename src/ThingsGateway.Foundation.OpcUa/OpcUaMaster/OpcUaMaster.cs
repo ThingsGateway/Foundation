@@ -13,13 +13,13 @@
 using Newtonsoft.Json;
 
 using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json.Nodes;
 #if NET8_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
 
 namespace ThingsGateway.Foundation.OpcUa;
-
 /// <summary>
 /// 订阅委托
 /// </summary>
@@ -1009,7 +1009,7 @@ public class OpcUaMaster : IAsyncDisposable
             UserIdentity userIdentity;
             if (!string.IsNullOrEmpty(OpcUaProperty.UserName))
             {
-                userIdentity = new UserIdentity(OpcUaProperty.UserName, OpcUaProperty.Password);
+                userIdentity = new UserIdentity(OpcUaProperty.UserName, Encoding.UTF8.GetBytes(OpcUaProperty.Password));
             }
             else
             {
@@ -1018,9 +1018,7 @@ public class OpcUaMaster : IAsyncDisposable
             //创建本地证书
             if (useSecurity)
                 await m_application.CheckApplicationInstanceCertificatesAsync(true, 1200, cancellationToken).ConfigureAwait(false);
-
-            m_session = await Opc.Ua.Client.Session.CreateAsync(
-                DefaultSessionFactory.Instance,
+            m_session = await new Opc.Ua.Client.DefaultSessionFactory(NullTelemetryContext.Default).CreateAsync(
             m_configuration,
             (ITransportWaitingConnection)null,
             endpoint,
