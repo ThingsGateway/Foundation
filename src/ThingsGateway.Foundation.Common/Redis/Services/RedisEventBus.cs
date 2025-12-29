@@ -21,6 +21,8 @@ public class RedisEventBus<TEvent>(FullRedis cache, String topic, String group) 
 {
     private RedisStream<TEvent>? _queue;
     private CancellationTokenSource? _source;
+    /// <summary>队列。默认RedisStream实现，借助队列重试机制来确保业务成功</summary>
+    public IProducerConsumer<TEvent> Queue => _queue!;
 
     /// <summary>销毁</summary>
     /// <param name="disposing"></param>
@@ -46,7 +48,9 @@ public class RedisEventBus<TEvent>(FullRedis cache, String topic, String group) 
         _queue = stream;
 
         if (_source != null)
-            _ = Task.Run(() => ConsumeMessage(_source));
+#pragma warning disable CA2008 // 不要在未传递 TaskScheduler 的情况下创建任务
+            _ = Task.Factory.StartNew(() => ConsumeMessage(_source), TaskCreationOptions.LongRunning);
+#pragma warning restore CA2008 // 不要在未传递 TaskScheduler 的情况下创建任务
     }
 
     /// <summary>发布消息到消息队列</summary>
@@ -86,40 +90,54 @@ public class RedisEventBus<TEvent>(FullRedis cache, String topic, String group) 
     {
         var cancellationToken = source.Token;
         var stream = _queue!;
-        try
-        {
-            if (!stream.Group.IsNullOrEmpty()) stream.SetGroup(stream.Group);
+        if (!stream.Group.IsNullOrEmpty()) stream.SetGroup(stream.Group);
 
-            while (!cancellationToken.IsCancellationRequested)
+        var context = new RedisEventContext<TEvent>(this, null!);
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            // try-catch 放在循环内，避免单次异常退出循环
+            try
             {
-                var msg = await stream!.TakeMessageAsync(15, cancellationToken).ConfigureAwait(false);
+                var msg = await stream.TakeMessageAsync(15, cancellationToken).ConfigureAwait(false);
                 if (msg != null)
                 {
                     var msg2 = msg.GetBody<TEvent>();
                     if (msg2 != null)
                     {
                         // 发布到事件总线
-                        await base.PublishAsync(msg2, new RedisEventContext<TEvent>(this, msg), cancellationToken).ConfigureAwait(false);
+                        context.Message = msg;
+                        await base.PublishAsync(msg2, context, cancellationToken).ConfigureAwait(false);
+                        context.Message = null!;
                     }
+
+                    // 确认消息
+                    stream.Acknowledge(msg.Id!);
                 }
                 else
                 {
                     await Task.Delay(1_000, cancellationToken).ConfigureAwait(false);
                 }
             }
+            catch (ThreadAbortException) { break; }
+            catch (ThreadInterruptedException) { break; }
+            catch (TaskCanceledException) { }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (cancellationToken.IsCancellationRequested) break;
+
+                XTrace.WriteException(ex);
+            }
         }
-        catch (TaskCanceledException) { }
-        catch (OperationCanceledException) { }
-        catch (Exception ex)
-        {
-            XTrace.WriteException(ex);
-        }
-        finally
+
+        // 通知取消
+        try
         {
 #pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
-            source.Cancel();
+            if (!source.IsCancellationRequested) source.Cancel();
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
-            _queue = null;
         }
+        catch (ObjectDisposedException) { }
+        _queue = null;
     }
 }

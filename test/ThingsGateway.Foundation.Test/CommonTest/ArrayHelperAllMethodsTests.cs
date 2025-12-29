@@ -1,9 +1,9 @@
-using System.Buffers;
+ï»¿using System.Buffers;
 using System.Text;
 using System.Text.Json.Nodes;
 
 using ThingsGateway.Foundation.Common.Extension;
-#pragma warning disable CA1861 // ²»Òª½«³£Á¿Êı×é×÷Îª²ÎÊı
+#pragma warning disable CA1861 // ä¸è¦å°†å¸¸é‡æ•°ç»„ä½œä¸ºå‚æ•°
 
 namespace ThingsGateway.Foundation.Common.Tests
 {

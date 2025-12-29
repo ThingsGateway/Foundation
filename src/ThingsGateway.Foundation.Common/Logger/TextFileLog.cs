@@ -357,7 +357,7 @@ public class TextFileLog : Logger, IDisposable
     {
         if (_Timer.Disposed) return false;
 
-        if (_logCount > 100) return false;
+        if (_logCount > 256) return false;
         return true;
     }
 #if NET9_0_OR_GREATER

@@ -22,16 +22,17 @@ namespace ThingsGateway.Gateway.Application.Extensions;
 /// <summary>
 /// 读写表达式脚本
 /// </summary>
-public interface ReadWriteExpressions
+public abstract class ReadWriteExpressions
 {
-    public TouchSocket.Core.ILog? Logger { get; set; }
+    public WeakReference<TouchSocket.Core.ILog> Log { get; set; }
+    public TouchSocket.Core.ILog? Logger => Log.TryGetTarget(out var log) ? log : null;
 
     /// <summary>
     /// 获取新值
     /// </summary>
     /// <param name="a"></param>
     /// <returns></returns>
-    object GetNewValue(object a);
+    public abstract dynamic GetNewValue(dynamic a);
 }
 
 /// <summary>
@@ -139,7 +140,7 @@ $@"
         public class Script:ReadWriteExpressions
         {{
             public TouchSocket.Core.ILog? Logger {{ get; set; }}
-            public object GetNewValue(object raw)
+            public object GetNewValue(dynamic raw)
             {{
                    {_body.ToString()};
             }}
@@ -192,7 +193,7 @@ $@"
             return rawvalue;
         }
         var readWriteExpressions = GetReadWriteExpressions(expressions);
-        readWriteExpressions.Logger = logger;
+        readWriteExpressions.Log = new WeakReference<TouchSocket.Core.ILog>(logger);
         var value = readWriteExpressions.GetNewValue(rawvalue);
         return value;
     }

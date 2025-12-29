@@ -64,7 +64,7 @@ public class ConsoleLog : Logger
     protected override void OnWrite(LogLevel level, String format, params Object?[] args)
     {
         // 日志队列积压将会导致内存暴增
-        if (_logCount > 64) return;
+        if (_logCount > 256) return;
 
         string body = Format(format, args);
 

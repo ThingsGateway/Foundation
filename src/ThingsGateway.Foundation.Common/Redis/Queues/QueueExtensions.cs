@@ -176,6 +176,7 @@ public static class QueueExtensions
                     var dic = rds.JsonHost.Decode(mqMsg)!;
                     var msg = rds.JsonHost.Convert<T>(dic);
 
+
                     // 消息标识
                     foreach (var item in ids)
                     {
