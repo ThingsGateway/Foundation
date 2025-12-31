@@ -452,7 +452,7 @@ public static class OpcUaUtils
         endpointConfiguration.OperationTimeout = 5000;
 
         // Connect to the local discovery server and find the available servers.
-        using (DiscoveryClient client = DiscoveryClient.Create(new Uri("opc.tcp://localhost:4840"), endpointConfiguration))
+        using (DiscoveryClient client = await DiscoveryClient.CreateAsync(configuration, new Uri("opc.tcp://localhost:4840"), endpointConfiguration).ConfigureAwait(false))
         {
             ApplicationDescriptionCollection servers = await client.FindServersAsync(null).ConfigureAwait(false);
 

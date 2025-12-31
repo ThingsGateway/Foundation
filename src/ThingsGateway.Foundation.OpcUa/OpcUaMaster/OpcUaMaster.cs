@@ -70,7 +70,7 @@ public class OpcUaMaster : IAsyncDisposable
     /// </summary>
     private readonly ConcurrentDictionary<string, Subscription> _subscriptionDicts = new();
 
-    private readonly ApplicationInstance m_application = new();
+    private readonly ApplicationInstance m_application = new(NullTelemetryContext.Default);
 
     private readonly ApplicationConfiguration m_configuration;
     private EventHandler<bool> m_ConnectComplete;
@@ -87,7 +87,7 @@ public class OpcUaMaster : IAsyncDisposable
     /// </summary>
     public OpcUaMaster()
     {
-        var certificateValidator = new CertificateValidator();
+        var certificateValidator = new CertificateValidator(NullTelemetryContext.Default);
         certificateValidator.CertificateValidation += CertificateValidation;
         // 构建应用程序配置
         m_configuration = new ApplicationConfiguration
@@ -272,12 +272,14 @@ public class OpcUaMaster : IAsyncDisposable
         {
             try
             {
-                var item = new MonitoredItem
+                var item = new MonitoredItem(NullTelemetryContext.Default)
                 {
                     StartNodeId = items[i],
                     AttributeId = Attributes.Value,
                     DisplayName = items[i],
-                    Filter = OpcUaProperty.DeadBand == 0 ? null : new DataChangeFilter() { DeadbandValue = OpcUaProperty.DeadBand, DeadbandType = (int)DeadbandType.Absolute, Trigger = DataChangeTrigger.StatusValue },
+                    Filter = OpcUaProperty.DeadBand == 0 ?
+                    new DataChangeFilter() { DeadbandValue = 0, DeadbandType = (int)DeadbandType.None, Trigger = DataChangeTrigger.StatusValueTimestamp } :
+                    new DataChangeFilter() { DeadbandValue = OpcUaProperty.DeadBand, DeadbandType = (int)DeadbandType.Absolute, Trigger = DataChangeTrigger.StatusValueTimestamp },
                     SamplingInterval = OpcUaProperty?.UpdateRate ?? 1000,
                 };
                 item.Notification += Callback;
@@ -1539,7 +1541,7 @@ public class OpcUaMaster : IAsyncDisposable
                     Log(3, null, "Reconnecting : {0}", e.Status.ToString());
                     m_ReconnectStarting?.Invoke(this, e);
 
-                    m_reConnectHandler = new SessionReconnectHandler(true, 10000);
+                    m_reConnectHandler = new SessionReconnectHandler(NullTelemetryContext.Default, true, 10000);
                     m_reConnectHandler.BeginReconnect(m_session, 1000, Server_ReconnectComplete);
 
                     e.CancelKeepAlive = true;
