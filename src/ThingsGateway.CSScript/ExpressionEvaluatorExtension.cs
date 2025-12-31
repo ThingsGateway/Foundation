@@ -32,7 +32,7 @@ public abstract class ReadWriteExpressions
     /// </summary>
     /// <param name="a"></param>
     /// <returns></returns>
-    public abstract dynamic GetNewValue(dynamic a);
+    public abstract object GetNewValue(dynamic a);
 }
 
 /// <summary>
@@ -84,7 +84,7 @@ public static class ExpressionEvaluatorExtension
     }
 
     private static MemoryCache Instance { get; set; } = new MemoryCache();
-
+    
     /// <summary>
     /// 添加或获取脚本，非线程安全
     /// </summary>
@@ -139,8 +139,7 @@ $@"
         {_using.ToString()}
         public class Script:ReadWriteExpressions
         {{
-            public TouchSocket.Core.ILog? Logger {{ get; set; }}
-            public object GetNewValue(dynamic raw)
+            public override object GetNewValue(dynamic raw)
             {{
                    {_body.ToString()};
             }}
