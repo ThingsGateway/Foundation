@@ -282,7 +282,7 @@ public static class JsonUtil
                 return ConvertArray(array);
 
             default:
-                return node.ToJsonString();
+                return node.ToJsonString(SystemTextJsonExtension.SystemTextJsonService.IndentedOptions);
         }
     }
 
