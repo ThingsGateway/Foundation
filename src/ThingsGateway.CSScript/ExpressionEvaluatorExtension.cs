@@ -84,7 +84,7 @@ public static class ExpressionEvaluatorExtension
     }
 
     private static MemoryCache Instance { get; set; } = new MemoryCache();
-    
+
     /// <summary>
     /// 添加或获取脚本，非线程安全
     /// </summary>
