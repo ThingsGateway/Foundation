@@ -32,7 +32,7 @@ public abstract class ReadWriteExpressions
     /// </summary>
     /// <param name="a"></param>
     /// <returns></returns>
-    public abstract object GetNewValue(dynamic a);
+    public abstract object GetNewValue(object a);
 }
 
 /// <summary>
@@ -136,7 +136,7 @@ $@"
         {_using.ToString()}
         public class Script:ReadWriteExpressions
         {{
-            public override object GetNewValue(dynamic raw)
+            public override object GetNewValue(object raw)
             {{
                    {_body.ToString()};
             }}
