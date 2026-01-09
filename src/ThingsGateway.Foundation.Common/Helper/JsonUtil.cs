@@ -270,7 +270,7 @@ public static class JsonUtil
         switch (node)
         {
             case JsonValue value:
-                return value.GetValue<object?>();
+                return GetPrimitive(value);
 
             case JsonObject obj:
                 return obj.ToDictionary(
@@ -283,6 +283,56 @@ public static class JsonUtil
 
             default:
                 return node.ToJsonString(SystemTextJsonExtension.SystemTextJsonService.IndentedOptions);
+        }
+    }
+    static object? GetPrimitive(JsonValue value)
+    {
+        var element = value.GetValue<JsonElement>();
+
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Null:
+                return null;
+
+            case JsonValueKind.String:
+                {
+                    var s = element.GetString();
+
+                    if (s == null)
+                        return null;
+
+                    // DateTime
+                    if (DateTime.TryParse(s, out var dt))
+                        return dt;
+
+                    // Guid
+                    if (Guid.TryParse(s, out var guid))
+                        return guid;
+
+                    return s;
+                }
+
+            case JsonValueKind.Number:
+                {
+                    // 优先 int
+                    if (element.TryGetInt32(out var i))
+                        return i;
+
+                    // 再 long
+                    if (element.TryGetInt64(out var l))
+                        return l;
+
+                    // 最后 double
+                    return element.GetDouble();
+                }
+
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                return element.GetBoolean();
+
+            default:
+                throw new NotSupportedException(
+                    $"Unsupported JsonValueKind: {element.ValueKind}");
         }
     }
 

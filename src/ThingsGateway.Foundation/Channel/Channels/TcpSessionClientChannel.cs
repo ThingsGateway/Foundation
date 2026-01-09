@@ -104,12 +104,14 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
 
 
 
-    /// <inheritdoc/>
+
     public override string ToString()
     {
-        return $"{IP}:{Port}:{Id}";
+        if (RemoteEndPoint == null)
+            return "unknown";
+        else
+            return $"{IP}:{Port}:{Id}";
     }
-
     /// <inheritdoc/>
     protected override void SafetyDispose(bool disposing)
     {

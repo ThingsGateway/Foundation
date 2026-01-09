@@ -40,8 +40,6 @@ public abstract class ReadWriteExpressions
 /// </summary>
 public static class ExpressionEvaluatorExtension
 {
-    private const string CacheKey = $"{nameof(ExpressionEvaluatorExtension)}-{nameof(GetReadWriteExpressions)}";
-
     private static readonly object m_waiterLock = new object();
 
     static ExpressionEvaluatorExtension()
@@ -92,8 +90,7 @@ public static class ExpressionEvaluatorExtension
     /// <returns></returns>
     public static ReadWriteExpressions GetOrAddScript(string source)
     {
-        var field = $"{CacheKey}-{source}";
-        var exfield = $"{CacheKey}-Exception-{source}";
+        var field = source;
         var runScript = Instance.Get<ReadWriteExpressions>(field);
         if (runScript == null)
         {
@@ -151,6 +148,7 @@ $@"
                 {
                     //如果编译失败，应该不重复编译，避免oom
                     Instance.Set<ReadWriteExpressions>(field, null, TimeSpan.FromHours(1));
+                    var exfield = $"Exception-{source}";
                     Instance.Set(exfield, ex, TimeSpan.FromHours(1));
                     throw;
                 }
@@ -160,9 +158,9 @@ $@"
         }
 
         Instance.SetExpire(field, TimeSpan.FromHours(1));
-        Instance.SetExpire(exfield, TimeSpan.FromHours(1));
         if (runScript == null)
         {
+            var exfield = $"Exception-{source}";
             throw (Instance.Get<Exception>(exfield) ?? new Exception("compilation error"));
         }
         return runScript;
@@ -202,7 +200,7 @@ $@"
     /// </summary>
     public static ReadWriteExpressions GetReadWriteExpressions(string source)
     {
-        var field = $"{CacheKey}-{source}";
+        var field = source;
         var runScript = Instance.Get<ReadWriteExpressions>(field);
         if (runScript == null)
         {
@@ -217,7 +215,7 @@ $@"
     }
     public static void SetExpire(string source, TimeSpan? timeSpan = null)
     {
-        var field = $"{CacheKey}-{source}";
+        var field = source;
         Instance.SetExpire(field, timeSpan ?? TimeSpan.FromHours(1));
     }
 }

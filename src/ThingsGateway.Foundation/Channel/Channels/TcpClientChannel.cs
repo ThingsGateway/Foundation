@@ -149,7 +149,10 @@ public class TcpClientChannel : TcpClient, IClientChannel
     /// <inheritdoc/>
     public override string ToString()
     {
-        return $"{IP}:{Port}";
+        if (RemoteEndPoint == null)
+            return RemoteIPHost.ToString();
+        else
+            return $"{IP}:{Port}";
     }
 
     protected override Task OnTcpClosed(ClosedEventArgs e)
