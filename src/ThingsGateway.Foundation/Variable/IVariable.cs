@@ -65,6 +65,7 @@ public interface IVariable
     /// <param name="value">值,可能会是基础类型，也有可能是数组、JsonNode</param>
     /// <param name="dateTime">采集时间</param>
     /// <param name="isOnline">是否在线</param>
+    /// <param name="setChanged">强制设置为变化状态</param>
     /// <returns></returns>
-    OperResult SetValue(object? value, DateTime dateTime, bool isOnline = true);
+    OperResult SetValue(object? value, DateTime dateTime, bool isOnline = true, bool setChanged = false);
 }

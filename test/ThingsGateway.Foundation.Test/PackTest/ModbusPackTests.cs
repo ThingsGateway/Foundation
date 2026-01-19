@@ -22,7 +22,7 @@ public class ModbusPackTests
         Assert.HasCount(1, result); // ✅ 必须合并成1包
 
         var pack = result[0];
-        Assert.AreEqual("S=1;41001", pack.RegisterAddress); // ✅ 起始地址
+        Assert.AreEqual("S=1;F=3;1000", pack.RegisterAddress); // ✅ 起始地址
         Assert.AreEqual(3, pack.Length); // ✅ 3个寄存器 * 2 byte = 6 byte
 
         var items = pack.Vars;
@@ -67,7 +67,7 @@ public class ModbusPackTests
         Assert.HasCount(1, result);
 
         var pack = result[0];
-        Assert.AreEqual("S=1;41001", pack.RegisterAddress);
+        Assert.AreEqual("S=1;F=3;1000", pack.RegisterAddress);
         Assert.AreEqual(5, pack.Length); // (1005 - 1001)=4寄存器 → 4*2 +2 = 10byte
 
         var v = pack.Vars;
@@ -87,7 +87,7 @@ public class ModbusPackTests
         var result = PackHelper.LoadSourceRead<FakeVariableSource, FakeVariable>(Device, vars, 10, "1000");
 
         var pack = result[0];
-        Assert.AreEqual("S=1;31001", pack.RegisterAddress);
+        Assert.AreEqual("S=1;F=4;1000", pack.RegisterAddress);
         Assert.AreEqual(2, pack.Length); // 2寄存器 = 4 byte
 
         var v = pack.Vars;
@@ -155,7 +155,7 @@ public class ModbusPackTests
         var pack = result[0];
         var v = pack.Vars;
 
-        Assert.AreEqual("S=1;41001", pack.RegisterAddress);
+        Assert.AreEqual("S=1;F=3;1000", pack.RegisterAddress);
 
         Assert.AreEqual(0, v[0].Index);   // 1001 int16
         Assert.AreEqual(2, v[1].Index);   // 1002 int32

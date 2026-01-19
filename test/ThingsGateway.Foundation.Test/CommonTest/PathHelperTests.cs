@@ -76,11 +76,7 @@ namespace ThingsGateway.Foundation.Common.Tests
 
             var result = PathHelper.GetRelativePath(basePath, otherPath);
 
-            if (OperatingSystem.IsWindows())
-                Assert.IsTrue(Path.IsPathRooted(result), $"Expected absolute path, but got: {result}");
-            else
-                Assert.IsTrue(Path.IsPathRooted(result) || result.StartsWith(".."),
-                    $"Expected absolute or parent path, got: {result}");
+            Assert.IsTrue(Path.IsPathRooted(result) || result.StartsWith(".."), $"Expected absolute path, but got: {result}");
         }
 
 

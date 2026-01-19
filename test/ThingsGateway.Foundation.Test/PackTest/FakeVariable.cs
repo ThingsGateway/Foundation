@@ -16,7 +16,7 @@ public class FakeVariable : IVariable
 
     public object? RawValue { get; set; }
 
-    public OperResult SetValue(object? value, DateTime dateTime, bool isOnline = true)
+    public OperResult SetValue(object? value, DateTime dateTime, bool isOnline = true, bool setChanged = false)
     {
         return OperResult.Success;
     }

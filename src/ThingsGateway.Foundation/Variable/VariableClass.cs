@@ -71,7 +71,7 @@ public class VariableClass : IVariable
         SetValue(RawValue, dateTime, true);
     }
     private DateTime time;
-    public OperResult SetValue(object? value, DateTime dateTime, bool isOnline = true)
+    public OperResult SetValue(object? value, DateTime dateTime, bool isOnline = true, bool setChanged = false)
     {
         IsOnline = isOnline;
         RawValue = value;
