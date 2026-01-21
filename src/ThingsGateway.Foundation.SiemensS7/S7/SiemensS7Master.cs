@@ -630,7 +630,7 @@ public partial class SiemensS7Master : DeviceBase
             {
                 return new OperResult<string[]>(AppResource.StringLengthReadError);
             }
-            var result = await SiemensHelper.ReadStringAsync(this, address, bitConverter, bitConverter.EncodingValue, cancellationToken).ConfigureAwait(false);
+            var result = await SiemensHelper.ReadStringAsync(this, address, bitConverter, bitConverter.Encoding, cancellationToken).ConfigureAwait(false);
             if (result.IsSuccess)
             {
                 return OperResult.CreateSuccessResult(new string[] { result.Content });
@@ -657,7 +657,7 @@ public partial class SiemensS7Master : DeviceBase
         }
         if (bitConverter.IsVariableStringLength)
         {
-            return SiemensHelper.WriteStringAsync(this, address, value, bitConverter, bitConverter.EncodingValue, cancellationToken);
+            return SiemensHelper.WriteStringAsync(this, address, value, bitConverter, bitConverter.Encoding, cancellationToken);
         }
         else
         {
