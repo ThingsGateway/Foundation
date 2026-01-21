@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //  此代码版权声明为全文件覆盖，如有原作者特别声明，会在下方手动补充
 //  此代码版权（除特别声明外的代码）归作者本人Diego所有
 //  源代码使用协议遵循本仓库的开源协议及附加协议
@@ -122,11 +122,14 @@ internal sealed partial class SiemensHelper
             var span = result.Content.Span;
             var len = span[0];
             if (len == byte.MaxValue) return new OperResult<string>(AppResource.NotString);
-            if (len == 0) len = 254;
-            if (value.Length > span[0]) return new OperResult<string>(AppResource.WriteDataLengthMore);
+            // STRING：总字节数 = 2 + 最大长度
+            // WSTRING：总字节数 = 4 + 2 × 最大长度
+            // if (len == 0) /*len = 254*/  len = (byte)(2+bitConverter.StringLength);
+            len = (byte)(bitConverter.StringLength);
+            if (/*inBytes.Length > span[0]*/ inBytes.Length>bitConverter.StringLength) return new OperResult<string>(AppResource.WriteDataLengthMore);
             return await plc.WriteAsync(
                 address,
-                ArrayHelper.SpliceArray([len, (byte)value.Length],
+                ArrayHelper.SpliceArray([len, (byte)inBytes.Length],
                 inBytes
                 ), DataTypeEnum.String, bitConverter, cancellationToken).ConfigureAwait(false);
         }
@@ -188,6 +191,7 @@ internal sealed partial class SiemensHelper
             var num = plc.BitConverter.ToUInt16(result.Content.Span, 0);
             if (num == 0)
                 num = 254;
+             
             if (value.Length > num) return new OperResult<string>(AppResource.WriteDataLengthMore);
             return await plc.WriteAsync(
                 address,
