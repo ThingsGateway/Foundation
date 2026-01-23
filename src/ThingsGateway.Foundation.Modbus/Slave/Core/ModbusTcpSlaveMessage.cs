@@ -84,12 +84,12 @@ public class ModbusTcpSlaveMessage : DeviceMessage, IResultMessage
 
         if (f == 15)
         {
-            var len = ReaderExtension.ReadValue<TByteBlock, byte>(ref byteBlock);
+            var len = byteBlock.TotalSequence.GetByte(pos + HeaderLength - 1);
             Request.SlaveWriteDatas = new ReadOnlySequence<byte>(byteBlock.Sequence.Slice(0, len).ByteBitsToBytes(Request.Length, Request.StartAddress));
         }
         else if (f == 16)
         {
-            var len = ReaderExtension.ReadValue<TByteBlock, byte>(ref byteBlock);
+            var len = byteBlock.TotalSequence.GetByte(pos + HeaderLength - 1);
             Request.SlaveWriteDatas = byteBlock.Sequence.Slice(0, len);
         }
 
