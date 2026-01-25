@@ -88,13 +88,13 @@ public class ModbusRtuSlaveMessage : DeviceMessage, IResultMessage
 
         if (f == 15)
         {
-            var len = byteBlock.TotalSequence.GetByte(pos + HeaderLength - 1);
-            Request.SlaveWriteDatas = new ReadOnlySequence<byte>(byteBlock.Sequence.Slice(0, len).ByteBitsToBytes(Request.Length, Request.StartAddress));
+            var len = byteBlock.TotalSequence.GetByte(pos + HeaderLength);
+            Request.SlaveWriteDatas = new ReadOnlySequence<byte>(byteBlock.Sequence.Slice(1, len).ByteBitsToBytes(Request.Length, Request.StartAddress));
         }
         else if (f == 16)
         {
-            var len = byteBlock.TotalSequence.GetByte(pos + HeaderLength - 1);
-            Request.SlaveWriteDatas = byteBlock.Sequence.Slice(0, len);
+            var len = byteBlock.TotalSequence.GetByte(pos + HeaderLength);
+            Request.SlaveWriteDatas = byteBlock.Sequence.Slice(1, len);
         }
 
         crcLen = HeaderLength + BodyLength - 2;
