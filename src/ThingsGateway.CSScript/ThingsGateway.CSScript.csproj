@@ -3,14 +3,17 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<DefineConstants>TRACE;class_lib</DefineConstants>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="CS-Script" Version="4.13.2" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\ThingsGateway.Foundation\ThingsGateway.Foundation.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.12.0" />
+		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+	</ItemGroup>
 </Project>

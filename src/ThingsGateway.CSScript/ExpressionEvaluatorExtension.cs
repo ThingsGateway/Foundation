@@ -152,7 +152,8 @@ $@"
                     Instance.Set(exfield, ex, TimeSpan.FromHours(1));
                     throw;
                 }
-
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
 
         }

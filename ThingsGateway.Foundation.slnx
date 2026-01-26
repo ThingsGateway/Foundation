@@ -3,6 +3,7 @@
     <Project Path="benchmark/ThingsGateway.Foundation.Benchmark/ThingsGateway.Foundation.Benchmark.csproj" />
   </Folder>
   <Folder Name="/sample/">
+    <Project Path="sample/ThingsGateway.CSScript.Sample/ThingsGateway.CSScript.Sample.csproj" />
     <Project Path="sample/ThingsGateway.Foundation.Sample/ThingsGateway.Foundation.Sample.csproj" />
   </Folder>
   <Folder Name="/src/">
