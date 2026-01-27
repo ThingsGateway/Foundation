@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Runtime.Loader;
 using System.Text;
+using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
 using Yitter.IdGenerator;
 
@@ -29,7 +30,15 @@ namespace Westwind.Scripting
         static CSharpScriptExecution()
         {
             DeleteBackup();
+            TimerX = new TimerX(Do, null, 120_000, 120_000) { Async = false };
         }
+
+        private static void Do(object? state)
+        {
+            AllReferences = null;
+        }
+
+        private static TimerX TimerX;
         private static void DeleteBackup()
         {
             var dir = Path.Combine(AppContext.BaseDirectory, "CSSCRIPT");
@@ -322,7 +331,7 @@ namespace Westwind.Scripting
                 {
                     GeneratedClassName = "_" + Utils.GenerateUniqueId();
                     var sb = GenerateClass(code);
-                    if (!CompileAssembly(sb.ToString()))
+                    if (!CompileAssembly(sb))
                         return null;
 
                     CachedAssemblies[hash] = Assembly;
