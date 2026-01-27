@@ -43,8 +43,11 @@ public abstract class ThingsGatewayBitConverter : IThingsGatewayBitConverter
     public Encoding EncodingValue => Encoding ?? Encoding.UTF8;
 
     /// <inheritdoc/>
-    public DataFormatEnum DataFormat { get; 
-        set; }
+    public DataFormatEnum DataFormat
+    {
+        get;
+        set;
+    }
 
     /// <inheritdoc/>
     public virtual BcdFormatEnum? BcdFormat { get; set; }
@@ -944,7 +947,7 @@ buffer.ToString(EncodingValue).AsSpan().TrimEnd().TrimInvisible();
         var f = Unsafe.ReadUnaligned<byte>(p + 5);
         var g = Unsafe.ReadUnaligned<byte>(p + 6);
         var h = Unsafe.ReadUnaligned<byte>(p + 7);
-        
+
         switch (this.DataFormat)
         {
             case DataFormatEnum.ABCD:

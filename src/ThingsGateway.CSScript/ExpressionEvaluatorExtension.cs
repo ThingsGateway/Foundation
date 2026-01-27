@@ -8,14 +8,12 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using CSScripting;
-
-using CSScriptLib;
-
+using System.Runtime.Loader;
 using System.Text;
-
 using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Caching;
+using Westwind.Scripting;
+using Yitter.IdGenerator;
 
 namespace ThingsGateway.Gateway.Application.Extensions;
 
@@ -34,35 +32,38 @@ public abstract class ReadWriteExpressions
     /// <returns></returns>
     public abstract object GetNewValue(object a);
 }
+public struct CacheItem : IEquatable<CacheItem>
+{
+    public object Obj { get; set; }
+    public AssemblyLoadContext ALC { get; set; }
+    public string Path { get; set; }
+    public bool Equals(CacheItem other)
+    {
+        return ReferenceEquals(Obj, other.Obj) &&
+               ReferenceEquals(ALC, other.ALC);
+    }
 
+    public override bool Equals(object? obj)
+    {
+        return obj is CacheItem other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Obj, ALC);
+    }
+}
 /// <summary>
 /// 表达式扩展
 /// </summary>
 public static class ExpressionEvaluatorExtension
 {
     private static readonly object m_waiterLock = new object();
-
+    public static readonly string ExpressionEvaluatorExtensionDir =
+      Path.Combine(AppContext.BaseDirectory, "CSSCRIPT");
     static ExpressionEvaluatorExtension()
     {
-        var temp = Environment.GetEnvironmentVariable("CSS_CUSTOM_TEMPDIR");
-        if (string.IsNullOrWhiteSpace(temp))
-        {
-            var tempDir = Path.Combine(AppContext.BaseDirectory, "CSSCRIPT");
-            if (Directory.Exists(tempDir))
-            {
-                try
-                {
-                    Directory.Delete(tempDir, true);
-                }
-                catch
-                {
-                }
-            }
-
-            Directory.CreateDirectory(tempDir);//重新创建，防止缓存的一些目录信息错误
-            Environment.SetEnvironmentVariable("CSS_CUSTOM_TEMPDIR", tempDir); //传入变量
-        }
-
+        Directory.CreateDirectory(ExpressionEvaluatorExtensionDir);
         Instance.KeyExpired += Instance_KeyExpired;
     }
 
@@ -72,8 +73,10 @@ public static class ExpressionEvaluatorExtension
         {
             if (Instance.GetAll().TryGetValue(e.Key, out var item))
             {
-                item?.Value?.TryDispose();
-                item?.Value?.GetType().Assembly.Unload();
+                var data = (CacheItem)item?.Value;
+                data.Obj?.TryDispose();
+                data.ALC?.Unload();
+                CSharpScriptExecution.MarkDelete(data.Path);
             }
         }
         catch
@@ -82,6 +85,7 @@ public static class ExpressionEvaluatorExtension
     }
 
     private static MemoryCache Instance { get; set; } = new MemoryCache();
+    static TimeSpan time = TimeSpan.FromHours(1);
 
     /// <summary>
     /// 添加或获取脚本，非线程安全
@@ -90,15 +94,14 @@ public static class ExpressionEvaluatorExtension
     /// <returns></returns>
     public static ReadWriteExpressions GetOrAddScript(string source)
     {
-        var field = source;
-        var runScript = Instance.Get<ReadWriteExpressions>(field);
-        if (runScript == null)
+        if (string.IsNullOrEmpty(source)) return null;
+        var key = source.GetHashCode().ToString();
+        var runScript = Instance.Get<CacheItem>(key);
+        if (runScript.Obj == null)
         {
-            var hasValue = Instance.TryGetValue<ReadWriteExpressions>(field, out runScript);
+            var hasValue = Instance.TryGetValue<CacheItem>(key, out runScript);
             if (!hasValue)
             {
-
-
                 if (!source.Contains("return"))
                 {
                     source = $"return {source}";//只判断简单脚本中可省略return字符串
@@ -120,7 +123,11 @@ public static class ExpressionEvaluatorExtension
                 // 动态加载并执行代码
                 try
                 {
-                    runScript = CSScript.Evaluator.With(eval => eval.IsAssemblyUnloadingEnabled = true).LoadCode<ReadWriteExpressions>(
+                    var context = new AssemblyLoadContext(YitIdHelper.NextId().ToString(), true);
+                    var script = new CSharpScriptExecution();
+                    script.AlternateAssemblyLoadContext = context;
+
+                    var code =
 $@"
         using System;
         using System.Linq;
@@ -141,15 +148,27 @@ $@"
                    {_body.ToString()};
             }}
         }}
-    ");
-                    Instance.Set(field, runScript);
+    ";
+
+
+                    var readWriteExpressions = script.CompileClassWithFile(code) as ReadWriteExpressions;
+                    if (readWriteExpressions == null)
+                    {
+                        CSharpScriptExecution.MarkDelete(script.OutputAssembly);
+                        throw new Exception("compilation error");
+                    }
+                    runScript.Obj = readWriteExpressions;
+                    runScript.ALC = context;
+                    runScript.Path = script.OutputAssembly;
+
+                    Instance.Set(key, runScript);
                 }
                 catch (Exception ex)
                 {
                     //如果编译失败，应该不重复编译，避免oom
-                    Instance.Set<ReadWriteExpressions>(field, null, TimeSpan.FromHours(1));
-                    var exfield = $"Exception-{source}";
-                    Instance.Set(exfield, ex, TimeSpan.FromHours(1));
+                    Instance.Set<CacheItem>(key, default, time);
+                    var exfield = $"Exception-{key}";
+                    Instance.Set(exfield, ex, time);
                     throw;
                 }
                 GC.Collect();
@@ -158,13 +177,13 @@ $@"
 
         }
 
-        Instance.SetExpire(field, TimeSpan.FromHours(1));
-        if (runScript == null)
+        Instance.SetExpire(key, time);
+        if (runScript.Obj == null)
         {
-            var exfield = $"Exception-{source}";
+            var exfield = $"Exception-{key}";
             throw (Instance.Get<Exception>(exfield) ?? new Exception("compilation error"));
         }
-        return runScript;
+        return (ReadWriteExpressions)runScript.Obj;
     }
 
     /// <summary>
@@ -210,13 +229,13 @@ $@"
                 runScript = GetOrAddScript(source);
             }
         }
-        Instance.SetExpire(field, TimeSpan.FromHours(1));
+        Instance.SetExpire(field, time);
 
         return runScript;
     }
     public static void SetExpire(string source, TimeSpan? timeSpan = null)
     {
         var field = source;
-        Instance.SetExpire(field, timeSpan ?? TimeSpan.FromHours(1));
+        Instance.SetExpire(field, timeSpan ?? time);
     }
 }
