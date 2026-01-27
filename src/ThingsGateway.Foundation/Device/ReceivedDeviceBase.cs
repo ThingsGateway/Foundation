@@ -10,7 +10,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-
 using ThingsGateway.Foundation.Common.PooledAwait;
 
 using TouchSocket.Core;
@@ -303,7 +302,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     private ValueTask BeforeSendAsync(IClientChannel channel, CancellationToken token)
     {
         SetDataAdapter(channel);
-        if (AutoConnect && Channel != null && Channel.Online != true)
+        if (AutoConnect && Channel != null && (Channel.Online != true || Channel.ClosedToken.IsCancellationRequested == true))
         {
             return ConnectAsync(token);
         }
@@ -321,12 +320,12 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
         static async PooledValueTask ConnectAsync(ReceivedDeviceBase @this, CancellationToken token)
         {
-            if (@this.AutoConnect && @this.Channel != null && @this.Channel?.Online != true)
+            if (@this.AutoConnect && @this.Channel != null && (@this.Channel.Online != true || @this.Channel.ClosedToken.IsCancellationRequested == true))
             {
                 try
                 {
                     await @this.connectWaitLock.WaitAsync(token).ConfigureAwait(false);
-                    if (@this.AutoConnect && @this.Channel != null && @this.Channel?.Online != true)
+                    if (@this.AutoConnect && @this.Channel != null && (@this.Channel.Online != true || @this.Channel.ClosedToken.IsCancellationRequested == true))
                     {
                         if (@this.Channel!.PluginManager == null)
                             await @this.Channel.SetupAsync(@this.Channel.Config.Clone()).ConfigureAwait(false);
@@ -587,11 +586,15 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     await waitData.WaitAsync(ctsToken).ConfigureAwait(false);
 
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
+                    if (@this.Channel?.ClosedToken.IsCancellationRequested == true)
+                    {
+                        return new DeviceMessage(new Exception("The channel is closed."));
+                    }
                     return reusableTimeout.TimeoutStatus
-                        ? new DeviceMessage(new TimeoutException()) { ErrorMessage = $"Timeout, sign: {sign}" }
-                        : new DeviceMessage(new OperationCanceledException());
+                        ? new DeviceMessage(new TimeoutException($"Timeout, sign: {sign}", ex))
+                        : new DeviceMessage(ex);
                 }
                 catch (Exception ex)
                 {
