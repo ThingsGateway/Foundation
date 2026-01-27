@@ -1511,12 +1511,13 @@ namespace Westwind.Scripting
         /// </summary>
         public void AddLoadedReferences()
         {
+            var all = AllReferences;
             lock (_lockObject)
             {
 
-                if (AllReferences != null)
+                if (all != null)
                 {
-                    AddAssemblies(AllReferences);
+                    AddAssemblies(all);
                 }
                 else
                 {
