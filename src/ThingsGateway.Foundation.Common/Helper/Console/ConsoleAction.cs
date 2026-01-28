@@ -79,7 +79,7 @@ public sealed class ConsoleAction
             }
             catch (Exception ex)
             {
-                WriteError($"执行命令时发生错误: {ex.GetStackTrace()}");
+                WriteError($"执行命令时发生错误: {ex.ToString()}");
                 OnException?.Invoke(ex);
             }
             return true;

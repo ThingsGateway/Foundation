@@ -21,6 +21,14 @@ namespace ThingsGateway.Foundation;
 /// </summary>
 public static partial class DeviceExtension
 {
+
+    public static TouchSocketConfig CloneAndDispose(this TouchSocketConfig touchSocketConfig)
+    {
+        var config = touchSocketConfig.Clone();
+        touchSocketConfig.Dispose();
+        return config;
+    }
+
     /// <inheritdoc/>
     public static async ValueTask<IOperResult<JsonNode>> ReadJsonNodeAsync(this IDevice device, string address, int length, DataTypeEnum dataType, IThingsGatewayBitConverter? bitConverter = null, CancellationToken cancellationToken = default)
     {

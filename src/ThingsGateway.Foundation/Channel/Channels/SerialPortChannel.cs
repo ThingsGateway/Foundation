@@ -110,6 +110,10 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
                     PortName = null;
                     await this.OnChannelEvent(Stoping).ConfigureAwait(false);
                     var result = await base.CloseAsync(msg, token).ConfigureAwait(false);
+                    if (!result.IsSuccess)
+                    {
+                        Logger?.LogWarning("Close fail: " + result.Message);
+                    }
                     if (!Online)
                     {
                         await this.OnChannelEvent(Stoped).ConfigureAwait(false);

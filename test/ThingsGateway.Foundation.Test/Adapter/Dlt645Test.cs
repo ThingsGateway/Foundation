@@ -40,7 +40,7 @@ public class Dlt645Test
             }, LogLevel.Trace);
         });
 
-        dltMaster.InitChannel(dltChannel);
+        dltMaster.InitChannel(new(dltChannel));
         await dltChannel.SetupAsync(dltChannel.Config).ConfigureAwait(false);
         await dltMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
         var adapter = dltChannel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;

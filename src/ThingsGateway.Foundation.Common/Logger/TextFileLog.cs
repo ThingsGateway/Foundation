@@ -107,7 +107,7 @@ public class TextFileLog : Logger, IDisposable
         catch (Exception ex)
         {
             _logFileError++;
-            Console.WriteLine("创建日志文件失败：{0}", ex.GetMessage());
+            Console.WriteLine("创建日志文件失败：{0}", ex.ToString());
             return null;
         }
     }
@@ -136,7 +136,7 @@ public class TextFileLog : Logger, IDisposable
             try
             {
                 // 使用 File.GetLastWriteTimeUtc
-                var writeTime = File.GetLastAccessTimeUtc(path);
+                var writeTime = File.GetLastWriteTimeUtc(path);
                 if (writeTime > latestTime)
                 {
                     latestTime = writeTime;

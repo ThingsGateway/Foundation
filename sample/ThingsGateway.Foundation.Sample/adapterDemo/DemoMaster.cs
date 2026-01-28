@@ -22,9 +22,9 @@ public partial class DemoMaster : DeviceBase
     {
         BitConverter.EndianType = EndianType.Big;
     }
-    public override void InitChannel(IChannel channel, ILog? deviceLog = null)
+    public override void InitChannel(ChannelObject channelObject, ILog? deviceLog = null)
     {
-        base.InitChannel(channel, deviceLog);
+        base.InitChannel(channelObject, deviceLog);
 
         RegisterByteLength = 2;
     }

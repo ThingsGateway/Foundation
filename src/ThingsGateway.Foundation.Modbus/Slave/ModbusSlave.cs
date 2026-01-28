@@ -53,9 +53,9 @@ public class ModbusSlave : DeviceBase, IModbusAddress
         BitConverter.EndianType = EndianType.Big;
     }
     /// <inheritdoc/>
-    public override void InitChannel(IChannel channel, ILog? deviceLog = null)
+    public override void InitChannel(ChannelObject channelObject, ILog? deviceLog = null)
     {
-        base.InitChannel(channel, deviceLog);
+        base.InitChannel(channelObject, deviceLog);
         RegisterByteLength = 2;
     }
 

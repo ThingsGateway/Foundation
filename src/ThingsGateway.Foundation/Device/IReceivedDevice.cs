@@ -22,6 +22,7 @@ public interface IReceivedDevice : IDisposable, IDisposable2, IAsyncDisposable
     /// <summary>
     /// 通道
     /// </summary>
+    ChannelObject? ChannelObject { get; }
     IChannel? Channel { get; }
 
     /// <summary>
@@ -111,9 +112,9 @@ public interface IReceivedDevice : IDisposable, IDisposable2, IAsyncDisposable
     /// <summary>
     /// 初始化通道信息
     /// </summary>
-    /// <param name="channel">通道</param>
+    /// <param name="channelObject">通道</param>
     /// <param name="deviceLog">单独设备日志</param>
-    void InitChannel(IChannel channel, ILog? deviceLog = null);
+    void InitChannel(ChannelObject channelObject, ILog? deviceLog = null);
 
     /// <summary>
     /// 创建通道

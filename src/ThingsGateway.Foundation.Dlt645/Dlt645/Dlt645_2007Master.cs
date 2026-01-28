@@ -19,9 +19,9 @@ namespace ThingsGateway.Foundation.Dlt645;
 /// <inheritdoc/>
 public class Dlt645_2007Master : DtuDeviceBase
 {
-    public override void InitChannel(IChannel channel, ILog? deviceLog = null)
+    public override void InitChannel(ChannelObject channelObject, ILog? deviceLog = null)
     {
-        base.InitChannel(channel, deviceLog);
+        base.InitChannel(channelObject, deviceLog);
         RegisterByteLength = 2;
     }
     public override IThingsGatewayBitConverter BitConverter { get; } = new Dlt645_2007BitConverter(EndianType.Big);

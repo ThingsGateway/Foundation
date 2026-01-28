@@ -21,9 +21,9 @@ namespace ThingsGateway.Foundation.SiemensS7;
 /// <inheritdoc/>
 public partial class SiemensS7Master : DeviceBase
 {
-    public override void InitChannel(IChannel channel, ILog? deviceLog = null)
+    public override void InitChannel(ChannelObject channelObject, ILog? deviceLog = null)
     {
-        base.InitChannel(channel, deviceLog);
+        base.InitChannel(channelObject, deviceLog);
 
         RegisterByteLength = 1;
     }

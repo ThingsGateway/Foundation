@@ -43,7 +43,7 @@ public class ModbusTest
                 TestContext.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
             }, LogLevel.Trace);
         });
-        modbusMaster.InitChannel(modbusChannel);
+        modbusMaster.InitChannel(new(modbusChannel));
         await modbusChannel.SetupAsync(modbusChannel.Config).ConfigureAwait(false);
         await modbusMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
         var adapter = modbusChannel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;
@@ -89,7 +89,7 @@ public class ModbusTest
                TestContext.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
            }, LogLevel.Trace);
         });
-        modbusMaster.InitChannel(modbusChannel);
+        modbusMaster.InitChannel(new(modbusChannel));
         await modbusChannel.SetupAsync(modbusChannel.Config).ConfigureAwait(false);
         await modbusMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
         var adapter = modbusChannel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;

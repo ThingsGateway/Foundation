@@ -87,6 +87,10 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
                     await ClearAsync().ConfigureAwait(false);
                     var iPHost = Monitors.FirstOrDefault()?.Option.IpHost;
                     var result = await base.StopAsync(token).ConfigureAwait(false);
+                    if (!result.IsSuccess)
+                    {
+                        Logger?.LogWarning("Stop fail: " + result.Message);
+                    }
                     if (!Monitors.Any())
                         Logger?.Info($"{iPHost}{AppResource.ServiceStoped}");
                     return result;

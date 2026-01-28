@@ -62,7 +62,7 @@ public abstract class Logger : DisposeBase, ILog
         {
             // 特殊处理异常
             if (args.Length == 1 && args[0] is Exception ex && (string.IsNullOrEmpty(format) || format == "{0}"))
-                return ex.GetMessage();
+                return ex.ToString();
 
             for (var i = 0; i < args.Length; i++)
             {

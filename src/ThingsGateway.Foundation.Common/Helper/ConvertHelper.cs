@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 
 using System.Globalization;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 
 namespace ThingsGateway.Foundation.Common.Extension;
@@ -98,82 +97,6 @@ public static class ConvertHelper
 
         return str;
     }
-
-    /// <summary>获取异常消息</summary>
-    /// <param name="ex">异常</param>
-    /// <returns></returns>
-    public static String GetMessage(this Exception ex)
-    {
-        // 部分异常ToString可能报错，例如System.Data.SqlClient.SqlException
-        try
-        {
-
-            using ValueStringBuilder valueStringBuilder = new();
-
-
-            valueStringBuilder.Append(ex.Message);
-            var ex1 = ex;
-            for (int i = 0; i < 5; i++)
-            {
-                var inEx = ex1.InnerException;
-                if (inEx != null)
-                {
-                    valueStringBuilder.Append(Environment.NewLine);
-                    valueStringBuilder.Append(inEx.Message);
-                    ex1 = inEx;
-                }
-            }
-
-            return valueStringBuilder.ToString();
-        }
-        catch
-        {
-            return ex.Message;
-        }
-
-
-    }
-
-    /// <summary>获取异常消息</summary>
-    /// <param name="ex">异常</param>
-    /// <returns></returns>
-    public static String? GetStackTrace(this Exception ex)
-    {
-        // 部分异常ToString可能报错，例如System.Data.SqlClient.SqlException
-        using ValueStringBuilder valueStringBuilder = new();
-        try
-        {
-
-
-
-            valueStringBuilder.Append(ex.Message);
-            valueStringBuilder.Append(Environment.NewLine);
-            valueStringBuilder.Append(ex.StackTrace);
-            var ex1 = ex;
-            for (int i = 0; i < 5; i++)
-            {
-                var inEx = ex1.InnerException;
-                if (inEx != null)
-                {
-                    valueStringBuilder.Append(Environment.NewLine);
-                    valueStringBuilder.Append(Environment.NewLine);
-                    valueStringBuilder.Append(ex.Message);
-                    valueStringBuilder.Append(Environment.NewLine);
-                    valueStringBuilder.Append(inEx.StackTrace);
-                    ex1 = inEx;
-                }
-            }
-
-            return valueStringBuilder.ToString();
-        }
-        catch
-        {
-            return ex.ToString();
-        }
-
-
-    }
-
 
     /// <summary>获取内部真实异常</summary>
     /// <param name="ex"></param>

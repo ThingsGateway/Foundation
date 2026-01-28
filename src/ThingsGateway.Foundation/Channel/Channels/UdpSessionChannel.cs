@@ -166,6 +166,10 @@ public class UdpSessionChannel : UdpSession, IClientChannel
                 {
                     await this.OnChannelEvent(Stoping).ConfigureAwait(false);
                     var result = await base.StopAsync(token).ConfigureAwait(false);
+                    if (!result.IsSuccess)
+                    {
+                        Logger?.LogWarning("Stop fail: " + result.Message);
+                    }
                     if (Monitor == null)
                     {
                         await this.OnChannelEvent(Stoped).ConfigureAwait(false);

@@ -38,7 +38,7 @@ public class SiemensS7Test
             }, LogLevel.Trace);
         });
 
-        siemensS7Master.InitChannel(siemensS7Channel);
+        siemensS7Master.InitChannel(new(siemensS7Channel));
         await siemensS7Channel.SetupAsync(siemensS7Channel.Config).ConfigureAwait(false);
         await siemensS7Master.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
         var adapter = siemensS7Channel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;

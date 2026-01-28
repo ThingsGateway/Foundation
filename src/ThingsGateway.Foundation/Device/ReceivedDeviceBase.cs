@@ -23,20 +23,21 @@ namespace ThingsGateway.Foundation;
 public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceivedDevice
 {
     /// <inheritdoc/>
-    public IChannel? Channel { get; private set; }
-
+    public ChannelObject? ChannelObject { get; private set; }
+    public IChannel Channel => ChannelObject?.Channel;
     public virtual bool SupportMultipleDevice()
     {
         return false;
     }
 
     /// <inheritdoc/>
-    public virtual void InitChannel([NotNullIfNotNull(nameof(Channel))] IChannel channel, ILog? deviceLog = default)
+    public virtual void InitChannel([NotNullIfNotNull(nameof(channelObject))] ChannelObject channelObject, ILog? deviceLog = default)
     {
+        var channel = channelObject.Channel;
         ArgumentNullExceptionEx.ThrowIfNull(channel, nameof(channel));
         if (channel.Collects.Contains(this))
             return;
-        Channel = channel;
+        ChannelObject = channelObject;
         _deviceLogger = deviceLog;
         lock (channel)
         {
@@ -52,7 +53,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             {
                 channel.Config.ConfigurePlugins(ConfigurePlugins(channel.Config));
 
-                if (Channel is IClientChannel clientChannel)
+                if (channel is IClientChannel clientChannel)
                 {
                     if (clientChannel.ChannelType == ChannelTypeEnum.UdpSession)
                     {
@@ -76,7 +77,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                         });
                     }
                 }
-                else if (Channel is ITcpServiceChannel serviceChannel)
+                else if (channel is ITcpServiceChannel serviceChannel)
                 {
                     channel.Config.SetTcpDataHandlingAdapter(() =>
                     {
@@ -87,11 +88,11 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             }
 
             channel.Collects.Add(this);
-            Channel.Starting.Add(ChannelStarting);
-            Channel.Stoped.Add(ChannelStoped);
-            Channel.Stoping.Add(ChannelStoping);
-            Channel.Started.Add(ChannelStarted);
-            Channel.ChannelReceived.Add(ChannelReceived);
+            channel.Starting.Add(ChannelStarting);
+            channel.Stoped.Add(ChannelStoped);
+            channel.Stoping.Add(ChannelStoping);
+            channel.Started.Add(ChannelStarted);
+            channel.ChannelReceived.Add(ChannelReceived);
 
             SetChannel();
         }
@@ -296,7 +297,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 await channel.SendAsync(sendMessage, token).ConfigureAwait(false);
             }
         }
-
     }
 
     private ValueTask BeforeSendAsync(IClientChannel channel, CancellationToken token)
@@ -327,8 +327,21 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     await @this.connectWaitLock.WaitAsync(token).ConfigureAwait(false);
                     if (@this.AutoConnect && @this.Channel != null && (@this.Channel.Online != true || @this.Channel.ClosedToken.IsCancellationRequested == true))
                     {
+                        TouchSocketConfig? config = null;
+                        //网络异常有几率导致socket对象被释放，ts框架无法感知
+                        if (@this.Channel.Online == true && @this.Channel.ClosedToken.IsCancellationRequested == true)
+                        {
+                            @this.Logger?.LogTrace("The channel is in an abnormal state, resetting the channel.");
+                            var oldChannel = @this.Channel;
+                            //直接重置通道
+                            config = oldChannel.Config.CloneAndDispose();
+                            oldChannel.SafeDispose();
+                            @this.ChannelObject.Reset(@this.CreateChannel(config, @this.Channel.ChannelOptions));
+                            @this.InitChannel(@this.ChannelObject, @this._deviceLogger);
+                        }
+
                         if (@this.Channel!.PluginManager == null)
-                            await @this.Channel.SetupAsync(@this.Channel.Config.Clone()).ConfigureAwait(false);
+                            await @this.Channel.SetupAsync(config ?? @this.Channel.Config.CloneAndDispose()).ConfigureAwait(false);
                         await @this.Channel.CloseAsync().ConfigureAwait(false);
 
 #pragma warning disable CA2000 // 丢失范围之前释放对象
@@ -340,6 +353,13 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                             var ctsToken = reusableTimeout.GetTokenSource(@this.Channel.ChannelOptions?.ConnectTimeout ?? 3000, token);
 
                             await @this.Channel.ConnectAsync(ctsToken).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException ex)
+                        {
+                            if (reusableTimeout.TimeoutStatus)
+                                throw new TimeoutException("Channel connect timeout", ex);
+                            else
+                                throw new Exception("Channel connect fail", ex);
                         }
                         finally
                         {

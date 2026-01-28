@@ -21,14 +21,6 @@ namespace ThingsGateway.Foundation.Common.Tests
         #region GetMessage & GetTrueException
 
         [TestMethod]
-        public void GetMessage_ShouldReturnCleanMessage()
-        {
-            var ex = new Exception("test");
-            var msg = ex.GetMessage();
-            Assert.Contains("test", msg);
-        }
-
-        [TestMethod]
         public void GetTrueException_ShouldUnwrapInner()
         {
             var inner = new InvalidOperationException("inner");
