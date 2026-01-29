@@ -51,7 +51,7 @@ public static class PluginUtil
                             {
                                 return;
                             }
-                            if (client.PauseReconnection)
+                            if (client.GetPauseReconnection())
                             {
                                 continue;
                             }

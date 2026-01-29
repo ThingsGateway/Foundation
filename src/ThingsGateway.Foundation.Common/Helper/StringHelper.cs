@@ -625,13 +625,13 @@ public static class StringHelper
         else
             return str[..f];
     }
-    /// <summary>修剪不可见字符。仅修剪ASCII，不包含Unicode</summary>
+    /// <summary>修剪不可见字符。</summary>
     /// <param name="value"></param>
     /// <returns></returns>
     public static string TrimInvisible(this ReadOnlySpan<char> value)
     {
         if (value.Length <= 0) return string.Empty;
-
+        
         using var builder = new ValueStringBuilder(value.Length);
 
         for (var i = 0; i < value.Length; i++)

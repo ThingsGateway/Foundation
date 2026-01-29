@@ -200,11 +200,10 @@ internal static class PackHelper
             }
             return address + it.Length; // 返回排序后的地址加上长度
         }).ToList();
-
         var minAddress = addresses[0].AddressStart; // 获取最小地址
         var maxAddress = addresses.Last().AddressStart; // 获取最大地址
 
-        while (maxAddress >= minAddress) // 循环，直到最大地址小于最小地址
+        do
         {
             int readLength = siemensS7Net.PduLength == 0 ? 200 : siemensS7Net.PduLength; // 读取长度为PDU长度减去28，避免超出限制
 
@@ -301,6 +300,7 @@ internal static class PackHelper
                 break; // 如果地址列表为空，则退出循环
             }
         }
+        while (maxAddress >= minAddress); // 循环，直到最大地址小于最小地址
 
         return sourceReads; // 返回打包后的源数据列表
     }
