@@ -631,7 +631,7 @@ public static class StringHelper
     public static string TrimInvisible(this ReadOnlySpan<char> value)
     {
         if (value.Length <= 0) return string.Empty;
-        
+
         using var builder = new ValueStringBuilder(value.Length);
 
         for (var i = 0; i < value.Length; i++)

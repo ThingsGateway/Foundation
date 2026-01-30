@@ -10,14 +10,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client.ComplexTypes" Version="1.5.378.65" />
+		<PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client.ComplexTypes" Version="1.5.378.106" />
 	</ItemGroup>
 	
 	<ItemGroup Condition="'$(TargetFramework)'=='net6.0'">
 		<PackageReference Include="System.Text.Json" Version="8.0.6" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)'!='net6.0'">
-		<PackageReference Include="System.Text.Json" Version="10.0.1" />
+		<PackageReference Include="System.Text.Json" Version="$(NET10Version)" />
 	</ItemGroup>
 	
 	<ItemGroup>
