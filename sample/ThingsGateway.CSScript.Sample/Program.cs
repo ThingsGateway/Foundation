@@ -1,7 +1,9 @@
-﻿using ThingsGateway.Gateway.Application.Extensions;
+﻿using System.Runtime.Loader;
+using Westwind.Scripting;
 
 namespace ThingsGateway.Foundation.Sample
 {
+
     public interface Test
     {
         public string Add(int num1, int num2);
@@ -12,18 +14,56 @@ namespace ThingsGateway.Foundation.Sample
     {
         private static async Task Main(string[] args)
         {
-            Console.ReadLine();
-            for (int i = 0; i < 11; i++)
-            {
-                var data = $"{i}".GetExpressionsResult(1);
-                Console.WriteLine(data);
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                Console.ReadLine();
+            var code = $@"
+
+using System;
+using ThingsGateway.Foundation.Sample;
+using System.Net;
+        public class Math{Random.Shared.Next()}:Test
+	{{
+		public string Add(int num1, int num2)
+		{{
+			// string templates
+			var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
+			Console.WriteLine(result);
+            var d=HttpWebRequest.DefaultMaximumErrorResponseLength;
+            if(d>1000)
+            {{
+                Console.WriteLine(d);
+            }}
+			return result;
+		}}
+		
+		public string Multiply(int num1, int num2)
+		{{
+			// string templates
+			var result = $""{{num1}}  *  {{num2}} = {{ num1 * num2 }}"";
+			Console.WriteLine(result);
+			
+			result = $""Take two: {{ result ?? ""No Result"" }}"";
+			Console.WriteLine(result);
+			
+			return result;
+		}}
+	}}
+    ";
+			{
+                var context = new AssemblyLoadContext("", true);
+                var script = new CSharpScriptExecution();
+                script.AlternateAssemblyLoadContext = context;
+
+                var readWriteExpressions = script.CompileClassWithFile(code) as Test;
+                Console.Write(readWriteExpressions.Add(5, 10));
             }
-            Console.ReadLine();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            {
+                var context = new AssemblyLoadContext("", true);
+                var script = new CSharpScriptExecution();
+                script.AlternateAssemblyLoadContext = context;
+
+                var readWriteExpressions = script.CompileClassWithFile(code) as Test;
+                Console.Write(readWriteExpressions.Add(5, 10));
+            }
+
             Console.ReadLine();
         }
 

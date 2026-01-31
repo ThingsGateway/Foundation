@@ -9,6 +9,7 @@ using System.Runtime.Loader;
 using System.Text;
 using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.StringExtension;
 using Yitter.IdGenerator;
 
 namespace Westwind.Scripting
@@ -36,6 +37,8 @@ namespace Westwind.Scripting
         private static void Do(object? state)
         {
             AllReferences = null;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         private static TimerX TimerX;
@@ -1521,30 +1524,31 @@ namespace Westwind.Scripting
                 }
                 else
                 {
-                    var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly =>
-                    !string.IsNullOrEmpty(assembly.Location) && !assembly.GetName().Name.StartsWith("Microsoft")).OrderBy(a => a.GetName().Name).ToArray();
+                    List<string> locations = new();
 
-                    foreach (var assembly in assemblies)
+                    var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !string.IsNullOrEmpty(assembly.Location) && !assembly.Location.ContainsIgnoreCase("AspNetCore")).Select(a => a.Location);
+                    foreach (var location in assemblies)
                     {
-                        try
-                        {
-                            if (string.IsNullOrEmpty(assembly.Location)) continue;
-                            AddAssembly(assembly.Location);
-                        }
-                        catch
-                        {
-                        }
+                        if (string.IsNullOrEmpty(location)) continue;
+                        locations.Add(GetFilePath(location));
+
                     }
 
-                    AddAssembly("Microsoft.CSharp.dll"); // dynamic
+                    locations.Add(GetFilePath("Microsoft.CSharp.dll")); // dynamic
 
-#if NET6_0_OR_GREATER
-                    AddAssemblies(
-                        "System.Linq.Expressions.dll", // IMPORTANT!
-                        "System.Text.RegularExpressions.dll" // IMPORTANT!
-                    );
-#endif
-                    AddAssembly("Newtonsoft.Json.dll");
+                    locations.Add(GetFilePath("System.Linq.Expressions.dll"));
+                    locations.Add(GetFilePath("System.Text.RegularExpressions.dll"));
+                    locations.Add(GetFilePath("Newtonsoft.Json.dll"));
+
+                    var data = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator);
+
+                    foreach (var item in data)
+                    {
+                        locations.Add(GetFilePath(item));
+                    }
+
+                    var addDll = locations.Where(a => !string.IsNullOrEmpty(a)).Order().ToArray();
+                    AddAssemblies(addDll);
 
                     AllReferences = References;
                 }
@@ -1594,16 +1598,9 @@ namespace Westwind.Scripting
             // this library and CodeAnalysis libs
             AddAssembly(typeof(CSharpScriptExecution)); // this scripting Library
         }
-
-        /// <summary>
-        /// Adds an assembly from disk. Provide a full path if possible
-        /// or a path that can resolve as part of the application folder
-        /// or the runtime folder.
-        /// </summary>
-        /// <param name="assemblyDll">assembly DLL name. Path is required if not in startup or .NET assembly folder</param>
-        public bool AddAssembly(string assemblyDll)
+        private string GetFilePath(string assemblyDll)
         {
-            if (string.IsNullOrEmpty(assemblyDll)) return false;
+            if (string.IsNullOrEmpty(assemblyDll)) return null;
 
             var file = Path.GetFullPath(assemblyDll);
 
@@ -1613,8 +1610,22 @@ namespace Westwind.Scripting
                 var path = Path.GetDirectoryName(typeof(object).Assembly.Location);
                 file = Path.Combine(path, assemblyDll);
                 if (!File.Exists(file))
-                    return false;
+                    return null;
+                else
+                    return file;
             }
+            return file;
+        }
+        /// <summary>
+        /// Adds an assembly from disk. Provide a full path if possible
+        /// or a path that can resolve as part of the application folder
+        /// or the runtime folder.
+        /// </summary>
+        /// <param name="assemblyDll">assembly DLL name. Path is required if not in startup or .NET assembly folder</param>
+        public bool AddAssembly(string assemblyDll)
+        {
+            var file = GetFilePath(assemblyDll);
+            if (string.IsNullOrEmpty(file)) return false;
 
             if (References.Any(r => r.FilePath == file)) return true;
 
