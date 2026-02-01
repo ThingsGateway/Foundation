@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Concurrent;
@@ -1089,12 +1090,13 @@ namespace Westwind.Scripting
         /// </summary>
         /// <param name="source">Source code</param>
         /// <param name="noLoad">if set doesn't load the assembly (useful only when OutputAssembly is set)</param>
+        /// <param name="first"></param>
         /// <returns></returns>
-        public bool CompileAssembly(string source, bool noLoad = false)
+        public bool CompileAssembly(string source, bool noLoad = false, bool first = true)
         {
             ClearErrors();
 
-            var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
+            var tree = SyntaxFactory.ParseSyntaxTree(source);
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
 
 
@@ -1133,6 +1135,22 @@ namespace Westwind.Scripting
                 else
                     compilationResult = compilation.Emit(codeStream);
 
+                if (first && !compilationResult.Success)
+                {
+
+                    var usings = tree.GetRoot()
+                         .DescendantNodes()
+                         .OfType<UsingDirectiveSyntax>()
+                         .Select(u => u.Name.ToString()).Where(a => !a.EqualIgnoreCase("System"))
+                         .ToArray();
+                    var data = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator).Where(a => usings.Any(b => Path.GetFileNameWithoutExtension(a).Contains(b))).ToList();
+                    foreach (var item in data)
+                    {
+                        AddAssemblies(GetFilePath(item));
+                    }
+                    codeStream.Dispose();
+                    return CompileAssembly(source, noLoad, false);
+                }
                 // Compilation Error handling
                 if (!compilationResult.Success)
                 {
@@ -1515,42 +1533,44 @@ namespace Westwind.Scripting
         public void AddLoadedReferences()
         {
             var all = AllReferences;
-            lock (_lockObject)
+            if (all != null)
             {
-
-                if (all != null)
+                AddAssemblies(all);
+            }
+            else
+            {
+                lock (_lockObject)
                 {
-                    AddAssemblies(all);
-                }
-                else
-                {
-                    List<string> locations = new();
 
-                    var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !string.IsNullOrEmpty(assembly.Location) && !assembly.Location.ContainsIgnoreCase("AspNetCore")).Select(a => a.Location);
-                    foreach (var location in assemblies)
+                    all = AllReferences;
+                    if (all != null)
                     {
-                        if (string.IsNullOrEmpty(location)) continue;
-                        locations.Add(GetFilePath(location));
-
+                        AddAssemblies(all);
                     }
-
-                    locations.Add(GetFilePath("Microsoft.CSharp.dll")); // dynamic
-
-                    locations.Add(GetFilePath("System.Linq.Expressions.dll"));
-                    locations.Add(GetFilePath("System.Text.RegularExpressions.dll"));
-                    locations.Add(GetFilePath("Newtonsoft.Json.dll"));
-
-                    var data = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator);
-
-                    foreach (var item in data)
+                    else
                     {
-                        locations.Add(GetFilePath(item));
+                        List<string> locations = new();
+
+                        var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !string.IsNullOrEmpty(assembly.Location) && !assembly.Location.ContainsIgnoreCase("AspNetCore")).Select(a => a.Location);
+                        foreach (var location in assemblies)
+                        {
+                            if (string.IsNullOrEmpty(location)) continue;
+                            locations.Add(GetFilePath(location));
+
+                        }
+
+                        locations.Add(GetFilePath("Microsoft.CSharp.dll")); // dynamic
+
+                        locations.Add(GetFilePath("System.Linq.Expressions.dll"));
+                        locations.Add(GetFilePath("System.Text.RegularExpressions.dll"));
+                        locations.Add(GetFilePath("Newtonsoft.Json.dll"));
+
+
+                        var addDll = locations.Where(a => !string.IsNullOrEmpty(a) && !a.ContainsIgnoreCase("AspNetCore")).Order().ToArray();
+                        AddAssemblies(addDll);
+
+                        AllReferences = References;
                     }
-
-                    var addDll = locations.Where(a => !string.IsNullOrEmpty(a)).Order().ToArray();
-                    AddAssemblies(addDll);
-
-                    AllReferences = References;
                 }
             }
 
@@ -2031,7 +2051,7 @@ namespace Westwind.Scripting
             "System.Text.RegularExpressions", "System.Threading.Tasks", "System.Linq", "Westwind.Scripting"
         };
         private static readonly char[] separator = new char[] { '\n' };
-        private readonly object _lockObject = new object();
+        private static readonly object _lockObject = new object();
     }
 
     public class CodeInjection
