@@ -10,6 +10,8 @@ using System.Runtime.Loader;
 using System.Text;
 using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.Json.Extension;
+using ThingsGateway.Foundation.Common.Log;
 using ThingsGateway.Foundation.Common.StringExtension;
 using Yitter.IdGenerator;
 
@@ -1143,7 +1145,10 @@ namespace Westwind.Scripting
                          .OfType<UsingDirectiveSyntax>()
                          .Select(u => u.Name.ToString()).Where(a => !a.EqualIgnoreCase("System"))
                          .ToArray();
-                    var data = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator).Where(a => usings.Any(b => Path.GetFileNameWithoutExtension(a).Contains(b))).ToList();
+                    var data = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator).Where(a => usings.Any(b => Path.GetFileNameWithoutExtension(a).Contains(b))).Where(a => !References.Any(r => r.FilePath == a)).ToList();
+
+                    if (usings.Length > 0)
+                        XTrace.WriteLine("AddReferences：" + Environment.NewLine + data.ToJsonNetString());
                     foreach (var item in data)
                     {
                         AddAssemblies(GetFilePath(item));
@@ -1206,8 +1211,9 @@ namespace Westwind.Scripting
         /// </summary>
         /// <param name="codeInputStream">Stream that contains C# code</param>
         /// <param name="noLoad">If set won't load the assembly and just compiles it. Useful only if OutputAssembly is set so you can explicitly load the assembly later.</param>
+        /// <param name="first"></param>
         /// <returns></returns>
-        public bool CompileAssembly(Stream codeInputStream, bool noLoad = false)
+        public bool CompileAssembly(Stream codeInputStream, bool noLoad = false, bool first = true)
         {
             ClearErrors();
 
@@ -1228,13 +1234,34 @@ namespace Westwind.Scripting
                 using (var codeStream = new MemoryStream())
                 {
                     var compilationResult = compilation.Emit(codeStream);
+                    if (first && !compilationResult.Success)
+                    {
+                        var usings = tree.GetRoot()
+                    .DescendantNodes()
+                    .OfType<UsingDirectiveSyntax>()
+                    .Select(u => u.Name.ToString()).Where(a => !a.EqualIgnoreCase("System"))
+                    .ToArray();
+                        var data = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator).Where(a => usings.Any(b => Path.GetFileNameWithoutExtension(a).Contains(b))).Where(a => !References.Any(r => r.FilePath == a)).ToList();
 
+                        if (usings.Length > 0)
+                            XTrace.WriteLine("AddReferences：" + Environment.NewLine + data.ToJsonNetString());
+
+                        foreach (var item in data)
+                        {
+                            var file = GetFilePath(item);
+                            AddAssemblies(file);
+                        }
+                        codeStream.Dispose();
+                        return CompileAssembly(codeInputStream, noLoad, false);
+
+                    }
                     // Compilation Error handling
                     if (!compilationResult.Success)
                     {
                         using var sb = new ValueStringBuilder();
                         foreach (var diag in compilationResult.Diagnostics)
                         {
+
                             sb.AppendLine(diag.ToString());
                         }
 
@@ -1549,7 +1576,7 @@ namespace Westwind.Scripting
                     }
                     else
                     {
-                        List<string> locations = new();
+                        HashSet<string> locations = new();
 
                         var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !string.IsNullOrEmpty(assembly.Location) && !assembly.Location.ContainsIgnoreCase("AspNetCore")).Select(a => a.Location);
                         foreach (var location in assemblies)
@@ -1565,8 +1592,10 @@ namespace Westwind.Scripting
                         locations.Add(GetFilePath("System.Text.RegularExpressions.dll"));
                         locations.Add(GetFilePath("Newtonsoft.Json.dll"));
 
+                        var addDll = locations.Where(a => !string.IsNullOrEmpty(a) && !a.ContainsIgnoreCase("AspNetCore") && !a.ContainsIgnoreCase("visual studio")).Order().ToArray();
 
-                        var addDll = locations.Where(a => !string.IsNullOrEmpty(a) && !a.ContainsIgnoreCase("AspNetCore")).Order().ToArray();
+                        XTrace.WriteLine("AddReferences：" + Environment.NewLine + addDll.ToJsonNetString());
+
                         AddAssemblies(addDll);
 
                         AllReferences = References;
@@ -1630,9 +1659,22 @@ namespace Westwind.Scripting
                 var path = Path.GetDirectoryName(typeof(object).Assembly.Location);
                 file = Path.Combine(path, assemblyDll);
                 if (!File.Exists(file))
-                    return null;
+                {
+                    file = Path.Combine(AppContext.BaseDirectory, assemblyDll);
+                    if (!File.Exists(file))
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        return file;
+                    }
+
+                }
                 else
+                {
                     return file;
+                }
             }
             return file;
         }

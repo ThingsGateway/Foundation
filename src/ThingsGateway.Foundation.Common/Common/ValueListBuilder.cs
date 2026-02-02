@@ -9,22 +9,55 @@ using System.Runtime.CompilerServices;
 
 namespace System.Collections.Generic;
 
+/// <summary>
+/// 高性能的可增长列表构建器，基于 <see cref="Span{T}"/> 和 <see cref="ArrayPool{T}"/> 实现。
+/// 特点：
+/// - 为 <c>ref struct</c>，仅可在栈上使用，适合临时构建列表结果；
+/// - 可以使用外部提供的 <see cref="Span{T}"/>（例如 stackalloc）作为初始缓冲区；
+/// - 缓冲区不够时从 <see cref="ArrayPool{T}.Shared"/> 租用数组以扩容，减少堆分配。
+/// </summary>
 public ref partial struct ValueListBuilder<T> : IDisposable
 {
+    /// <summary>
+    /// 当前使用的缓冲区视图，可能来源于外部 span 或数组池租用的数组。
+    /// </summary>
     private Span<T> _span;
+
+    /// <summary>
+    /// 若非 null，则为从数组池租用的数组引用，需要在 <see cref="Dispose"/> 时归还。
+    /// 如果使用外部提供的 span，则该字段为 null。
+    /// </summary>
     private T[]? _arrayFromPool;
+
+    /// <summary>
+    /// 当前已写入元素个数（逻辑长度）。
+    /// </summary>
     private int _pos;
 
+    /// <summary>
+    /// 默认构造函数，使用初始容量 32（会根据池的 bucket 实际调整）。
+    /// </summary>
     public ValueListBuilder() : this(32)
     {
 
     }
 
+    /// <summary>
+    /// 使用指定初始容量创建构建器。
+    /// 会立即通过 <see cref="Grow(int)"/> 从数组池租用相应容量的数组。
+    /// </summary>
+    /// <param name="length">初始容量。</param>
     public ValueListBuilder(int length)
     {
         Grow(length);
         _pos = 0;
     }
+
+    /// <summary>
+    /// 使用外部提供的初始 <see cref="Span{T}"/> 作为缓冲区。
+    /// 不会向数组池租用数组，<see cref="Dispose"/> 时也不会归还任何数组。
+    /// </summary>
+    /// <param name="initialSpan">初始缓冲区。</param>
     public ValueListBuilder(Span<T> initialSpan)
     {
         _span = initialSpan;
@@ -32,6 +65,9 @@ public ref partial struct ValueListBuilder<T> : IDisposable
         _pos = 0;
     }
 
+    /// <summary>
+    /// 向列表末尾追加一个元素；容量不足时会触发扩容。
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(T item)
     {
@@ -50,6 +86,10 @@ public ref partial struct ValueListBuilder<T> : IDisposable
         }
     }
 
+    /// <summary>
+    /// 容量不足时的追加慢路径：先扩容，再写入元素。
+    /// 独立为非内联方法，保持常规 <see cref="Add(T)"/> 快路径体积更小，以利于 JIT 优化。
+    /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void AddWithResize(T item)
     {
@@ -60,8 +100,15 @@ public ref partial struct ValueListBuilder<T> : IDisposable
         _pos = pos + 1;
     }
 
+    /// <summary>
+    /// 返回当前已写入部分的只读切片 [0, <c>_pos</c>)。
+    /// </summary>
     public ReadOnlySpan<T> AsSpan() => _span.Slice(0, _pos);
 
+    /// <summary>
+    /// 释放当前实例持有的数组池资源。
+    /// 如果使用的是外部提供的 span，则该方法不会做任何事情。
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
@@ -97,6 +144,7 @@ public ref partial struct ValueListBuilder<T> : IDisposable
             nextCapacity = Math.Max(Math.Max(_span.Length + 1, ArrayMaxLength), _span.Length);
         }
 
+        // 从数组池租用新的更大数组，并把现有内容拷贝过去。
         T[] array = ArrayPool<T>.Shared.Rent(nextCapacity);
         _span.CopyTo(array);
 

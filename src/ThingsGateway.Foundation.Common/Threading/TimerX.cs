@@ -1,18 +1,14 @@
-﻿using System.Reflection;
-
-namespace ThingsGateway.Foundation.Common;
+﻿namespace ThingsGateway.Foundation.Common;
 
 /// <summary>不可重入的定时器，支持Cron</summary>
 /// <remarks>
-/// 
-/// 为了避免系统的Timer可重入的问题，差别在于本地调用完成后才开始计算时间间隔。这实际上也是经常用到的。
-/// 
+/// <para>为了避免系统的Timer可重入的问题，差别在于本地调用完成后才开始计算时间间隔。这实际上也是经常用到的。</para>
+/// <para>
 /// 因为挂载在静态列表上，必须从外部主动调用<see cref="IDisposable.Dispose"/>才能销毁定时器。
 /// 但是要注意GC回收定时器实例。
-/// 
-/// 该定时器不能放入太多任务，否则适得其反！
-/// 
-/// TimerX必须维持对象，否则Scheduler也没有维持对象时，大家很容易一起被GC回收。
+/// </para>
+/// <para>该定时器不能放入太多任务，否则适得其反！</para>
+/// <para>TimerX必须维持对象，否则Scheduler也没有维持对象时，大家很容易一起被GC回收。</para>
 /// </remarks>
 public class TimerX : ITimer, ITimerx
 {
@@ -24,10 +20,44 @@ public class TimerX : ITimer, ITimerx
     public TimerScheduler Scheduler { get; private set; }
 
     /// <summary>目标对象。弱引用，使得调用方对象可以被GC回收</summary>
-    internal readonly WeakReference Target;
+    internal WeakReference? Target { get; private set; }
+    /// <summary>
+    /// 任务委托
+    /// </summary>
+    internal Func<object?, Task>? TaskDelegate
+    {
+        get; set
+        {
+            if (value != null)
+                Target = new(value.Target);
+            field = value;
+        }
+    }
+    /// <summary>
+    /// 任务委托
+    /// </summary>
+    internal Func<object?, ValueTask>? ValueTaskDelegate
+    {
+        get; set
+        {
+            if (value != null)
+                Target = new(value.Target);
+            field = value;
+        }
+    }
+    /// <summary>
+    /// 任务委托
+    /// </summary>
+    internal TimerCallback? TimerCallbackDelegate
+    {
+        get; set
+        {
+            if (value != null)
+                Target = new(value.Target);
+            field = value;
+        }
+    }
 
-    /// <summary>委托方法</summary>
-    internal readonly MethodInfo Method;
 
     internal readonly Boolean IsAsyncTask;
 
@@ -78,9 +108,6 @@ public class TimerX : ITimer, ITimerx
     /// <summary>Cron表达式，实现复杂的定时逻辑</summary>
     public IReadOnlyCollection<Cron>? Crons => _crons;
 
-    /// <summary>链路追踪名称。默认使用方法名</summary>
-    public String TracerName { get; set; }
-
     private DateTime _AbsolutelyNext;
     private readonly Cron[]? _crons;
 
@@ -98,10 +125,8 @@ public class TimerX : ITimer, ITimerx
     //    #endregion
 
     #region 构造
-    private TimerX(Object? target, MethodInfo method, Object? state, String? scheduler = null)
+    private TimerX(Object? state, String? scheduler = null)
     {
-        Target = new WeakReference(target);
-        Method = method;
         State = state;
 
         // 使用开机滴答作为定时调度基准
@@ -111,7 +136,6 @@ public class TimerX : ITimer, ITimerx
         //Scheduler.Add(this);
         _baseTime = Scheduler.GetNow().AddMilliseconds(-_nextTick);
 
-        TracerName = $"timer:{method.Name}";
     }
 
     private void Init(Int64 ms)
@@ -127,10 +151,12 @@ public class TimerX : ITimer, ITimerx
     /// <param name="dueTime">多久之后开始。毫秒</param>
     /// <param name="period">间隔周期。毫秒</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(TimerCallback callback, Object? state, Int32 dueTime, Int32 period, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(TimerCallback callback, Object? state, Int32 dueTime, Int32 period, String? scheduler = null) : this(state, scheduler)
     {
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-        ArgumentOutOfRangeExceptionEx.ThrowIfNegative(dueTime, nameof(dueTime));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (dueTime < 0) throw new ArgumentOutOfRangeException(nameof(dueTime));
+
+        TimerCallbackDelegate = callback;
 
         Period = period;
 
@@ -143,10 +169,13 @@ public class TimerX : ITimer, ITimerx
     /// <param name="dueTime">多久之后开始。毫秒</param>
     /// <param name="period">间隔周期。毫秒</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(Func<Object, Task> callback, Object? state, Int32 dueTime, Int32 period, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(Func<Object?, Task> callback, Object? state, Int32 dueTime, Int32 period, String? scheduler = null) : this(state, scheduler)
     {
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-        ArgumentOutOfRangeExceptionEx.ThrowIfNegative(dueTime, nameof(dueTime));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (dueTime < 0) throw new ArgumentOutOfRangeException(nameof(dueTime));
+
+        TaskDelegate = callback;
+
 
         IsAsyncTask = true;
         Async = true;
@@ -162,12 +191,14 @@ public class TimerX : ITimer, ITimerx
     /// <param name="dueTime">多久之后开始。毫秒</param>
     /// <param name="period">间隔周期。毫秒</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(Func<Object, ValueTask> callback, Object? state, Int32 dueTime, Int32 period, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(Func<Object?, ValueTask> callback, Object? state, Int32 dueTime, Int32 period, String? scheduler = null) : this(state, scheduler)
     {
-        IsValueTask = true;
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-        ArgumentOutOfRangeExceptionEx.ThrowIfNegative(dueTime, nameof(dueTime));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (dueTime < 0) throw new ArgumentOutOfRangeException(nameof(dueTime));
 
+        ValueTaskDelegate = callback;
+
+        IsValueTask = true;
         IsAsyncTask = true;
         Async = true;
         Period = period;
@@ -182,12 +213,14 @@ public class TimerX : ITimer, ITimerx
     /// <param name="startTime">绝对开始时间</param>
     /// <param name="period">间隔周期。毫秒</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(TimerCallback callback, Object? state, DateTime startTime, Int32 period, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(TimerCallback callback, Object? state, DateTime startTime, Int32 period, String? scheduler = null) : this(state, scheduler)
     {
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-        ArgumentOutOfRangeExceptionEx.ThrowIfNegative(period, nameof(period));
-        if (startTime <= DateTime.MinValue)
-            ThrowHelper.ThrowArgumentOutOfRangeException(startTime, nameof(startTime));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (period < 0) throw new ArgumentOutOfRangeException(nameof(period));
+        if (startTime <= DateTime.MinValue) throw new ArgumentOutOfRangeException(nameof(startTime));
+
+        TimerCallbackDelegate = callback;
+
 
         Period = period;
         Absolutely = true;
@@ -207,12 +240,13 @@ public class TimerX : ITimer, ITimerx
     /// <param name="startTime">绝对开始时间</param>
     /// <param name="period">间隔周期。毫秒</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(Func<Object, Task> callback, Object? state, DateTime startTime, Int32 period, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(Func<Object?, Task> callback, Object? state, DateTime startTime, Int32 period, String? scheduler = null) : this(state, scheduler)
     {
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-        ArgumentOutOfRangeExceptionEx.ThrowIfNegative(period, nameof(period));
-        if (startTime <= DateTime.MinValue)
-            ThrowHelper.ThrowArgumentOutOfRangeException(startTime, nameof(startTime));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (period < 0) throw new ArgumentOutOfRangeException(nameof(period));
+        if (startTime <= DateTime.MinValue) throw new ArgumentOutOfRangeException(nameof(startTime));
+
+        TaskDelegate = callback;
 
         IsAsyncTask = true;
         Async = true;
@@ -235,14 +269,15 @@ public class TimerX : ITimer, ITimerx
     /// <param name="startTime">绝对开始时间</param>
     /// <param name="period">间隔周期。毫秒</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(Func<Object, ValueTask> callback, Object? state, DateTime startTime, Int32 period, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(Func<Object?, ValueTask> callback, Object? state, DateTime startTime, Int32 period, String? scheduler = null) : this(state, scheduler)
     {
-        IsValueTask = true;
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-        ArgumentOutOfRangeExceptionEx.ThrowIfNegative(period, nameof(period));
-        if (startTime <= DateTime.MinValue)
-            ThrowHelper.ThrowArgumentOutOfRangeException(startTime, nameof(startTime));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (period < 0) throw new ArgumentOutOfRangeException(nameof(period));
+        if (startTime <= DateTime.MinValue) throw new ArgumentOutOfRangeException(nameof(startTime));
 
+        ValueTaskDelegate = callback;
+
+        IsValueTask = true;
         IsAsyncTask = true;
         Async = true;
         Period = period;
@@ -262,13 +297,13 @@ public class TimerX : ITimer, ITimerx
     /// <param name="state">用户数据</param>
     /// <param name="cronExpression">Cron表达式。支持多个表达式，分号分隔</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(TimerCallback callback, Object? state, String cronExpression, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(TimerCallback callback, Object? state, String cronExpression, String? scheduler = null) : this(state, scheduler)
     {
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
 
+        TimerCallbackDelegate = callback;
 
-        if (string.IsNullOrEmpty(cronExpression))
-            ThrowHelper.ThrowArgumentNullException(nameof(cronExpression));
 
         using var list = new ValueListBuilder<Cron>();
         foreach (var item in cronExpression.Split(';'))
@@ -294,13 +329,13 @@ public class TimerX : ITimer, ITimerx
     /// <param name="state">用户数据</param>
     /// <param name="cronExpression">Cron表达式。支持多个表达式，分号分隔</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(Func<Object, Task> callback, Object? state, String cronExpression, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(Func<Object?, Task> callback, Object? state, String cronExpression, String? scheduler = null) : this(state, scheduler)
     {
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
 
+        TaskDelegate = callback;
 
-        if (string.IsNullOrEmpty(cronExpression))
-            ThrowHelper.ThrowArgumentNullException(nameof(cronExpression));
 
         using var list = new ValueListBuilder<Cron>();
         foreach (var item in cronExpression.Split(';'))
@@ -328,14 +363,14 @@ public class TimerX : ITimer, ITimerx
     /// <param name="state">用户数据</param>
     /// <param name="cronExpression">Cron表达式。支持多个表达式，分号分隔</param>
     /// <param name="scheduler">调度器</param>
-    public TimerX(Func<Object, ValueTask> callback, Object? state, String cronExpression, String? scheduler = null) : this(callback.Target, callback.Method, state, scheduler)
+    public TimerX(Func<Object?, ValueTask> callback, Object? state, String cronExpression, String? scheduler = null) : this(state, scheduler)
     {
+        if (callback == null) throw new ArgumentNullException(nameof(callback));
+        if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
+
+        ValueTaskDelegate = callback;
+
         IsValueTask = true;
-        ArgumentNullExceptionEx.ThrowIfNull(callback, nameof(callback));
-
-
-        if (string.IsNullOrEmpty(cronExpression))
-            ThrowHelper.ThrowArgumentNullException(nameof(cronExpression));
 
         using var list = new ValueListBuilder<Cron>();
         foreach (var item in cronExpression.Split(';'))
@@ -358,6 +393,9 @@ public class TimerX : ITimer, ITimerx
         Init(ms);
     }
 
+    /// <summary>
+    /// 销毁标记
+    /// </summary>
     public bool Disposed { get; private set; }
     /// <summary>销毁定时器</summary>
     public void Dispose()
@@ -379,9 +417,7 @@ public class TimerX : ITimer, ITimerx
         }
 
         // 释放非托管资源
-        Scheduler?.Remove(this, disposing ? "Dispose" : "GC");
-
-
+        Scheduler?.Remove(this);
 
     }
 
@@ -498,11 +534,6 @@ public class TimerX : ITimer, ITimerx
     #endregion
 
     #region 静态方法
-    /// <summary>延迟执行一个委托。特别要小心，很可能委托还没被执行，对象就被gc回收了</summary>
-    /// <param name="callback"></param>
-    /// <param name="ms"></param>
-    /// <returns></returns>
-    public static TimerX Delay(TimerCallback callback, Int32 ms) => new(callback, null, ms, 0) { Async = true };
 
     private static TimerX? _NowTimer;
     private static DateTime _Now;
@@ -531,16 +562,9 @@ public class TimerX : ITimer, ITimerx
         }
     }
 
-    public Func<object?, Task>? TaskCachedDelegate { get; internal set; }
-    public Func<object?, ValueTask>? ValueTaskCachedDelegate { get; internal set; }
-    public TimerCallback? TimerCallbackCachedDelegate { get; internal set; }
+
 
     private static void CopyNow(Object? state) => _Now = TimerScheduler.Default.GetNow();
     #endregion
 
-    #region 辅助
-    /// <summary>已重载</summary>
-    /// <returns></returns>
-    public override String ToString() => $"[{Id}]{Method.DeclaringType?.Name}.{Method.Name} ({(_crons != null ? _crons.Join(";") : (Period + "ms"))})";
-    #endregion
 }

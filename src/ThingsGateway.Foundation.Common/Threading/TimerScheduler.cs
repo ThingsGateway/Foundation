@@ -6,7 +6,6 @@ namespace ThingsGateway.Foundation.Common;
 /// <summary>定时器调度器</summary>
 public class TimerScheduler : IDisposable
 {
-
     static TimerScheduler()
     {
         // 在这个同步异步大量混合使用的时代，需要更多的初始线程来屏蔽各种对TPL的不合理使用
@@ -27,7 +26,6 @@ public class TimerScheduler : IDisposable
     }
     internal static void Init()
     {
-
     }
     #region 静态
 
@@ -51,16 +49,19 @@ public class TimerScheduler : IDisposable
     }
     private static void ClearAll()
     {
-        var schedulers = _cache;
-        if (schedulers == null || schedulers.Count == 0) return;
-
-        XTrace.WriteLine("TimerScheduler.ClearAll. Count: [{0}]", schedulers.Count);
-        foreach (var item in schedulers)
+        lock (_cache)
         {
-            item.Value.Dispose();
-        }
+            var schedulers = _cache;
+            if (schedulers == null || schedulers.Count == 0) return;
 
-        schedulers.Clear();
+            XTrace.WriteLine("TimerScheduler.ClearAll. Count: [{0}]", schedulers.Count);
+            foreach (var item in schedulers)
+            {
+                item.Value.Dispose();
+            }
+
+            schedulers.Clear();
+        }
     }
     /// <summary>默认调度器</summary>
     public static TimerScheduler Default { get; } = Create("Default");
@@ -145,6 +146,9 @@ public class TimerScheduler : IDisposable
     private TimerX[] Timers = [];
     #endregion
 
+    /// <summary>
+    /// 锁对象
+    /// </summary>
 #if NET9_0_OR_GREATER
     protected Lock lockThis = new();
 #else
@@ -189,8 +193,7 @@ public class TimerScheduler : IDisposable
 
     /// <summary>从队列删除定时器</summary>
     /// <param name="timer"></param>
-    /// <param name="reason"></param>
-    public void Remove(TimerX timer, String reason)
+    public void Remove(TimerX timer)
     {
         if (timer == null || timer.Id == 0) return;
 
@@ -206,10 +209,6 @@ public class TimerScheduler : IDisposable
                 Count--;
             }
         }
-
-        timer.Method.RemoveCache<TimerCallback>(timer.Target.Target);
-        timer.Method.RemoveCache<Func<Object?, ValueTask>>(timer.Target.Target);
-        timer.Method.RemoveCache<Func<Object?, Task>>(timer.Target.Target);
 
     }
 
@@ -263,11 +262,9 @@ public class TimerScheduler : IDisposable
                         timer.Calling = true;
                         if (timer.IsAsyncTask)
                             Task.Factory.StartNew(ExecuteAsync, timer, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
-                        //Task.Factory.StartNew(ExecuteAsync, timer, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
                         else if (!timer.Async)
                             Execute(timer);
                         else
-                            //Task.Factory.StartNew(() => ProcessItem(timer));
                             // 不需要上下文流动，捕获所有异常
                             ThreadPool.UnsafeQueueUserWorkItem(_processCallback, timer);
                     }
@@ -324,18 +321,15 @@ public class TimerScheduler : IDisposable
         try
         {
             // 弱引用判断
-            var target = timer.Target.Target;
-            if (target == null && !timer.Method.IsStatic)
+            var target = timer.Target?.Target;
+            if (target == null && timer.TimerCallbackDelegate?.Method.IsStatic != true)
             {
-                Remove(timer, "委托已不存在（GC回收委托所在对象）");
+                Remove(timer);
                 timer.Dispose();
                 return;
             }
-            if (timer.TimerCallbackCachedDelegate == null)
-            {
-                timer.TimerCallbackCachedDelegate = timer.Method.As<TimerCallback>(target);
-            }
-            timer.TimerCallbackCachedDelegate!(timer.State);
+
+            timer.TimerCallbackDelegate!(timer.State);
         }
         catch (ThreadAbortException) { throw; }
         catch (ThreadInterruptedException) { throw; }
@@ -361,24 +355,16 @@ public class TimerScheduler : IDisposable
         {
             if (state is not TimerX timer) return;
 
-            //TimerX.Current = timer;
-
-            // 控制日志显示
-            //WriteLogEventArgs.CurrentThreadName = Name == "Default" ? "T" : Name;
-
             timer.hasSetNext = false;
 
-            //string tracerName = timer.TracerName ?? "timer:ExecuteAsync";
-            //string timerArg = timer.Timers.ToString();
-            //using var span = timer.Tracer?.NewSpan(tracerName, timerArg);
             var sw = ValueStopwatch.StartNew();
             try
             {
                 // 弱引用判断
-                var target = timer.Target.Target;
-                if (target == null && !timer.Method.IsStatic)
+                var target = timer.Target?.Target;
+                if (target == null && timer.ValueTaskDelegate?.Method.IsStatic != true && timer.TaskDelegate?.Method.IsStatic != true)
                 {
-                    @this.Remove(timer, "委托已不存在（GC回收委托所在对象）");
+                    @this.Remove(timer);
 #pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
                     timer.Dispose();
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
@@ -389,25 +375,16 @@ public class TimerScheduler : IDisposable
 
                 if (timer.IsValueTask)
                 {
-                    if (timer.ValueTaskCachedDelegate == null)
-                    {
-                        timer.ValueTaskCachedDelegate = timer.Method.As<Func<Object?, ValueTask>>(target);
-                    }
 
-                    //var func = timer.Method.As<Func<Object?, ValueTask>>(target);
-                    var task = timer.ValueTaskCachedDelegate!(timer.State);
+                    var task = timer.ValueTaskDelegate!(timer.State);
                     if (!task.IsCompleted)
                         await task.ConfigureAwait(false);
                 }
                 else
                 {
-                    if (timer.TaskCachedDelegate == null)
-                    {
-                        timer.TaskCachedDelegate = timer.Method.As<Func<Object?, Task>>(target);
-                    }
 
-                    //var func = timer.Method.As<Func<Object?, Task>>(target);
-                    var task = timer.TaskCachedDelegate!(timer.State);
+
+                    var task = timer.TaskDelegate!(timer.State);
                     if (!task.IsCompleted)
                         await task.ConfigureAwait(false);
                 }
@@ -418,7 +395,6 @@ public class TimerScheduler : IDisposable
             // 如果用户代码没有拦截错误，则这里拦截，避免出错了都不知道怎么回事
             catch (Exception ex)
             {
-                //span?.SetError(ex, null);
                 XTrace.WriteException(ex);
             }
             finally
@@ -438,18 +414,12 @@ public class TimerScheduler : IDisposable
         {
             if (!timer.Async && !timer.IsAsyncTask)
                 XTrace.WriteLine("任务 {0} 耗时过长 {1:n0}ms，建议使用异步任务Async=true", timer, ms);
-
         }
 
         timer.Timers++;
         OnFinish(timer);
 
         timer.Calling = false;
-
-        //TimerX.Current = null;
-
-        // 控制日志显示
-        //WriteLogEventArgs.CurrentThreadName = null;
 
         // 调度线程可能在等待，需要唤醒
         Wake();
@@ -463,7 +433,7 @@ public class TimerScheduler : IDisposable
         // 清理一次性定时器
         if (p <= 0)
         {
-            Remove(timer, "Period<=0");
+            Remove(timer);
             timer.Dispose();
         }
         else if (p < _period)

@@ -9,6 +9,7 @@
 //------------------------------------------------------------------------------
 
 using System.ComponentModel.DataAnnotations;
+using ThingsGateway.Foundation.Common.Extension;
 
 namespace ThingsGateway;
 
@@ -41,7 +42,7 @@ public sealed class MinValueAttribute : ValidationAttribute
             return false;
         }
 
-        var input = Convert.ToUInt64(value);
+        var input = value.ToDecimal();
         return input >= MinValue;
     }
 }

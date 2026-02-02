@@ -126,7 +126,7 @@ public static class ExpressionEvaluatorExtension
                     var context = new AssemblyLoadContext(YitIdHelper.NextId().ToString(), true);
                     var script = new CSharpScriptExecution();
                     script.AlternateAssemblyLoadContext = context;
-
+                    
                     var code =
 $@"
         using System;

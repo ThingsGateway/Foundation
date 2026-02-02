@@ -126,7 +126,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     public virtual int RegisterByteLength { get; protected set; } = 1;
 
     /// <inheritdoc/>
-    public virtual IThingsGatewayBitConverter BitConverter { get; } = ThingsGatewayBitConverter.BigEndian;
+    public virtual IThingsGatewayBitConverter BitConverter { get; } = ThingsGatewayBitConverter.BigEndian.Adapt();
 
     /// <inheritdoc/>
     public bool OnLine => Channel?.Online ?? false;

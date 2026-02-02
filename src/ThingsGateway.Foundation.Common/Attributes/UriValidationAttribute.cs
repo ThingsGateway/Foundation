@@ -12,19 +12,21 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 namespace ThingsGateway;
 
+/// <summary>
+/// Uri格式校验
+/// </summary>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
 public sealed class UriValidationAttribute : ValidationAttribute
 {
+    private static readonly Regex Ipv4Regex = new Regex(@"^\d{1,3}(\.\d{1,3}){3}(:\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly Regex Ipv6Regex = new Regex(@"^\[*::\*\](?::\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly Regex DomainRegex = new Regex(@"^(tcp|http)://([\w.-]+)(:\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         var uriString = value?.ToString();
         if (string.IsNullOrWhiteSpace(uriString)) return ValidationResult.Success;
-        // 正则表达式匹配 IPv4 格式
-        var ipv4Pattern = @"^\d{1,3}(\.\d{1,3}){3}(:\d+)?$";
-        // 正则表达式匹配 IPv6 格式
-        var ipv6Pattern = @"^\[\*::\*\](?::\d+)?$";
-        // 匹配域名格式（tcp/http）
-        var domainPattern = @"^(tcp|http)://([\w.-]+)(:\d+)?$";
 
         // 验证端口号
         if (int.TryParse(uriString, out int port))
@@ -34,19 +36,46 @@ public sealed class UriValidationAttribute : ValidationAttribute
                 return new ValidationResult("The port number must be an integer between 1 and 65535");
             }
         }
-        else if (Regex.IsMatch(uriString, ipv4Pattern))
+        else if (Ipv4Regex.IsMatch(uriString))
         {
             // IPv4 验证
-            string[] segments = uriString!.Split(':')[0].Split('.');
-            foreach (var segment in segments)
+            var ipPart = uriString!.Split(':')[0];
+            int start = 0;
+            int dotCount = 0;
+            // 手动解析 IPv4 段，避免多次 Split/Parse 分配和异常开销
+            for (int i = 0; i <= ipPart.Length; i++)
             {
-                if (int.Parse(segment) > 255)
+                if (i == ipPart.Length || ipPart[i] == '.')
                 {
-                    return new ValidationResult("Each segment of the IPv4 address value must be between 0 and 255");
+                    var len = i - start;
+                    if (len <= 0 || len > 3)
+                    {
+                        return new ValidationResult("Each segment of the IPv4 address value must be between 0 and 255");
+                    }
+                    int valueSeg = 0;
+                    for (int j = start; j < i; j++)
+                    {
+                        char c = ipPart[j];
+                        if (c < '0' || c > '9')
+                        {
+                            return new ValidationResult("Each segment of the IPv4 address value must be between 0 and 255");
+                        }
+                        valueSeg = valueSeg * 10 + (c - '0');
+                        if (valueSeg > 255)
+                        {
+                            return new ValidationResult("Each segment of the IPv4 address value must be between 0 and 255");
+                        }
+                    }
+                    dotCount++;
+                    start = i + 1;
                 }
             }
+            if (dotCount != 4)
+            {
+                return new ValidationResult("Each segment of the IPv4 address value must be between 0 and 255");
+            }
         }
-        else if (!Regex.IsMatch(uriString, ipv6Pattern) && !Regex.IsMatch(uriString, domainPattern))
+        else if (!Ipv6Regex.IsMatch(uriString) && !DomainRegex.IsMatch(uriString))
         {
             // 其他格式验证失败
             return new ValidationResult("The format of the input URI string does not meet the requirements");

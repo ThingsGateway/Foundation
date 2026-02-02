@@ -1,4 +1,7 @@
-﻿namespace ThingsGateway.Foundation.Common;
+﻿using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.StringExtension;
+
+namespace ThingsGateway.Foundation.Common;
 
 /// <summary>轻量级Cron表达式</summary>
 /// <remarks>
@@ -232,7 +235,7 @@ public class Cron
         if (p > 0)
         {
             var str = v[(p + 1)..];
-            if (str.StartsWithIgnoreCase("L"))
+            if (str.StartsWithIgnoreCase('L'))
                 index = -str[1..].ToInt();
             else
                 index = str.ToInt();
