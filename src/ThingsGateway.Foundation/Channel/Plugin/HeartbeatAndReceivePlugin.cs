@@ -126,6 +126,10 @@ public sealed class HeartbeatAndReceivePlugin : PluginBase, ITcpConnectedPlugin,
 
         if (client is ITcpClient tcpClient)
         {
+            if (!client.Online)
+            {
+                return;
+            }
             await tcpClient.SendAsync(DtuIdByte, tcpClient.ClosedToken).ConfigureAwait(false);
 
             if (_task == null)

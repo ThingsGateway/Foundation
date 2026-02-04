@@ -312,8 +312,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         }
     }
 
-    private WaitLock connectWaitLock = new(nameof(ReceivedDeviceBase));
-
     public ValueTask ConnectAsync(CancellationToken token = default)
     {
         return ConnectAsync(this, token);
@@ -324,7 +322,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             {
                 try
                 {
-                    await @this.connectWaitLock.WaitAsync(token).ConfigureAwait(false);
+                    await @this.Channel.Lock.WaitAsync(token).ConfigureAwait(false);
                     if (@this.AutoConnect && @this.Channel != null && (@this.Channel.Online != true || @this.Channel.ClosedToken.IsCancellationRequested == true))
                     {
                         TouchSocketConfig? config = null;
@@ -369,7 +367,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 }
                 finally
                 {
-                    @this.connectWaitLock.Release();
+                    @this.Channel.Lock.Release();
                 }
             }
         }
@@ -730,7 +728,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         }
         _reusableTimeouts?.SafeDispose();
         _deviceLogger?.TryDispose();
-        connectWaitLock?.SafeDispose();
+        Channel.Lock?.SafeDispose();
         base.Dispose(disposing);
     }
 
@@ -739,53 +737,61 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     {
         if (Channel != null)
         {
-            Channel.Starting.Remove(ChannelStarting);
-            Channel.Stoped.Remove(ChannelStoped);
-            Channel.Started.Remove(ChannelStarted);
-            Channel.Stoping.Remove(ChannelStoping);
-            Channel.ChannelReceived.Remove(ChannelReceived);
-
-            if (Channel.Collects.Count == 1)
+            try
             {
-                if (Channel is ITcpServiceChannel tcpServiceChannel)
-                {
-                    tcpServiceChannel.Clients.ForEach(a => a.WaitHandlePool?.CancelAll());
-                }
+                await Channel.Lock.WaitAsync().ConfigureAwait(false);
 
-                try
+                Channel.Starting.Remove(ChannelStarting);
+                Channel.Stoped.Remove(ChannelStoped);
+                Channel.Started.Remove(ChannelStarted);
+                Channel.Stoping.Remove(ChannelStoping);
+                Channel.ChannelReceived.Remove(ChannelReceived);
+
+                if (Channel.Collects.Count == 1)
                 {
-                    //只关闭，不释放
-                    await Channel.CloseAsync().ConfigureAwait(false);
-                    if (Channel is IClientChannel client)
+                    if (Channel is ITcpServiceChannel tcpServiceChannel)
                     {
-                        client.WaitHandlePool?.CancelAll();
+                        tcpServiceChannel.Clients.ForEach(a => a.WaitHandlePool?.CancelAll());
+                    }
+
+                    try
+                    {
+                        //只关闭，不释放
+                        await Channel.CloseAsync().ConfigureAwait(false);
+                        if (Channel is IClientChannel client)
+                        {
+                            client.WaitHandlePool?.CancelAll();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogWarning(ex);
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger?.LogWarning(ex);
-                }
-            }
-            else
-            {
-                if (Channel is ITcpServiceChannel tcpServiceChannel && this is IDtu dtu)
-                {
-                    if (tcpServiceChannel.TryGetClient($"ID={dtu.DtuId}", out var client))
+                    if (Channel is ITcpServiceChannel tcpServiceChannel && this is IDtu dtu)
                     {
-                        client.WaitHandlePool?.CancelAll();
-                        await client.CloseAsync().ConfigureAwait(false);
+                        if (tcpServiceChannel.TryGetClient($"ID={dtu.DtuId}", out var client))
+                        {
+                            client.WaitHandlePool?.CancelAll();
+                            await client.CloseAsync().ConfigureAwait(false);
+                        }
                     }
                 }
+
+                Channel.Collects.Remove(this);
+
+
             }
 
-            Channel.Collects.Remove(this);
-
-
+            finally
+            {
+                Channel.Lock.Release();
+            }
         }
-
         _reusableTimeouts?.SafeDispose();
         _deviceLogger?.TryDispose();
-        connectWaitLock?.SafeDispose();
         base.Dispose(disposing);
     }
     /// <inheritdoc/>

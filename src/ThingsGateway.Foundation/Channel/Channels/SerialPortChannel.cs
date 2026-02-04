@@ -28,6 +28,7 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
         ResetSign();
     }
 
+    public WaitLock Lock { get; } = new();
     public override TouchSocketConfig Config => base.Config ?? ChannelOptions.Config;
 
     public void ResetSign(int minSign = 1, int maxSign = ushort.MaxValue - 1)
@@ -45,8 +46,8 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
     /// <inheritdoc/>
     public ChannelTypeEnum ChannelType => ChannelOptions.ChannelType;
 
-    internal List<IReceivedDevice> Collects { get; } = new();
-    List<IReceivedDevice> IChannel.Collects => Collects;
+    internal ConcurrentList<IReceivedDevice> Collects { get; } = new();
+    ConcurrentList<IReceivedDevice> IChannel.Collects => Collects;
 
     /// <inheritdoc/>
     public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects => Collects;

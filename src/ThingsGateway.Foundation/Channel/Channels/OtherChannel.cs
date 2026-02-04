@@ -25,6 +25,7 @@ public class OtherChannel : SetupConfigObject, IClientChannel
         this.SafeDispose();
     }
 
+    public WaitLock Lock { get; } = new();
     private SingleStreamDataHandlingAdapter? m_dataHandlingAdapter;
     public DataHandlingAdapter? ReadOnlyDataHandlingAdapter => m_dataHandlingAdapter;
 
@@ -52,8 +53,8 @@ public class OtherChannel : SetupConfigObject, IClientChannel
     /// <inheritdoc/>
     public ChannelTypeEnum ChannelType => ChannelOptions.ChannelType;
 
-    internal List<IReceivedDevice> Collects { get; } = new();
-    List<IReceivedDevice> IChannel.Collects => Collects;
+    internal ConcurrentList<IReceivedDevice> Collects { get; } = new();
+    ConcurrentList<IReceivedDevice> IChannel.Collects => Collects;
 
     /// <inheritdoc/>
     public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects => Collects;

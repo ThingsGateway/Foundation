@@ -56,6 +56,8 @@ public class UdpSessionChannel : UdpSession, IClientChannel
         pool?.CancelAll();
     }
 
+    public WaitLock Lock { get; } = new();
+
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();
 
@@ -65,8 +67,8 @@ public class UdpSessionChannel : UdpSession, IClientChannel
     /// <inheritdoc/>
     public ChannelTypeEnum ChannelType => ChannelOptions.ChannelType;
 
-    internal List<IReceivedDevice> Collects { get; } = new();
-    List<IReceivedDevice> IChannel.Collects => Collects;
+    internal ConcurrentList<IReceivedDevice> Collects { get; } = new();
+    ConcurrentList<IReceivedDevice> IChannel.Collects => Collects;
 
     /// <inheritdoc/>
     public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects => Collects;

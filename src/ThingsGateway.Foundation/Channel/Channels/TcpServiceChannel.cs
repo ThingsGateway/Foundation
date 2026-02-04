@@ -157,8 +157,8 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
 /// </summary>
 public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChannel, ITcpServiceChannel where TClient : TcpSessionClientChannel, IClientChannel, IChannel, new()
 {
-    internal List<IReceivedDevice> Collects { get; } = new();
-    List<IReceivedDevice> IChannel.Collects => Collects;
+    internal ConcurrentList<IReceivedDevice> Collects { get; } = new();
+    ConcurrentList<IReceivedDevice> IChannel.Collects => Collects;
 
     /// <inheritdoc/>
     public IReadOnlyCollection<IReceivedDevice> ReadOnlyCollects => Collects;
@@ -170,6 +170,7 @@ public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChann
     }
     public override TouchSocketConfig Config => base.Config ?? ChannelOptions.Config;
 
+    public WaitLock Lock { get; } = new();
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();
 

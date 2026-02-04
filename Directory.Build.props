@@ -19,7 +19,7 @@
 
 		</NoWarn>
 		<TouchSocketVersion>4.1.1</TouchSocketVersion>
-		<FoundationVersion>12.4.47</FoundationVersion>
+		<FoundationVersion>12.4.48</FoundationVersion>
 		<Version>$(FoundationVersion)</Version>
 		
 		

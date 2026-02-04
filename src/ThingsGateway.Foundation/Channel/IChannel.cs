@@ -33,7 +33,7 @@ public interface IChannel : ISetupConfigObject, IDisposable, IClosableClient, IC
     /// </summary>
     ChannelTypeEnum ChannelType { get; }
 
-    internal List<IReceivedDevice> Collects { get; }
+    internal ConcurrentList<IReceivedDevice> Collects { get; }
     /// <summary>
     /// 通道下的所有设备
     /// </summary>
@@ -58,6 +58,7 @@ public interface IChannel : ISetupConfigObject, IDisposable, IClosableClient, IC
     /// 通道停止前
     /// </summary>
     public ChannelEventHandler Stoping { get; }
+    WaitLock Lock { get; }
 
     void ResetSign(int minSign = 1, int maxSign = ushort.MaxValue - 1);
 
@@ -67,13 +68,13 @@ public interface IChannel : ISetupConfigObject, IDisposable, IClosableClient, IC
 /// <summary>
 /// 接收事件回调类
 /// </summary>
-public class ChannelReceivedEventHandler : List<Func<IClientChannel, ReceivedDataEventArgs, bool, ValueTask>>
+public class ChannelReceivedEventHandler : ConcurrentList<Func<IClientChannel, ReceivedDataEventArgs, bool, ValueTask>>
 {
 }
 
 /// <summary>
 /// 通道事件回调类
 /// </summary>
-public class ChannelEventHandler : List<Func<IClientChannel, bool, ValueTask<bool>>>
+public class ChannelEventHandler : ConcurrentList<Func<IClientChannel, bool, ValueTask<bool>>>
 {
 }
