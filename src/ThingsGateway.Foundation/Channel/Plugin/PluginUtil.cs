@@ -40,70 +40,11 @@ public static class PluginUtil
                 action += a => a.UseReconnection<IClientChannel>(a =>
                 {
                     a.PollingInterval = TimeSpan.FromSeconds(5);
+                    a.ConnectTimeout = TimeSpan.FromMilliseconds(channelOptions.ConnectTimeout);
                     a.ConnectAction = async (client, cancellationToken) =>
                     {
-                        var attempts = 0;
-                        var currentInterval = a.BaseInterval;
 
-                        while (a.MaxRetryCount < 0 || attempts < a.MaxRetryCount)
-                        {
-                            if (cancellationToken.IsCancellationRequested)
-                            {
-                                return;
-                            }
-                            if (client.GetPauseReconnection())
-                            {
-                                continue;
-                            }
-
-                            attempts++;
-
-                            try
-                            {
-                                if (client.Online)
-                                {
-                                    a.OnSuccessed?.Invoke(client);
-                                    return;
-                                }
-
-                                await client.ConnectAsync(cancellationToken).ConfigureAwait(EasyTask.ContinueOnCapturedContext);
-                                a.OnSuccessed?.Invoke(client);
-
-                                if (a.LogReconnection)
-                                {
-                                    client.Logger?.Info(a, $"重连成功，尝试次数: {attempts}");
-                                }
-                                return;
-                            }
-                            catch (Exception ex)
-                            {
-                                if (cancellationToken.IsCancellationRequested)
-                                {
-                                    return;
-                                }
-                                a.OnFailed?.Invoke(client, attempts, ex);
-
-                                if (a.LogReconnection)
-                                {
-                                    client.Logger?.Warning(a, $"重连失败，尝试次数: {attempts}，错误: {ex.Message}");
-                                }
-
-                                if (a.MaxRetryCount > 0 && attempts >= a.MaxRetryCount)
-                                {
-                                    a.OnGiveUp?.Invoke(client, attempts);
-                                    if (a.LogReconnection)
-                                    {
-                                        client.Logger?.Error(a, $"达到最大重连次数 {a.MaxRetryCount}，放弃重连");
-                                    }
-                                    return;
-                                }
-
-                                // 计算下次重连间隔
-                                currentInterval = CalculateNextInterval(a, attempts, currentInterval);
-
-                                await Task.Delay(currentInterval, CancellationToken.None).ConfigureAwait(EasyTask.ContinueOnCapturedContext);
-                            }
-                        }
+                        await client.ConnectAsync(cancellationToken).ConfigureAwait(EasyTask.ContinueOnCapturedContext);
                     };
                 }
                 );
