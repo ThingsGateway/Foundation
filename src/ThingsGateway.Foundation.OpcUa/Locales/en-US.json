@@ -27,7 +27,8 @@
     "UserName": "UserName",
     "UseSecurity": "IsUseSecurity",
     "Write": "Write",
-    "WriteValue": "WriteValue"
+    "WriteValue": "WriteValue",
+    "DataChangeTrigger": "DataChangeTrigger"
   },
   "ThingsGateway.Foundation.OpcUa.OpcUaResource": {}
 }

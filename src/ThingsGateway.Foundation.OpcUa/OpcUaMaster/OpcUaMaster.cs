@@ -278,8 +278,8 @@ public class OpcUaMaster : IAsyncDisposable
                     AttributeId = Attributes.Value,
                     DisplayName = items[i],
                     Filter = OpcUaProperty.DeadBand == 0 ?
-                    new DataChangeFilter() { DeadbandValue = 0, DeadbandType = (int)DeadbandType.None, Trigger = DataChangeTrigger.StatusValueTimestamp } :
-                    new DataChangeFilter() { DeadbandValue = OpcUaProperty.DeadBand, DeadbandType = (int)DeadbandType.Absolute, Trigger = DataChangeTrigger.StatusValueTimestamp },
+                    new DataChangeFilter() { DeadbandValue = 0, DeadbandType = (int)DeadbandType.None, Trigger = OpcUaProperty.DataChangeTrigger } :
+                    new DataChangeFilter() { DeadbandValue = OpcUaProperty.DeadBand, DeadbandType = (int)DeadbandType.Absolute, Trigger = OpcUaProperty.DataChangeTrigger },
                     SamplingInterval = OpcUaProperty?.UpdateRate ?? 1000,
                 };
                 item.Notification += Callback;
@@ -916,7 +916,7 @@ public class OpcUaMaster : IAsyncDisposable
                 foreach (var value in monitoreditem.DequeueValues())
                 {
 
-                    var variableNode = ReadNode(monitoreditem.StartNodeId.ToString(), StatusCode.IsGood(value.StatusCode)).GetAwaiter().GetResult();
+                    var variableNode = ReadNode(monitoreditem.StartNodeId.ToString(), true).GetAwaiter().GetResult();
                     if (value.Value != null)
                     {
                         if (value.Value.GetType().IsRichPrimitive())
@@ -1111,7 +1111,7 @@ public class OpcUaMaster : IAsyncDisposable
         List<(string, DataValue, JToken)> jTokens = new();
         for (int i = 0; i < results.Count; i++)
         {
-            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), StatusCode.IsGood(results[i].StatusCode), cancellationToken).ConfigureAwait(false);
+            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), true, cancellationToken).ConfigureAwait(false);
             var type = await TypeInfo.GetBuiltInTypeAsync(variableNode.DataType, m_session.SystemContext.TypeTable, cancellationToken).ConfigureAwait(false);
             var jToken = NewtonsoftJsonUtils.Encode(m_session.MessageContext, type, results[i].Value);
             jTokens.Add((variableNode.NodeId.ToString(), results[i], jToken));
@@ -1152,7 +1152,7 @@ public class OpcUaMaster : IAsyncDisposable
         List<(string, DataValue, JsonNode)> jTokens = new();
         for (int i = 0; i < results.Count; i++)
         {
-            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), StatusCode.IsGood(results[i].StatusCode), cancellationToken).ConfigureAwait(false);
+            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), true, cancellationToken).ConfigureAwait(false);
             var type = await TypeInfo.GetBuiltInTypeAsync(variableNode.DataType, m_session.SystemContext.TypeTable, cancellationToken).ConfigureAwait(false);
             var jToken = SystemTextJsonUtil.Encode(m_session.MessageContext, type, results[i].Value);
             jTokens.Add((variableNode.NodeId.ToString(), results[i], jToken));
@@ -1200,7 +1200,7 @@ public class OpcUaMaster : IAsyncDisposable
 
         VariableNode variableNode = GetVariableNodes(itemsToRead, values, diagnosticInfos, responseHeader).FirstOrDefault();
 
-        if (cache)
+        if (cache && variableNode != null)
             _variableDicts.AddOrUpdate(nodeIdStr, a => variableNode, (a, b) => variableNode);
         return variableNode;
     }
@@ -1246,7 +1246,7 @@ public class OpcUaMaster : IAsyncDisposable
         if (OpcUaProperty.LoadType && variableNode.DataType != NodeId.Null && (await TypeInfo.GetBuiltInTypeAsync(variableNode.DataType, m_session.SystemContext.TypeTable, cancellationToken).ConfigureAwait(false)) == BuiltInType.ExtensionObject)
             await typeSystem.LoadTypeAsync(variableNode.DataType, ct: cancellationToken).ConfigureAwait(false);
 
-        if (cache)
+        if (cache && variableNode != null)
             _variableDicts.AddOrUpdate(nodeIdStr, a => variableNode, (a, b) => variableNode);
         return variableNode;
     }
@@ -1288,8 +1288,21 @@ public class OpcUaMaster : IAsyncDisposable
                 Log(3, ServiceResultException.Create(StatusCodes.BadUnexpectedError, "Node does not support the NodeId attribute."), $"Get nodeid {itemsToRead[0 + 2 * i].NodeId} fail");
             }
 
-            variableNode.NodeId = (NodeId)value.GetValue(typeof(NodeId));
-            variableNodes.Add(variableNode);
+            if (!DataValue.IsGood(value))
+            {
+                if (value?.StatusCode.Code == 0x80340000)
+                {
+                    variableNode.NodeId = (NodeId)value.GetValue(typeof(NodeId));
+                    variableNodes.Add(variableNode);
+                }
+            }
+            else
+            {
+                variableNode.NodeId = (NodeId)value.GetValue(typeof(NodeId));
+                variableNodes.Add(variableNode);
+            }
+
+
         }
 
         return variableNodes;
@@ -1336,10 +1349,7 @@ public class OpcUaMaster : IAsyncDisposable
             for (int i = 0; i < variableNodes.Count; i++)
             {
                 var node = variableNodes[i];
-                if (_variableDicts.TryGetValue(nodeIdStrs[i], out var value))
-                {
-                }
-                else
+                if (!_variableDicts.TryGetValue(nodeIdStrs[i], out var value) || value == null)
                 {
                     if (cache)
                         _variableDicts.AddOrUpdate(nodeIdStrs[i], a => node, (a, b) => node);
@@ -1484,6 +1494,7 @@ public class OpcUaMaster : IAsyncDisposable
     {
         try
         {
+            connected = true;
             Log(2, null, "Reconnected : success");
 
             if (!Object.ReferenceEquals(sender, m_reConnectHandler))

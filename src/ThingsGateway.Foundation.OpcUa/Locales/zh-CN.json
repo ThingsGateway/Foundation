@@ -27,7 +27,8 @@
     "UserName": "登录账号",
     "UseSecurity": "安全策略",
     "Write": "写入",
-    "WriteValue": "写入值"
+    "WriteValue": "写入值",
+    "DataChangeTrigger": "订阅模式"
   },
   "ThingsGateway.Foundation.OpcUa.OpcUaResource": {}
 }

@@ -30,6 +30,7 @@ public class OpcUaProperty
     /// </summary>
     public bool CheckDomain { get; set; }
 
+    public DataChangeTrigger DataChangeTrigger { get; set; } = DataChangeTrigger.StatusValue;
     /// <summary>
     /// 死区
     /// </summary>
