@@ -267,7 +267,7 @@ public class OpcUaMaster : IAsyncDisposable
             DisplayName = subscriptionName
         };
         List<MonitoredItem> monitoredItems = new();
-        var variableNodes = loadType ? await ReadNodesAsync(items, false, cancellationToken).ConfigureAwait(false) : null;
+        var variableNodes = loadType ? await ReadNodesAsync(items, true, cancellationToken).ConfigureAwait(false) : null;
         for (int i = 0; i < items.Length; i++)
         {
             try
@@ -804,7 +804,7 @@ public class OpcUaMaster : IAsyncDisposable
                     NodeId = new NodeId(item.Key),
                     AttributeId = Attributes.Value,
                 };
-                var variableNode = await ReadNodeAsync(item.Key, false, false, cancellationToken).ConfigureAwait(false);
+                var variableNode = await ReadNodeAsync(item.Key, true, cancellationToken).ConfigureAwait(false);
                 var dataValue = NewtonsoftJsonUtils.Decode(
                     m_session.MessageContext,
                     variableNode.DataType,
@@ -863,7 +863,7 @@ public class OpcUaMaster : IAsyncDisposable
                     NodeId = new NodeId(item.Key),
                     AttributeId = Attributes.Value,
                 };
-                var variableNode = await ReadNodeAsync(item.Key, false, false, cancellationToken).ConfigureAwait(false);
+                var variableNode = await ReadNodeAsync(item.Key, true, cancellationToken).ConfigureAwait(false);
                 var dataValue = SystemTextJsonUtil.Decode(
                     m_session.MessageContext,
                     variableNode.DataType,
@@ -916,7 +916,7 @@ public class OpcUaMaster : IAsyncDisposable
                 foreach (var value in monitoreditem.DequeueValues())
                 {
 
-                    var variableNode = ReadNode(monitoreditem.StartNodeId.ToString(), false, StatusCode.IsGood(value.StatusCode)).GetAwaiter().GetResult();
+                    var variableNode = ReadNode(monitoreditem.StartNodeId.ToString(), StatusCode.IsGood(value.StatusCode)).GetAwaiter().GetResult();
                     if (value.Value != null)
                     {
                         if (value.Value.GetType().IsRichPrimitive())
@@ -1111,7 +1111,7 @@ public class OpcUaMaster : IAsyncDisposable
         List<(string, DataValue, JToken)> jTokens = new();
         for (int i = 0; i < results.Count; i++)
         {
-            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), false, StatusCode.IsGood(results[i].StatusCode), cancellationToken).ConfigureAwait(false);
+            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), StatusCode.IsGood(results[i].StatusCode), cancellationToken).ConfigureAwait(false);
             var type = await TypeInfo.GetBuiltInTypeAsync(variableNode.DataType, m_session.SystemContext.TypeTable, cancellationToken).ConfigureAwait(false);
             var jToken = NewtonsoftJsonUtils.Encode(m_session.MessageContext, type, results[i].Value);
             jTokens.Add((variableNode.NodeId.ToString(), results[i], jToken));
@@ -1152,7 +1152,7 @@ public class OpcUaMaster : IAsyncDisposable
         List<(string, DataValue, JsonNode)> jTokens = new();
         for (int i = 0; i < results.Count; i++)
         {
-            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), false, StatusCode.IsGood(results[i].StatusCode), cancellationToken).ConfigureAwait(false);
+            var variableNode = await ReadNodeAsync(nodeIds[i].ToString(), StatusCode.IsGood(results[i].StatusCode), cancellationToken).ConfigureAwait(false);
             var type = await TypeInfo.GetBuiltInTypeAsync(variableNode.DataType, m_session.SystemContext.TypeTable, cancellationToken).ConfigureAwait(false);
             var jToken = SystemTextJsonUtil.Encode(m_session.MessageContext, type, results[i].Value);
             jTokens.Add((variableNode.NodeId.ToString(), results[i], jToken));
@@ -1163,14 +1163,11 @@ public class OpcUaMaster : IAsyncDisposable
     /// <summary>
     /// 从服务器或缓存读取节点
     /// </summary>
-    private async Task<VariableNode> ReadNode(string nodeIdStr, bool isOnlyServer = true, bool cache = true, CancellationToken cancellationToken = default)
+    private async Task<VariableNode> ReadNode(string nodeIdStr, bool cache = true, CancellationToken cancellationToken = default)
     {
-        if (!isOnlyServer)
+        if (_variableDicts.TryGetValue(nodeIdStr, out var value))
         {
-            if (_variableDicts.TryGetValue(nodeIdStr, out var value))
-            {
-                return value;
-            }
+            return value;
         }
         NodeId nodeToRead = new(nodeIdStr);
 
@@ -1211,14 +1208,11 @@ public class OpcUaMaster : IAsyncDisposable
     /// <summary>
     /// 从服务器或缓存读取节点
     /// </summary>
-    private async Task<VariableNode> ReadNodeAsync(string nodeIdStr, bool isOnlyServer = true, bool cache = true, CancellationToken cancellationToken = default)
+    private async Task<VariableNode> ReadNodeAsync(string nodeIdStr, bool cache = true, CancellationToken cancellationToken = default)
     {
-        if (!isOnlyServer)
+        if (_variableDicts.TryGetValue(nodeIdStr, out var value))
         {
-            if (_variableDicts.TryGetValue(nodeIdStr, out var value))
-            {
-                return value;
-            }
+            return value;
         }
 
         NodeId nodeToRead = new(nodeIdStr);
