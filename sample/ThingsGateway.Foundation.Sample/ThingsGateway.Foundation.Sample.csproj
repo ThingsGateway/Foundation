@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\ThingsGateway.Foundation.Dlt645\ThingsGateway.Foundation.Dlt645.csproj" />
     <ProjectReference Include="..\..\src\ThingsGateway.Foundation.Modbus\ThingsGateway.Foundation.Modbus.csproj" />
   </ItemGroup>
 
