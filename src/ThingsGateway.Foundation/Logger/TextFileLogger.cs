@@ -122,7 +122,7 @@ public class TextFileLogger : ThingsGateway.Foundation.Common.Log.TextFileLog, T
         {
             stringBuilder.Append(',');
             stringBuilder.Append('\"');
-            stringBuilder.Append(exception.ToString());
+            stringBuilder.Append(exception.GetStackTrace());
             stringBuilder.Append('\"');
         }
 

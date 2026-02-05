@@ -916,40 +916,57 @@ public class OpcUaMaster : IAsyncDisposable
                 foreach (var value in monitoreditem.DequeueValues())
                 {
 
-                    var variableNode = ReadNode(monitoreditem.StartNodeId.ToString(), true).GetAwaiter().GetResult();
                     if (value.Value != null)
                     {
-                        if (value.Value.GetType().IsRichPrimitive())
+                        if (OpcUaProperty.LoadType)
                         {
-                            JTokenDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, null));
-                            JsonNodeDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, null));
-                            continue;
-                        }
-                        if (JTokenDataChangedEventHandler != null)
-                        {
-                            var data = NewtonsoftJsonUtils.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
-                            if (data == null && value.Value != null)
+                            if (value.Value.GetType().IsRichPrimitive())
                             {
-                                Log(3, null, $"{monitoreditem.StartNodeId}Conversion error, original value is{value.Value}");
-                                var data1 = NewtonsoftJsonUtils.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
+                                JTokenDataChangedEventHandler?.Invoke((null, monitoreditem, value, null));
+                                JsonNodeDataChangedEventHandler?.Invoke((null, monitoreditem, value, null));
+                                continue;
                             }
-                            JTokenDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, data!));
-                        }
-                        else if (JsonNodeDataChangedEventHandler != null)
-                        {
-                            var data = SystemTextJsonUtil.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
-                            if (data == null && value.Value != null)
+                            VariableNode? variableNode = null;
+                            try
                             {
-                                Log(3, null, $"{monitoreditem.StartNodeId}Conversion error, original value is{value.Value}");
-                                var data1 = SystemTextJsonUtil.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
+                                variableNode = ReadNode(monitoreditem.StartNodeId.ToString(), true).GetAwaiter().GetResult();
                             }
-                            JsonNodeDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, data!));
+                            catch (Exception ex)
+                            {
+                                Log(3, ex, $"{monitoreditem.StartNodeId} - ReadNode error");
+                            }
+
+                            if (JTokenDataChangedEventHandler != null)
+                            {
+                                var data = NewtonsoftJsonUtils.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
+                                if (data == null && value.Value != null)
+                                {
+                                    Log(3, null, $"{monitoreditem.StartNodeId}Conversion error, original value is{value.Value}");
+                                    var data1 = NewtonsoftJsonUtils.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
+                                }
+                                JTokenDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, data!));
+                            }
+                            else if (JsonNodeDataChangedEventHandler != null)
+                            {
+                                var data = SystemTextJsonUtil.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
+                                if (data == null && value.Value != null)
+                                {
+                                    Log(3, null, $"{monitoreditem.StartNodeId}Conversion error, original value is{value.Value}");
+                                    var data1 = SystemTextJsonUtil.Encode(m_session.MessageContext, TypeInfo.GetBuiltInType(variableNode.DataType, m_session.SystemContext.TypeTable), value.Value);
+                                }
+                                JsonNodeDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, data!));
+                            }
+                        }
+                        else
+                        {
+                            JTokenDataChangedEventHandler?.Invoke((null, monitoreditem, value, null));
+                            JsonNodeDataChangedEventHandler?.Invoke((null, monitoreditem, value, null));
                         }
                     }
                     else
                     {
-                        JTokenDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, null));
-                        JsonNodeDataChangedEventHandler?.Invoke((variableNode, monitoreditem, value, null));
+                        JTokenDataChangedEventHandler?.Invoke((null, monitoreditem, value, null));
+                        JsonNodeDataChangedEventHandler?.Invoke((null, monitoreditem, value, null));
                     }
                 }
             }
@@ -1011,11 +1028,13 @@ public class OpcUaMaster : IAsyncDisposable
             UserIdentity userIdentity;
             if (!string.IsNullOrEmpty(OpcUaProperty.UserName))
             {
+#pragma warning disable CA2000 // 丢失范围之前释放对象
                 userIdentity = new UserIdentity(OpcUaProperty.UserName, Encoding.UTF8.GetBytes(OpcUaProperty.Password));
             }
             else
             {
                 userIdentity = new UserIdentity(new AnonymousIdentityToken());
+#pragma warning restore CA2000 // 丢失范围之前释放对象
             }
             //创建本地证书
             if (useSecurity)
@@ -1295,6 +1314,10 @@ public class OpcUaMaster : IAsyncDisposable
                     variableNode.NodeId = (NodeId)value.GetValue(typeof(NodeId));
                     variableNodes.Add(variableNode);
                 }
+                else
+                {
+                    LogEvent?.Invoke(3, this, $"GetVariableNodes: Get nodeid {itemsToRead[0 + 2 * i].NodeId} fail: {value?.StatusCode}", null);
+                }
             }
             else
             {
@@ -1311,7 +1334,7 @@ public class OpcUaMaster : IAsyncDisposable
     /// <summary>
     /// 从服务器读取节点
     /// </summary>
-    private async Task<List<Node>> ReadNodesAsync(string[] nodeIdStrs, bool cache = false, CancellationToken cancellationToken = default)
+    private async Task<List<Node>> ReadNodesAsync(string[] nodeIdStrs, bool cache = true, CancellationToken cancellationToken = default)
     {
         List<Node> result = new(nodeIdStrs.Length);
         foreach (var items in nodeIdStrs.ChunkBetter(OpcUaProperty.GroupSize))

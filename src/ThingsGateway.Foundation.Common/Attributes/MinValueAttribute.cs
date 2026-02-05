@@ -9,7 +9,6 @@
 //------------------------------------------------------------------------------
 
 using System.ComponentModel.DataAnnotations;
-using ThingsGateway.Foundation.Common.Extension;
 
 namespace ThingsGateway;
 

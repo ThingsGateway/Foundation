@@ -1733,9 +1733,12 @@ namespace Westwind.Scripting
                     unsafe
                     {
                         bool result = type.Assembly.TryGetRawMetadata(out byte* metaData, out int size);
+#pragma warning disable CA2000 // 丢失范围之前释放对象
                         var moduleMetaData = ModuleMetadata.CreateFromMetadata((nint)metaData, size);
                         var assemblyMetaData = AssemblyMetadata.Create(moduleMetaData);
-                        References.Add(assemblyMetaData.GetReference());
+#pragma warning restore CA2000 // 丢失范围之前释放对象
+                        var reference = assemblyMetaData.GetReference();
+                        References.Add(reference);
                     }
 #else
             return false;

@@ -47,7 +47,7 @@ using System.Net;
 		}}
 	}}
     ";
-			{
+            {
                 var context = new AssemblyLoadContext("", true);
                 var script = new CSharpScriptExecution();
                 script.AlternateAssemblyLoadContext = context;

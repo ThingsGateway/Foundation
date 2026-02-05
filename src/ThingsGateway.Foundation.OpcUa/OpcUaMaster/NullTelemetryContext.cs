@@ -20,7 +20,7 @@ namespace ThingsGateway.Foundation.OpcUa;
 public class NullTelemetryContext : TelemetryContextBase
 {
     public NullTelemetryContext()
-        : base(new NullLoggerFactory())
+        : base(NullLoggerFactory.Instance)
     {
     }
     public static NullTelemetryContext Default = new NullTelemetryContext();

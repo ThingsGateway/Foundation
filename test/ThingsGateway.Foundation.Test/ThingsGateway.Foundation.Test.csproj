@@ -5,7 +5,7 @@
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<NoWarn> CA1812; CA1852;CA1515;$(NoWarn)</NoWarn>
+		<NoWarn> CA1812; CA1852;CA1515;CA2000;$(NoWarn)</NoWarn>
 		<IsAotCompatible>false</IsAotCompatible>
 		<UseVSTest>true</UseVSTest>
 		<IsPackable>false</IsPackable>
