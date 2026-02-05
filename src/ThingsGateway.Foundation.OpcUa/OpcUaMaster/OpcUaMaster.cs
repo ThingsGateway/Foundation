@@ -63,8 +63,6 @@ public class OpcUaMaster : IAsyncDisposable
     /// </summary>
     private readonly ConcurrentDictionary<string, VariableNode> _variableDicts = new();
 
-    private readonly object checkLock = new();
-
     /// <summary>
     /// 当前的订阅组，组名称/组
     /// </summary>
@@ -73,11 +71,7 @@ public class OpcUaMaster : IAsyncDisposable
     private readonly ApplicationInstance m_application = new(NullTelemetryContext.Default);
 
     private readonly ApplicationConfiguration m_configuration;
-    private EventHandler<bool> m_ConnectComplete;
-    private EventHandler<KeepAliveEventArgs> m_KeepAliveComplete;
-    private EventHandler m_ReconnectComplete;
-    private SessionReconnectHandler m_reConnectHandler;
-    private EventHandler m_ReconnectStarting;
+
     private ISession m_session;
 
     private ComplexTypeSystem typeSystem;
@@ -175,15 +169,6 @@ public class OpcUaMaster : IAsyncDisposable
     }
 
     /// <summary>
-    /// Raised after successfully connecting to or disconnecing from a server.
-    /// </summary>
-    public event EventHandler<bool> ConnectComplete
-    {
-        add { m_ConnectComplete += value; }
-        remove { m_ConnectComplete -= value; }
-    }
-
-    /// <summary>
     /// 订阅
     /// </summary>
     public event JTokenDataChangedEventHandler JTokenDataChangedEventHandler;
@@ -192,32 +177,6 @@ public class OpcUaMaster : IAsyncDisposable
     /// 订阅
     /// </summary>
     public event JsonNodeDataChangedEventHandler JsonNodeDataChangedEventHandler;
-    /// <summary>
-    /// Raised when a good keep alive from the server arrives.
-    /// </summary>
-    public event EventHandler<KeepAliveEventArgs> KeepAliveComplete
-    {
-        add { m_KeepAliveComplete += value; }
-        remove { m_KeepAliveComplete -= value; }
-    }
-
-    /// <summary>
-    /// Raised when a reconnect operation completes.
-    /// </summary>
-    public event EventHandler ReconnectComplete
-    {
-        add { m_ReconnectComplete += value; }
-        remove { m_ReconnectComplete -= value; }
-    }
-
-    /// <summary>
-    /// Raised when a reconnect operation starts.
-    /// </summary>
-    public event EventHandler ReconnectStarting
-    {
-        add { m_ReconnectStarting += value; }
-        remove { m_ReconnectStarting -= value; }
-    }
 
     /// <summary>
     /// 配置信息
@@ -236,11 +195,6 @@ public class OpcUaMaster : IAsyncDisposable
     /// OpcUaMaster
     /// </summary>
     public string OPCUAName { get; set; } = "ThingsGateway";
-
-    /// <summary>
-    /// SessionReconnectHandler
-    /// </summary>
-    public SessionReconnectHandler ReConnectHandler => m_reConnectHandler;
 
     /// <summary>
     /// 当前活动会话。
@@ -993,6 +947,7 @@ public class OpcUaMaster : IAsyncDisposable
     SemaphoreSlim waitLock = new(1, 1);
 
     private string LastServerUrl { get; set; }
+    private SessionReconnectHandler m_reconnectHandler;
     /// <summary>
     /// Creates a new session.
     /// </summary>
@@ -1039,11 +994,14 @@ public class OpcUaMaster : IAsyncDisposable
             //创建本地证书
             if (useSecurity)
                 await m_application.CheckApplicationInstanceCertificatesAsync(true, 1200, cancellationToken).ConfigureAwait(false);
-            m_session = await new Opc.Ua.Client.DefaultSessionFactory(NullTelemetryContext.Default).CreateAsync(
+
+            var sessionFactory = new DefaultSessionFactory(NullTelemetryContext.Default);
+
+            m_session = await sessionFactory.CreateAsync(
             m_configuration,
             (ITransportWaitingConnection)null,
             endpoint,
-            false,
+            true,
             OpcUaProperty.CheckDomain,
             (string.IsNullOrEmpty(OPCUAName)) ? m_configuration.ApplicationName : OPCUAName,
             600000,
@@ -1052,13 +1010,19 @@ public class OpcUaMaster : IAsyncDisposable
             ).ConfigureAwait(false);
             connected = true;
 
-            m_session.KeepAliveInterval = OpcUaProperty.KeepAliveInterval == 0 ? 60000 : OpcUaProperty.KeepAliveInterval;
+            m_session.KeepAliveInterval = OpcUaProperty.KeepAliveInterval == 0 ? 5000 : OpcUaProperty.KeepAliveInterval;
+            // support transfer
+            m_session.DeleteSubscriptionsOnClose = false;
+            m_session.TransferSubscriptionsOnReconnect = true;
+
             m_session.KeepAlive += Session_KeepAlive;
 
-            typeSystem = new ComplexTypeSystem(m_session);
+            // prepare a reconnect handler
+            m_reconnectHandler = new SessionReconnectHandler(
+                NullTelemetryContext.Default,
+                true);
 
-            // raise an event.
-            DoConnectComplete(true);
+            typeSystem = new ComplexTypeSystem(m_session);
 
             Log(2, null, "Connected");
         }
@@ -1068,20 +1032,25 @@ public class OpcUaMaster : IAsyncDisposable
         }
     }
 
+    private readonly Lock m_lock = new();
+
     private async Task PrivateDisconnectAsync()
     {
         bool state = m_session?.Connected == true;
 
         connected = false;
-        if (m_reConnectHandler != null)
-        {
-            try { m_reConnectHandler.Dispose(); } catch { }
-            m_reConnectHandler = null;
-        }
         if (m_session != null)
         {
-            m_session.KeepAlive -= Session_KeepAlive;
+            lock (m_lock)
+            {
+                Session.KeepAlive -= Session_KeepAlive;
+                m_reconnectHandler?.Dispose();
+                m_reconnectHandler = null;
+            }
+
+
             await m_session.CloseAsync(10000).ConfigureAwait(false);
+            m_session.DetachChannel();
             m_session.Dispose();
             m_session = null;
         }
@@ -1089,7 +1058,6 @@ public class OpcUaMaster : IAsyncDisposable
         if (state)
         {
             Log(2, null, "Disconnected");
-            DoConnectComplete(false);
         }
     }
 
@@ -1402,13 +1370,6 @@ public class OpcUaMaster : IAsyncDisposable
             throw new Exception(string.Format("Verification certificate failed with error code: {0}: {1}", eventArgs.Error.Code, eventArgs.Error.AdditionalInfo));
     }
 
-    /// <summary>
-    /// Raises the connect complete event on the main GUI thread.
-    /// </summary>
-    private void DoConnectComplete(bool state)
-    {
-        m_ConnectComplete?.Invoke(this, state);
-    }
 
     /// <summary>
     /// Report the client status
@@ -1513,71 +1474,112 @@ public class OpcUaMaster : IAsyncDisposable
     /// <summary>
     /// 连接处理器连接事件处理完成。
     /// </summary>
-    private void Server_ReconnectComplete(object? sender, EventArgs e)
+    private void Client_ReconnectComplete(object? sender, EventArgs e)
     {
         try
         {
-            connected = true;
-            Log(2, null, "Reconnected : success");
 
-            if (!Object.ReferenceEquals(sender, m_reConnectHandler))
+            // ignore callbacks from discarded objects.
+            if (!ReferenceEquals(sender, m_reconnectHandler))
             {
                 return;
             }
-            // if session recovered, Session property is null
-            if (m_reConnectHandler.Session != null)
+
+            lock (m_lock)
             {
-                // ensure only a new instance is disposed
-                // after reactivate, the same session instance may be returned
-                if (!Object.ReferenceEquals(m_session, m_reConnectHandler.Session))
+                // if session recovered, Session property is null
+                if (m_reconnectHandler.Session != null)
                 {
-                    var session = m_session;
-                    m_session = m_reConnectHandler.Session;
                     connected = true;
 
-                    Utils.SilentDispose(session);
+                    // ensure only a new instance is disposed
+                    // after reactivate, the same session instance may be returned
+                    if (!ReferenceEquals(Session, m_reconnectHandler.Session))
+                    {
+                        Log(2, null,
+                        "RECONNECTED TO NEW SESSION : {0}",
+                        m_reconnectHandler.Session.SessionId);
+
+                        var session = m_session;
+                        m_session = m_reconnectHandler.Session;
+                        Utils.SilentDispose(session);
+                    }
+                    else
+                    {
+                        Log(2, null,
+    "REACTIVATED SESSION : {0}",
+    m_reconnectHandler.Session.SessionId);
+                    }
+                }
+                else
+                {
+                    Log(2, null,
+                    "RECONNECT KeepAlive recovered");
+
                 }
             }
 
-            m_reConnectHandler.Dispose();
-            m_reConnectHandler = null;
-
-            // raise any additional notifications.
-            m_ReconnectComplete?.Invoke(this, e);
         }
         catch (Exception ex)
         {
-            Log(3, ex, $"{nameof(Server_ReconnectComplete)}");
+            Log(3, ex, $"{nameof(Client_ReconnectComplete)} error");
         }
     }
-
+    private Lock keppLiveLock = new();
     private void Session_KeepAlive(ISession session, KeepAliveEventArgs e)
     {
-        lock (checkLock)
+        try
         {
-            if (!Object.ReferenceEquals(session, m_session))
+            lock (keppLiveLock)
             {
-                return;
-            }
-
-            if (ServiceResult.IsBad(e.Status))
-            {
-                connected = false;
-
-                if (m_reConnectHandler == null)
+                if (e.CancelKeepAlive)
                 {
-                    Log(3, null, "Reconnecting : {0}", e.Status.ToString());
-                    m_ReconnectStarting?.Invoke(this, e);
+                    return;
+                }
 
-                    m_reConnectHandler = new SessionReconnectHandler(NullTelemetryContext.Default, true, 10000);
-                    m_reConnectHandler.BeginReconnect(m_session, 1000, Server_ReconnectComplete);
+                // check for events from discarded sessions.
+                if (Session == null || !Session.Equals(session))
+                {
+                    return;
+                }
 
+                // start reconnect sequence on communication error.
+                if (ServiceResult.IsBad(e.Status))
+                {
+                    connected = false;
+
+                    SessionReconnectHandler.ReconnectState state = m_reconnectHandler
+                        .BeginReconnect(
+                            Session,
+                            null,
+                            1000,
+                            Client_ReconnectComplete
+                            );
+                    if (state == SessionReconnectHandler.ReconnectState.Triggered)
+                    {
+                        Log(2, null,
+                           "KeepAlive status {0}, reconnect status {1}, reconnect period {2}ms.",
+                            e.Status,
+                            state,
+                            1000
+                        );
+                    }
+                    else
+                    {
+                        Log(2, null,
+                                         "KeepAlive status {0}, reconnect status {1}.",
+                            e.Status,
+                            state);
+                    }
+
+                    // cancel sending a new keep alive request, because reconnect is triggered.
                     e.CancelKeepAlive = true;
                 }
             }
-
-            // raise any additional notifications.
-            m_KeepAliveComplete?.Invoke(this, e);
+        }
+        catch (Exception exception)
+        {
+            Log(3, exception, "Error in OnKeepAlive.");
         }
     }
 
