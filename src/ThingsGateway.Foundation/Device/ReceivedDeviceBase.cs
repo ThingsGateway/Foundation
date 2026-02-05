@@ -728,7 +728,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         }
         _reusableTimeouts?.SafeDispose();
         _deviceLogger?.TryDispose();
-        Channel.Lock?.SafeDispose();
         base.Dispose(disposing);
     }
 
