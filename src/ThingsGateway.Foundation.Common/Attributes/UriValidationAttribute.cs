@@ -20,7 +20,7 @@ public sealed class UriValidationAttribute : ValidationAttribute
 {
     private static readonly Regex Ipv4Regex = new Regex(@"^\d{1,3}(\.\d{1,3}){3}(:\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
     private static readonly Regex Ipv6Regex = new Regex(@"^\[*::\*\](?::\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-    private static readonly Regex DomainRegex = new Regex(@"^(tcp|http)://([\w.-]+)(:\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex DomainRegex = new Regex(@"^([\w+.-]+)://([\w.-]+)(:\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
