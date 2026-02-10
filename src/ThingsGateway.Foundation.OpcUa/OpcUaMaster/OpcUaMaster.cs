@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json.Nodes;
+using ThingsGateway.Plugin.OpcUa;
 #if NET8_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
@@ -68,20 +69,23 @@ public class OpcUaMaster : IAsyncDisposable
     /// </summary>
     private readonly ConcurrentDictionary<string, Subscription> _subscriptionDicts = new();
 
-    private readonly ApplicationInstance m_application = new(NullTelemetryContext.Default);
 
     private readonly ApplicationConfiguration m_configuration;
 
     private ISession m_session;
 
     private ComplexTypeSystem typeSystem;
+    internal OpcUaTelemetryContext DefaultTelemetryContext;
+    private readonly ApplicationInstance m_application;
 
     /// <summary>
     /// 默认的构造函数，实例化一个新的OPC UA类
     /// </summary>
     public OpcUaMaster()
     {
-        var certificateValidator = new CertificateValidator(NullTelemetryContext.Default);
+        DefaultTelemetryContext = new OpcUaTelemetryContext((level, source, message, ex) => LogEvent?.Invoke(level, source, message, ex));
+        m_application = new(DefaultTelemetryContext);
+        var certificateValidator = new CertificateValidator(DefaultTelemetryContext);
         certificateValidator.CertificateValidation += CertificateValidation;
         // 构建应用程序配置
         m_configuration = new ApplicationConfiguration
@@ -226,7 +230,7 @@ public class OpcUaMaster : IAsyncDisposable
         {
             try
             {
-                var item = new MonitoredItem(NullTelemetryContext.Default)
+                var item = new MonitoredItem(DefaultTelemetryContext)
                 {
                     StartNodeId = items[i],
                     AttributeId = Attributes.Value,
@@ -977,7 +981,7 @@ public class OpcUaMaster : IAsyncDisposable
             }
             var useSecurity = OpcUaProperty?.UseSecurity ?? true;
 
-            EndpointDescription endpointDescription = await OpcUaUtils.SelectEndpointAsync(m_configuration, serverUrl, useSecurity, 10000).ConfigureAwait(false);
+            EndpointDescription endpointDescription = await OpcUaUtils.SelectEndpointAsync(m_configuration, serverUrl, useSecurity, 10000, DefaultTelemetryContext).ConfigureAwait(false);
             EndpointConfiguration endpointConfiguration = EndpointConfiguration.Create(m_configuration);
             ConfiguredEndpoint endpoint = new(null, endpointDescription, endpointConfiguration);
             UserIdentity userIdentity;
@@ -995,7 +999,7 @@ public class OpcUaMaster : IAsyncDisposable
             if (useSecurity)
                 await m_application.CheckApplicationInstanceCertificatesAsync(true, 1200, cancellationToken).ConfigureAwait(false);
 
-            var sessionFactory = new DefaultSessionFactory(NullTelemetryContext.Default);
+            var sessionFactory = new DefaultSessionFactory(DefaultTelemetryContext);
 
             m_session = await sessionFactory.CreateAsync(
             m_configuration,
@@ -1019,7 +1023,7 @@ public class OpcUaMaster : IAsyncDisposable
 
             // prepare a reconnect handler
             m_reconnectHandler = new SessionReconnectHandler(
-                NullTelemetryContext.Default,
+                DefaultTelemetryContext,
                 true);
 
             typeSystem = new ComplexTypeSystem(m_session);
