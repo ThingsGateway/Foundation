@@ -24,12 +24,13 @@ public static class OpcUaUtils
     /// <param name="discoveryUrl">The discovery URL.</param>
     /// <param name="useSecurity">if set to <c>true</c> select an endpoint that uses security.</param>
     /// <param name="discoverTimeout">The timeout for the discover operation.</param>
+    /// <param name="telemetry"></param>
     /// <returns>The best available endpoint.</returns>
     public static async Task<EndpointDescription> SelectEndpointAsync(
         ApplicationConfiguration application,
         string discoveryUrl,
         bool useSecurity,
-        int discoverTimeout
+        int discoverTimeout, ITelemetryContext telemetry
         )
     {
         var uri = CoreClientUtils.GetDiscoveryUrl(discoveryUrl);
@@ -41,7 +42,7 @@ public static class OpcUaUtils
             // Connect to the server's discovery endpoint and find the available configuration.
             Uri url = new Uri(client.Endpoint.EndpointUrl);
             var endpoints = await client.GetEndpointsAsync(null).ConfigureAwait(false);
-            var selectedEndpoint = CoreClientUtils.SelectEndpoint(application, url, endpoints, useSecurity, NullTelemetryContext.Default);
+            var selectedEndpoint = CoreClientUtils.SelectEndpoint(application, url, endpoints, useSecurity, telemetry);
 
             Uri endpointUrl = Utils.ParseUri(selectedEndpoint.EndpointUrl);
             if (endpointUrl != null && endpointUrl.Scheme == uri.Scheme)
