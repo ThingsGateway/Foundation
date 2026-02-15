@@ -539,11 +539,11 @@ public static class ReflectHelper
     {
         if (member is PropertyInfo pi)
         {
-            pi.SetValue(target, (value==null||value.GetType().IsFrom(pi.PropertyType))?value:value.ChangeTypeEx(pi.PropertyType));
+            pi.SetValue(target, (value == null || value.GetType().IsFrom(pi.PropertyType)) ? value : value.ChangeTypeEx(pi.PropertyType));
         }
         else if (member is FieldInfo fi)
         {
-            fi.SetValue(target, (value==null||value.GetType().IsFrom(fi.FieldType))?value:value.ChangeTypeEx(fi.FieldType));
+            fi.SetValue(target, (value == null || value.GetType().IsFrom(fi.FieldType)) ? value : value.ChangeTypeEx(fi.FieldType));
         }
         else
         {

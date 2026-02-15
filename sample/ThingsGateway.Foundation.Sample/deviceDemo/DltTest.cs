@@ -1,8 +1,5 @@
-﻿using ThingsGateway.Foundation;
-using ThingsGateway.Foundation.Common;
+﻿using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Dlt645;
-using TouchSocket.Core;
-using TouchSocket.Sockets;
 
 #pragma warning disable CA2000 // 丢失范围之前释放对象
 namespace ThingsGateway.Foundation.Sample

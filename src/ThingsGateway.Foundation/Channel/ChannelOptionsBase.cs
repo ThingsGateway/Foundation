@@ -15,10 +15,6 @@ namespace ThingsGateway.Foundation
 {
     public abstract class ChannelOptionsBase : IValidatableObject
     {
-        ~ChannelOptionsBase()
-        {
-            this.TryDispose();
-        }
         /// <summary>
         /// 通道类型
         /// </summary>

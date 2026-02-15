@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-using ThingsGateway.Foundation.Common;
+﻿using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Modbus;
 
 namespace ThingsGateway.Foundation.Sample
