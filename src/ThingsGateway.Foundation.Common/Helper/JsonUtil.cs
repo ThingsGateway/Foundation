@@ -287,55 +287,42 @@ public static class JsonUtil
     }
     static object? GetPrimitive(JsonValue value)
     {
-        var element = value.GetValue<JsonElement>();
+        // null
+        if (value.TryGetValue<object?>(out var obj) && obj is null)
+            return null;
 
-        switch (element.ValueKind)
+        // string
+        if (value.TryGetValue<string>(out var s))
         {
-            case JsonValueKind.Null:
-                return null;
+            if (DateTime.TryParse(s, out var dt))
+                return dt;
 
-            case JsonValueKind.String:
-                {
-                    var s = element.GetString();
+            if (Guid.TryParse(s, out var guid))
+                return guid;
 
-                    if (s == null)
-                        return null;
-
-                    // DateTime
-                    if (DateTime.TryParse(s, out var dt))
-                        return dt;
-
-                    // Guid
-                    if (Guid.TryParse(s, out var guid))
-                        return guid;
-
-                    return s;
-                }
-
-            case JsonValueKind.Number:
-                {
-                    // 优先 int
-                    if (element.TryGetInt32(out var i))
-                        return i;
-
-                    // 再 long
-                    if (element.TryGetInt64(out var l))
-                        return l;
-
-                    // 最后 double
-                    return element.GetDouble();
-                }
-
-            case JsonValueKind.True:
-            case JsonValueKind.False:
-                return element.GetBoolean();
-
-            default:
-                throw new NotSupportedException(
-                    $"Unsupported JsonValueKind: {element.ValueKind}");
+            return s;
         }
-    }
 
+        // bool
+        if (value.TryGetValue<bool>(out var b))
+            return b;
+
+        // number（按你原来的优先级）
+        if (value.TryGetValue<int>(out var i))
+            return i;
+
+        if (value.TryGetValue<long>(out var l))
+            return l;
+
+        if (value.TryGetValue<double>(out var d))
+            return d;
+
+        // 兜底（比如 decimal 等）
+        if (value.TryGetValue<object>(out var other))
+            return other;
+
+        throw new NotSupportedException("Unsupported JsonValue");
+    }
     private static object? ConvertArray(System.Text.Json.Nodes.JsonArray array)
     {
         // 类型判断
