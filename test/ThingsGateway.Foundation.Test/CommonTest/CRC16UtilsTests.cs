@@ -1,52 +1,52 @@
-﻿using System.Buffers;
+using System.Buffers;
+using Xunit;
 
 namespace ThingsGateway.Foundation.Common.Tests
 {
-    [TestClass]
     public class CrcHelperTests
     {
         /// <summary>
         /// 常见Modbus CRC测试：01 03 00 00 00 0A → CRC = C5 CD（低字节在前）
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Crc16Only_DefaultPolynomial_ReturnsExpected()
         {
             byte[] data = { 0x01, 0x03, 0x00, 0x00, 0x00, 0x0A };
 
             var crc = CrcHelper.Crc16Only(data);
 
-            CollectionAssert.AreEqual(new byte[] { 0xC5, 0xCD }, crc);
+            Assert.Equal(new byte[] { 0xC5, 0xCD }, crc);
         }
 
         /// <summary>
         /// 测试空输入
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Crc16Only_EmptyInput_ReturnsInitialValue()
         {
             byte[] data = Array.Empty<byte>();
             var crc = CrcHelper.Crc16Only(data);
 
             // 对空输入CRC结果是初始值经过算法迭代后的状态
-            Assert.HasCount(2, crc);
+            Assert.Equal(2, crc.Length);
         }
 
         /// <summary>
         /// 测试自定义多项式（如0x1021）
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Crc16Only_CustomPolynomial_Works()
         {
             byte[] data = { 0x12, 0x34, 0x56, 0x78 };
             var crc = CrcHelper.Crc16Only(data, 0x1021);
 
-            Assert.HasCount(2, crc);
+            Assert.Equal(2, crc.Length);
         }
 
         /// <summary>
         /// ReadOnlySequence单段数据验证
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Crc16Only_Sequence_SingleSegment_Works()
         {
             byte[] data = { 0xAA, 0xBB, 0xCC };
@@ -54,13 +54,13 @@ namespace ThingsGateway.Foundation.Common.Tests
 
             var crc = CrcHelper.Crc16Only(seq);
 
-            Assert.HasCount(2, crc);
+            Assert.Equal(2, crc.Length);
         }
 
         /// <summary>
         /// ReadOnlySequence多段验证
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void Crc16Only_Sequence_MultiSegment_Works()
         {
             byte[] part1 = { 0x01, 0x02 };
@@ -75,7 +75,7 @@ namespace ThingsGateway.Foundation.Common.Tests
 
             var crc = CrcHelper.Crc16Only(seq, 0xA001);
 
-            Assert.HasCount(2, crc);
+            Assert.Equal(2, crc.Length);
         }
 
         /// <summary>

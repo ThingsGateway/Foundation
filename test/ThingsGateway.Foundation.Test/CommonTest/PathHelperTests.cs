@@ -1,33 +1,36 @@
-﻿using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.Extension;
+using Xunit;
 #pragma warning disable CS8625 // 无法将 null 字面量转换为非 null 的引用类型。
 
 namespace ThingsGateway.Foundation.Common.Tests
 {
-    [TestClass]
-    [DoNotParallelize]
-    public class PathHelperTests
+    public class PathHelperTests : IDisposable
     {
         private string _tempDir = Path.Combine(Path.GetTempPath(), "PathHelperTests");
 
-        [TestInitialize]
-        public void Setup()
+        public PathHelperTests()
         {
             if (Directory.Exists(_tempDir))
                 Directory.Delete(_tempDir, true);
             Directory.CreateDirectory(_tempDir);
         }
 
+        public void Dispose()
+        {
+            if (Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, true);
+        }
 
-        [TestMethod]
+        [Fact]
         public void GetRelativePath_SamePath_ReturnsDot()
         {
             var p = Path.Combine(_tempDir, "a");
             Directory.CreateDirectory(p);
             var result = PathHelper.GetRelativePath(p, p);
-            Assert.AreEqual(".", result);
+            Assert.Equal(".", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetRelativePath_Subdirectory_ReturnsRelative()
         {
             var baseDir = Path.Combine(_tempDir, "root");
@@ -35,10 +38,10 @@ namespace ThingsGateway.Foundation.Common.Tests
             Directory.CreateDirectory(Path.GetDirectoryName(subDir)!);
 
             var rel = PathHelper.GetRelativePath(baseDir, subDir);
-            Assert.AreEqual($"child{Path.DirectorySeparatorChar}file.txt", rel);
+            Assert.Equal($"child{Path.DirectorySeparatorChar}file.txt", rel);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetRelativePath_ParentDirectory_ReturnsDotDot()
         {
             var parent = Path.Combine(_tempDir, "root");
@@ -46,11 +49,11 @@ namespace ThingsGateway.Foundation.Common.Tests
             Directory.CreateDirectory(Path.GetDirectoryName(child)!);
 
             var rel = PathHelper.GetRelativePath(parent, child);
-            Assert.AreEqual("a\\b\\c.txt", rel); // 现在是从 root 到 child，会包含“..”路径
+            Assert.Equal("a\\b\\c.txt", rel); // 现在是从 root 到 child，会包含".."路径
         }
 
 
-        [TestMethod]
+        [Fact]
         public void GetRelativePath_DifferentRoot_ReturnsAbsolute()
         {
             string basePath;
@@ -76,61 +79,61 @@ namespace ThingsGateway.Foundation.Common.Tests
 
             var result = PathHelper.GetRelativePath(basePath, otherPath);
 
-            Assert.IsTrue(Path.IsPathRooted(result) || result.StartsWith(".."), $"Expected absolute path, but got: {result}");
+            Assert.True(Path.IsPathRooted(result) || result.StartsWith(".."), $"Expected absolute path, but got: {result}");
         }
 
 
-        [TestMethod]
+        [Fact]
         public void GetRelativePath_ThrowsOnNull()
         {
-            Assert.ThrowsExactly<ArgumentNullException>(() => PathHelper.GetRelativePath(null!, "a"));
-            Assert.ThrowsExactly<ArgumentNullException>(() => PathHelper.GetRelativePath("a", null!));
+            Assert.Throws<ArgumentNullException>(() => PathHelper.GetRelativePath(null!, "a"));
+            Assert.Throws<ArgumentNullException>(() => PathHelper.GetRelativePath("a", null!));
         }
 
-        [TestMethod]
+        [Fact]
         public void CombinePathReplace_Works()
         {
             var result = PathHelper.CombinePathReplace("folder", "sub", "file.txt");
-            Assert.AreEqual("folder/sub/file.txt", result.Replace('\\', '/'));
+            Assert.Equal("folder/sub/file.txt", result.Replace('\\', '/'));
         }
 
-        [TestMethod]
+        [Fact]
         public void CombinePathReplace_EmptyInput_ReturnsEmpty()
         {
-            Assert.AreEqual(string.Empty, PathHelper.CombinePathReplace());
+            Assert.Equal(string.Empty, PathHelper.CombinePathReplace());
         }
 
-        [TestMethod]
+        [Fact]
         public void EnsureDirectory_FilePath_CreatesParentDir()
         {
             var filePath = Path.Combine(_tempDir, "nested", "file.txt");
             var dir = filePath.EnsureDirectory(isfile: true);
 
-            Assert.IsTrue(Directory.Exists(dir));
+            Assert.True(Directory.Exists(dir));
             Assert.EndsWith("nested", dir);
         }
 
-        [TestMethod]
+        [Fact]
         public void EnsureDirectory_DirectoryPath_CreatesDir()
         {
             var dirPath = Path.Combine(_tempDir, "nested") + Path.DirectorySeparatorChar;
             var dir = dirPath.EnsureDirectory(isfile: false);
 
-            Assert.IsTrue(Directory.Exists(dir));
+            Assert.True(Directory.Exists(dir));
         }
 
-        [TestMethod]
+        [Fact]
         public void EnsureDirectory_Existing_ReturnsOriginal()
         {
             var dir = _tempDir.EnsureDirectory();
-            Assert.AreEqual(_tempDir, dir);
+            Assert.Equal(_tempDir, dir);
         }
 
-        [TestMethod]
+        [Fact]
         public void EnsureDirectory_Null_ReturnsNull()
         {
             string? result = ((String?)null).EnsureDirectory();
-            Assert.IsNull(result);
+            Assert.Null(result);
         }
     }
 }

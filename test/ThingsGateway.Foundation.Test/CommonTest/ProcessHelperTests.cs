@@ -1,11 +1,11 @@
-﻿using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.Extension;
+using Xunit;
 
 namespace ThingsGateway.Foundation.Common.Tests
 {
-    [TestClass]
     public class ProcessHelperTests
     {
-        [TestMethod]
+        [Fact]
         public void GetProcessId_ShouldReturnCurrentProcessId()
         {
             // Arrange
@@ -15,10 +15,10 @@ namespace ThingsGateway.Foundation.Common.Tests
             var result = ProcessHelper.GetProcessId();
 
             // Assert
-            Assert.AreEqual(expected, result);
+            Assert.Equal(expected, result);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetProcessId_ShouldCacheValue()
         {
             // Arrange
@@ -28,10 +28,10 @@ namespace ThingsGateway.Foundation.Common.Tests
             var id2 = ProcessHelper.GetProcessId();
 
             // Assert
-            Assert.AreEqual(id1, id2);
+            Assert.Equal(id1, id2);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_EchoCommand_ReturnsExpectedOutput()
         {
             // Arrange
@@ -42,21 +42,21 @@ namespace ThingsGateway.Foundation.Common.Tests
             var output = ProcessHelper.Execute(cmd, args, 2000);
 
             // Assert
-            Assert.IsNotNull(output);
-            StringAssert.Contains(output, "HelloWorld");
+            Assert.NotNull(output);
+            Assert.Contains("HelloWorld", output);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_InvalidCommand_ReturnsNull()
         {
             // Arrange
             var result = ProcessHelper.Execute("this_command_does_not_exist", msWait: 1000);
 
             // Assert
-            Assert.IsNull(result);
+            Assert.Null(result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_CommandWithEncoding_Works()
         {
             // Arrange
@@ -67,11 +67,11 @@ namespace ThingsGateway.Foundation.Common.Tests
             var output = ProcessHelper.Execute(cmd, args, 2000);
 
             // Assert
-            Assert.IsNotNull(output);
-            StringAssert.Contains(output, "你好");
+            Assert.NotNull(output);
+            Assert.Contains("你好", output);
         }
 
-        [TestMethod]
+        [Fact]
         public void Execute_Timeout_KillsProcess()
         {
             // Arrange
@@ -81,7 +81,7 @@ namespace ThingsGateway.Foundation.Common.Tests
             var output = ProcessHelper.Execute(cmd, GetSleepArgs(5), msWait: 1000);
 
             // Assert
-            Assert.IsTrue(string.IsNullOrEmpty(output));
+            Assert.True(string.IsNullOrEmpty(output));
         }
 
         /// <summary>

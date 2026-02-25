@@ -1,11 +1,11 @@
-﻿using System.Text;
+using System.Text;
+using Xunit;
 
 namespace ThingsGateway.Foundation.Common.Tests
 {
-    [TestClass]
     public class EncodingHelperTests
     {
-        [TestMethod]
+        [Fact]
         public void GetString_UTF8_Normal()
         {
             // Arrange
@@ -17,20 +17,20 @@ namespace ThingsGateway.Foundation.Common.Tests
             var result = encoding.GetString(bytes);
 
             // Assert
-            Assert.AreEqual(text, result);
+            Assert.Equal(text, result);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetString_Empty_ReturnsEmpty()
         {
             var encoding = Encoding.UTF8;
             var bytes = Array.Empty<byte>();
             var result = encoding.GetString(bytes);
 
-            Assert.AreEqual(string.Empty, result);
+            Assert.Equal(string.Empty, result);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetString_ASCII_Works()
         {
             var encoding = Encoding.ASCII;
@@ -38,10 +38,10 @@ namespace ThingsGateway.Foundation.Common.Tests
             var bytes = encoding.GetBytes(text);
             var result = encoding.GetString(bytes);
 
-            Assert.AreEqual(text, result);
+            Assert.Equal(text, result);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetString_Unicode_Works()
         {
             var encoding = Encoding.Unicode;
@@ -49,10 +49,10 @@ namespace ThingsGateway.Foundation.Common.Tests
             var bytes = encoding.GetBytes(text);
             var result = encoding.GetString(bytes);
 
-            Assert.AreEqual(text, result);
+            Assert.Equal(text, result);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetBytes_UTF8_Normal()
         {
             var encoding = Encoding.UTF8;
@@ -62,11 +62,11 @@ namespace ThingsGateway.Foundation.Common.Tests
 
             var count = encoding.GetBytes(text.AsSpan(), buffer);
 
-            Assert.HasCount(count, expected);
-            CollectionAssert.AreEqual(expected, buffer.ToArray());
+            Assert.Equal(count, expected.Length);
+            Assert.Equal(expected, buffer.ToArray());
         }
 
-        [TestMethod]
+        [Fact]
         public void GetBytes_Unicode_Works()
         {
             var encoding = Encoding.Unicode;
@@ -76,11 +76,11 @@ namespace ThingsGateway.Foundation.Common.Tests
 
             var count = encoding.GetBytes(text.AsSpan(), buffer);
 
-            Assert.HasCount(count, expected);
-            CollectionAssert.AreEqual(expected, buffer.ToArray());
+            Assert.Equal(count, expected.Length);
+            Assert.Equal(expected, buffer.ToArray());
         }
 
-        [TestMethod]
+        [Fact]
         public void GetBytes_And_GetString_AreInverse()
         {
             var encoding = Encoding.UTF8;
@@ -90,7 +90,7 @@ namespace ThingsGateway.Foundation.Common.Tests
             var written = encoding.GetBytes(text.AsSpan(), buffer);
             var decoded = encoding.GetString(buffer[..written]);
 
-            Assert.AreEqual(text, decoded);
+            Assert.Equal(text, decoded);
         }
     }
 }

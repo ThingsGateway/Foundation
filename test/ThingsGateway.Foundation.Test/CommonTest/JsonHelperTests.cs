@@ -1,38 +1,35 @@
-﻿using System.Text.Json.Nodes;
+using System.Text.Json.Nodes;
 using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.Extension;
+using Xunit;
 
 namespace ThingsGateway.Foundation.Common.Tests
 {
-    [TestClass]
     public class JsonHelperTests
     {
-
-
-        [TestMethod]
+        [Fact]
         public void ToSystemTextJsonStringNumber()
         {
             ushort value = 0;
             var data = value.ToSystemTextJsonString(false);
-            Assert.AreEqual("0", data);
+            Assert.Equal("0", data);
         }
 
-
-        [TestMethod]
+        [Fact]
         public void GetObjectFromJsonNode_Should_Work_For_All_Primitive_Types()
         {
             // null
             {
                 var v = JsonValue.Create((string?)null);
                 var r = JsonUtil.GetObjectFromJsonNode(v);
-                Assert.IsNull(r);
+                Assert.Null(r);
             }
 
             // string
             {
                 var v = JsonValue.Create("hello");
                 var r = JsonUtil.GetObjectFromJsonNode(v);
-                Assert.AreEqual("hello", r);
+                Assert.Equal("hello", r);
             }
 
             // DateTime (string -> DateTime)
@@ -41,8 +38,8 @@ namespace ThingsGateway.Foundation.Common.Tests
                 var v = JsonValue.Create(dt.ToString("O"));
                 var r = JsonUtil.GetObjectFromJsonNode(v);
 
-                Assert.IsInstanceOfType(r, typeof(DateTime));
-                Assert.AreEqual(dt, (DateTime)r);
+                Assert.IsType<DateTime>(r);
+                Assert.Equal(dt, (DateTime)r);
             }
 
             // Guid (string -> Guid)
@@ -51,8 +48,8 @@ namespace ThingsGateway.Foundation.Common.Tests
                 var v = JsonValue.Create(g.ToString());
                 var r = JsonUtil.GetObjectFromJsonNode(v);
 
-                Assert.IsInstanceOfType(r, typeof(Guid));
-                Assert.AreEqual(g, (Guid)r);
+                Assert.IsType<Guid>(r);
+                Assert.Equal(g, (Guid)r);
             }
 
             // bool
@@ -60,8 +57,8 @@ namespace ThingsGateway.Foundation.Common.Tests
                 var v = JsonValue.Create(true);
                 var r = JsonUtil.GetObjectFromJsonNode(v);
 
-                Assert.IsInstanceOfType(r, typeof(bool));
-                Assert.AreEqual(true, r);
+                Assert.IsType<bool>(r);
+                Assert.Equal(true, r);
             }
 
             // int
@@ -69,8 +66,8 @@ namespace ThingsGateway.Foundation.Common.Tests
                 var v = JsonValue.Create(123);
                 var r = JsonUtil.GetObjectFromJsonNode(v);
 
-                Assert.IsInstanceOfType(r, typeof(int));
-                Assert.AreEqual(123, r);
+                Assert.IsType<int>(r);
+                Assert.Equal(123, r);
             }
 
             // long
@@ -79,8 +76,8 @@ namespace ThingsGateway.Foundation.Common.Tests
                 var v = JsonValue.Create(value);
                 var r = JsonUtil.GetObjectFromJsonNode(v);
 
-                Assert.IsInstanceOfType(r, typeof(long));
-                Assert.AreEqual(value, r);
+                Assert.IsType<long>(r);
+                Assert.Equal(value, r);
             }
 
             // double
@@ -88,9 +85,9 @@ namespace ThingsGateway.Foundation.Common.Tests
                 var v = JsonValue.Create(1.25d);
                 var r = JsonUtil.GetObjectFromJsonNode(v);
 
-                Assert.IsInstanceOfType(r, typeof(double));
-                Assert.AreEqual(1.25d, (double)r, 0.0000001);
+                Assert.IsType<double>(r);
+                Assert.Equal(1.25d, (double)r, 0.0000001);
             }
         }
-        }
+    }
 }

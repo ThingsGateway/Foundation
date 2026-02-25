@@ -12,25 +12,31 @@ using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
 using ThingsGateway.Foundation.Common.StringExtension;
 using ThingsGateway.Foundation.Modbus;
+using Xunit;
+using Xunit.Abstractions;
 
 using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation.Test;
 
-[TestClass]
 public class ModbusTest
 {
-    public TestContext TestContext { get; set; }
+    private readonly ITestOutputHelper _output;
 
-    [TestMethod]
-    [DataRow("400045", true, "00020000002F01032C0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")]
-    [DataRow("300045", true, "00020000002F01042C0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")]
-    [DataRow("100045", true, "000200000009010206000000000000")]
-    [DataRow("000045", true, "000200000009010106000000000000")]
-    [DataRow("400045", false, "0002000000060106002C0001", "1", DataTypeEnum.UInt16)]
-    [DataRow("000045", false, "0002000000060105002CFF00", "true", DataTypeEnum.Boolean)]
-    [DataRow("400045;w=16", false, "0002000000090110002C0001020001", "1", DataTypeEnum.UInt16)]
-    [DataRow("000045;w=15", false, "000200000008010F002C00010101", "true", DataTypeEnum.Boolean)]
+    public ModbusTest(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    [Theory]
+    [InlineData("400045", true, "00020000002F01032C0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")]
+    [InlineData("300045", true, "00020000002F01042C0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")]
+    [InlineData("100045", true, "000200000009010206000000000000")]
+    [InlineData("000045", true, "000200000009010106000000000000")]
+    [InlineData("400045", false, "0002000000060106002C0001", "1", DataTypeEnum.UInt16)]
+    [InlineData("000045", false, "0002000000060105002CFF00", "true", DataTypeEnum.Boolean)]
+    [InlineData("400045;w=16", false, "0002000000090110002C0001020001", "1", DataTypeEnum.UInt16)]
+    [InlineData("000045;w=15", false, "000200000008010F002C00010101", "true", DataTypeEnum.Boolean)]
     public async Task ModbusTcp_ReadWrite_OK(string address, bool read, string data, string writeData = null, DataTypeEnum dataTypeEnum = DataTypeEnum.UInt16)
     {
         var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusTcp, Timeout = 10000 };
@@ -40,12 +46,12 @@ public class ModbusTest
         {
             a.AddEasyLogger((a, b, c, d) =>
             {
-                TestContext.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
+                _output.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
             }, LogLevel.Trace);
         });
         modbusMaster.InitChannel(new(modbusChannel));
-        await modbusChannel.SetupAsync(modbusChannel.Config).ConfigureAwait(false);
-        await modbusMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+        await modbusChannel.SetupAsync(modbusChannel.Config);
+        await modbusMaster.ConnectAsync(CancellationToken.None);
         var adapter = modbusChannel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;
 
         var task1 = Task.Run(async () =>
@@ -53,30 +59,30 @@ public class ModbusTest
              if (read)
              {
                  var result = await modbusMaster.ReadByteAsync(address).ConfigureAwait(false);
-                 Assert.IsTrue(result.IsSuccess, result.ToString());
+                 Assert.True(result.IsSuccess, result.ToString());
              }
              else
              {
                  var result = await modbusMaster.WriteJsonNodeAsync(address, JsonUtil.GetJsonNodeFromString(writeData), dataTypeEnum).ConfigureAwait(false);
-                 Assert.IsTrue(result.IsSuccess, result.ToString());
+                 Assert.True(result.IsSuccess, result.ToString());
              }
          });
-        await Task.Delay(50).ConfigureAwait(false);
+        await Task.Delay(50);
         var task2 = Task.Run(async () =>
         {
             SingleStreamDataHandlingAdapterTest singleStreamDataHandlingAdapterTest = new();
             await singleStreamDataHandlingAdapterTest.SendCallback(data.HexStringToBytes(), (a) => singleStreamDataHandlingAdapterTest.ReceivedAsync(adapter, CancellationToken.None), 1, CancellationToken.None).ConfigureAwait(false);
         });
-        await Task.WhenAll(task1, task2).ConfigureAwait(false);
+        await Task.WhenAll(task1, task2);
     }
 
-    [TestMethod]
-    [DataRow("400045", true, "01032C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000007859")]
-    [DataRow("300045", true, "01042C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ADE")]
-    [DataRow("100045", true, "010206000000000000E0B9")]
-    [DataRow("000045", true, "010106000000000000A0AC")]
-    [DataRow("400045", false, "0106002C000189C3", "1", DataTypeEnum.UInt16)]
-    [DataRow("000045", false, "0105002CFF004DF3", "true", DataTypeEnum.Boolean)]
+    [Theory]
+    [InlineData("400045", true, "01032C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000007859")]
+    [InlineData("300045", true, "01042C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ADE")]
+    [InlineData("100045", true, "010206000000000000E0B9")]
+    [InlineData("000045", true, "010106000000000000A0AC")]
+    [InlineData("400045", false, "0106002C000189C3", "1", DataTypeEnum.UInt16)]
+    [InlineData("000045", false, "0105002CFF004DF3", "true", DataTypeEnum.Boolean)]
     public async Task ModbusRtu_ReadWrite_OK(string address, bool read, string data, string writeData = null, DataTypeEnum dataTypeEnum = DataTypeEnum.UInt16)
     {
         var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusRtu, Timeout = 10000, Station = 1 };
@@ -86,12 +92,12 @@ public class ModbusTest
         {
             a.AddEasyLogger((a, b, c, d) =>
            {
-               TestContext.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
+               _output.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
            }, LogLevel.Trace);
         });
         modbusMaster.InitChannel(new(modbusChannel));
-        await modbusChannel.SetupAsync(modbusChannel.Config).ConfigureAwait(false);
-        await modbusMaster.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+        await modbusChannel.SetupAsync(modbusChannel.Config);
+        await modbusMaster.ConnectAsync(CancellationToken.None);
         var adapter = modbusChannel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;
 
         var task1 = Task.Run(async () =>
@@ -99,23 +105,20 @@ public class ModbusTest
             if (read)
             {
                 var result = await modbusMaster.ReadByteAsync(address).ConfigureAwait(false);
-                Assert.IsTrue(result.IsSuccess, result.ToString());
+                Assert.True(result.IsSuccess, result.ToString());
             }
             else
             {
                 var result = await modbusMaster.WriteJsonNodeAsync(address, JsonUtil.GetJsonNodeFromString(writeData), dataTypeEnum).ConfigureAwait(false);
-                Assert.IsTrue(result.IsSuccess, result.ToString());
+                Assert.True(result.IsSuccess, result.ToString());
             }
         });
-        await Task.Delay(50).ConfigureAwait(false);
+        await Task.Delay(50);
         var task2 = Task.Run(async () =>
         {
             SingleStreamDataHandlingAdapterTest singleStreamDataHandlingAdapterTest = new();
             await singleStreamDataHandlingAdapterTest.SendCallback(data.HexStringToBytes(), (a) => singleStreamDataHandlingAdapterTest.ReceivedAsync(adapter, CancellationToken.None), 1, CancellationToken.None).ConfigureAwait(false);
         });
-        await Task.WhenAll(task1, task2).ConfigureAwait(false);
+        await Task.WhenAll(task1, task2);
     }
-
-
-
 }
