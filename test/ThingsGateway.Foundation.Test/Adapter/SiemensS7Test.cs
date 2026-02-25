@@ -12,10 +12,9 @@ using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
 using ThingsGateway.Foundation.Common.StringExtension;
 using ThingsGateway.Foundation.SiemensS7;
+using TouchSocket.Core;
 using Xunit;
 using Xunit.Abstractions;
-
-using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation.Test;
 

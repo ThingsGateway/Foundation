@@ -9,9 +9,8 @@
 // ------------------------------------------------------------------------------
 
 using ThingsGateway.Foundation;
-using Xunit;
-
 using TouchSocket.Core;
+using Xunit;
 
 internal static class TestAdapterHelper
 {

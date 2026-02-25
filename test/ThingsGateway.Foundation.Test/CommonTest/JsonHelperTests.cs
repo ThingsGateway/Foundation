@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
-using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.Json.Extension;
 using Xunit;
 
 namespace ThingsGateway.Foundation.Common.Tests
