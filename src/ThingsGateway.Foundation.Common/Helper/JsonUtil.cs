@@ -377,17 +377,39 @@ public static class JsonUtil
             case JsonNode node:
                 return node;
 
+            // 原生值类型直接用 JsonValue.Create<T>，避免以 object 形式传入
             case bool b:
+                return JsonValue.Create(b);
             case string s:
+                return JsonValue.Create(s);
+            case byte bt:
+                return JsonValue.Create(bt);
+            case sbyte sbt:
+                return JsonValue.Create(sbt);
+            case short sh:
+                return JsonValue.Create(sh);
+            case ushort ush:
+                return JsonValue.Create(ush);
             case int i:
+                return JsonValue.Create(i);
+            case uint ui:
+                return JsonValue.Create(ui);
             case long l:
-            case double d:
+                return JsonValue.Create(l);
+            case ulong ul:
+                return JsonValue.Create(ul);
             case float f:
+                return JsonValue.Create(f);
+            case double d:
+                return JsonValue.Create(d);
             case decimal m:
+                return JsonValue.Create(m);
             case DateTime dt:
+                return JsonValue.Create(dt);
             case DateTimeOffset dto:
+                return JsonValue.Create(dto);
             case Guid g:
-                return JsonValue.Create(value);
+                return JsonValue.Create(g);
 
             default:
                 return System.Text.Json.JsonSerializer.SerializeToNode(value, SystemTextJsonExtension.SystemTextJsonService.NoneIndentedOptions);

@@ -332,6 +332,8 @@ public static class ThingsGatewayBitConverterExtension
     /// </summary>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="NotSupportedException"></exception>
+    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public static ReadOnlyMemory<byte> GetBytesFromData(this IThingsGatewayBitConverter byteConverter, JsonNode? value, DataTypeEnum dataType)
     {
         ArgumentNullExceptionEx.ThrowIfNull(value);
@@ -388,29 +390,29 @@ public static class ThingsGatewayBitConverterExtension
             switch (dataType)
             {
                 case DataTypeEnum.Boolean:
-                    return byteConverter.GetBytes(value.GetValue<bool>());
+                    return byteConverter.GetBytes(value.Deserialize<bool>());
                 case DataTypeEnum.Byte:
-                    return new byte[1] { value.GetValue<byte>() };
+                    return new byte[1] { value.Deserialize<byte>() };
                 case DataTypeEnum.Int16:
-                    return byteConverter.GetBytes(value.GetValue<short>());
+                    return byteConverter.GetBytes(value.Deserialize<short>());
                 case DataTypeEnum.UInt16:
-                    return byteConverter.GetBytes(value.GetValue<ushort>());
+                    return byteConverter.GetBytes(value.Deserialize<ushort>());
                 case DataTypeEnum.Int32:
-                    return byteConverter.GetBytes(value.GetValue<int>());
+                    return byteConverter.GetBytes(value.Deserialize<int>());
                 case DataTypeEnum.UInt32:
-                    return byteConverter.GetBytes(value.GetValue<uint>());
+                    return byteConverter.GetBytes(value.Deserialize<uint>());
                 case DataTypeEnum.Int64:
-                    return byteConverter.GetBytes(value.GetValue<long>());
+                    return byteConverter.GetBytes(value.Deserialize<long>());
                 case DataTypeEnum.UInt64:
-                    return byteConverter.GetBytes(value.GetValue<ulong>());
+                    return byteConverter.GetBytes(value.Deserialize<ulong>());
                 case DataTypeEnum.Float:
-                    return byteConverter.GetBytes(value.GetValue<float>());
+                    return byteConverter.GetBytes(value.Deserialize<float>());
                 case DataTypeEnum.Double:
-                    return byteConverter.GetBytes(value.GetValue<double>());
+                    return byteConverter.GetBytes(value.Deserialize<double>());
                 case DataTypeEnum.Decimal:
-                    return byteConverter.GetBytes(value.GetValue<decimal>());
+                    return byteConverter.GetBytes(value.Deserialize<decimal>());
                 case DataTypeEnum.String:
-                    return byteConverter.GetBytes(value.GetValue<string>());
+                    return byteConverter.GetBytes(value.Deserialize<string>());
                 default:
 
                     throw new NotSupportedException(
@@ -427,13 +429,13 @@ public static class ThingsGatewayBitConverterExtension
                 var result = new T[arr.Count];
                 for (int i = 0; i < arr.Count; i++)
                 {
-                    result[i] = arr[i]!.GetValue<T>();
+                    result[i] = arr[i]!.Deserialize<T>();
                 }
                 return result;
             }
 
             // 容错：单值转为单元素数组
-            return new T[] { node.GetValue<T>() };
+            return new T[] { node.Deserialize<T>() };
         }
     }
 
