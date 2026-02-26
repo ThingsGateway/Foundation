@@ -236,7 +236,7 @@ public class OpcUaMaster : IAsyncDisposable
                     AttributeId = Attributes.Value,
                     DisplayName = items[i],
                     Filter = OpcUaProperty.DeadBand == 0 ?
-                    new DataChangeFilter() { DeadbandValue = 0, DeadbandType = (int)DeadbandType.None, Trigger = OpcUaProperty.DataChangeTrigger } :
+                    null :
                     new DataChangeFilter() { DeadbandValue = OpcUaProperty.DeadBand, DeadbandType = (int)DeadbandType.Absolute, Trigger = OpcUaProperty.DataChangeTrigger },
                     SamplingInterval = OpcUaProperty?.UpdateRate ?? 1000,
                 };
@@ -262,7 +262,7 @@ public class OpcUaMaster : IAsyncDisposable
                 await m_subscription.CreateAsync(cancellationToken).ConfigureAwait(false);
                 await Task.Delay(100, cancellationToken).ConfigureAwait(false); // allow for subscription to be finished on server?
             }
-            catch (Exception)
+            catch
             {
                 await m_session.RemoveSubscriptionAsync(m_subscription, cancellationToken).ConfigureAwait(false);
                 throw;
@@ -1306,10 +1306,9 @@ public class OpcUaMaster : IAsyncDisposable
     /// <summary>
     /// 从服务器读取节点
     /// </summary>
-    private async Task<List<Node>> ReadNodesAsync(string[] nodeIdStrs, bool cache = true, CancellationToken cancellationToken = default)
+    private async Task<List<Node>> ReadNodesAsync(string[] items, bool cache = true, CancellationToken cancellationToken = default)
     {
-        List<Node> result = new(nodeIdStrs.Length);
-        foreach (var items in nodeIdStrs.ChunkBetter(OpcUaProperty.GroupSize))
+        List<Node> result = new(items.Length);
         {
             uint[] attributes = new uint[] { Attributes.NodeId, Attributes.DataType };
 
@@ -1339,15 +1338,15 @@ public class OpcUaMaster : IAsyncDisposable
             DiagnosticInfoCollection diagnosticInfos = readResponse.DiagnosticInfos;
             var responseHeader = readResponse.ResponseHeader;
 
-            var variableNodes = GetVariableNodes(itemsToRead, values, diagnosticInfos, responseHeader, nodeIdStrs.Length);
+            var variableNodes = GetVariableNodes(itemsToRead, values, diagnosticInfos, responseHeader, items.Length);
 
             for (int i = 0; i < variableNodes.Count; i++)
             {
                 var node = variableNodes[i];
-                if (!_variableDicts.TryGetValue(nodeIdStrs[i], out var value) || value == null)
+                if (!_variableDicts.TryGetValue(items[i], out var value) || value == null)
                 {
                     if (cache)
-                        _variableDicts.AddOrUpdate(nodeIdStrs[i], a => node, (a, b) => node);
+                        _variableDicts.AddOrUpdate(items[i], a => node, (a, b) => node);
                     if (node.DataType != NodeId.Null && (await TypeInfo.GetBuiltInTypeAsync(node.DataType, m_session.SystemContext.TypeTable, cancellationToken).ConfigureAwait(false)) == BuiltInType.ExtensionObject)
                     {
                         await typeSystem.LoadTypeAsync(node.DataType, ct: cancellationToken).ConfigureAwait(false);

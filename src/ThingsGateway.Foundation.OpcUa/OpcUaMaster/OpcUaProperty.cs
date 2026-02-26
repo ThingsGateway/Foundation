@@ -31,15 +31,17 @@ public class OpcUaProperty
     public bool CheckDomain { get; set; }
 
     public DataChangeTrigger DataChangeTrigger { get; set; } = DataChangeTrigger.StatusValue;
+
     /// <summary>
     /// 死区
     /// </summary>
     public double DeadBand { get; set; } = 0;
 
     /// <summary>
-    /// 分组大小
+    /// 更新间隔
     /// </summary>
-    public int GroupSize { get; set; } = 500;
+    public int UpdateRate { get; set; } = 1000;
+
 
     public int KeepAliveInterval { get; set; } = 3000;
 
@@ -54,19 +56,15 @@ public class OpcUaProperty
     public string OpcUrl { get; set; } = "opc.tcp://127.0.0.1:49320";
 
     /// <summary>
+    /// 登录账号
+    /// </summary>
+    public string UserName { get; set; }
+
+    /// <summary>
     /// 登录密码
     /// </summary>
     public string Password { get; set; }
 
-    /// <summary>
-    /// 更新间隔
-    /// </summary>
-    public int UpdateRate { get; set; } = 1000;
-
-    /// <summary>
-    /// 登录账号
-    /// </summary>
-    public string UserName { get; set; }
 
     /// <summary>
     /// 安全策略

@@ -29,6 +29,14 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     /// <inheritdoc/>
     public void SetDataHandlingAdapterLogger(ILog? log)
     {
+        if(DataHandlingAdapter==null)
+        {
+            var adapter = this.ListenOption.Adapter?.Invoke();
+            if (adapter != null)
+            {
+                this.SetAdapter(adapter);
+            }
+        }
         if (DataHandlingAdapter is IDeviceDataHandleAdapter handleAdapter && log != null)
         {
             handleAdapter.Logger = log;
