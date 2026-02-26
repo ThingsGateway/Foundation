@@ -61,7 +61,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
 
     public override bool SupportMultipleDevice()
     {
-        return Channel?.ChannelType == ChannelTypeEnum.TcpService;
+        return Channel?.ChannelType == ChannelTypeEnum.TcpService && MulStation == false;
     }
 
     #region 属性
@@ -106,6 +106,16 @@ public class ModbusSlave : DeviceBase, IModbusAddress
     }
     protected override void SetChannel()
     {
+    }
+
+    /// <summary>
+    /// 通道即将连接成功时，会设置适配器，如果通道存在其他设备并且不希望其他设备处理时，返回true
+    /// </summary>
+    protected override ValueTask<bool> ChannelStarting(IClientChannel channel, bool last)
+    {
+        //if (Logger != null)
+        //    channel.SetDataHandlingAdapterLogger(Logger);
+        return EasyValueTask.FromResult(true);
     }
     /// <inheritdoc/>
     public override DataHandlingAdapter GetDataAdapter()
@@ -461,6 +471,9 @@ public class ModbusSlave : DeviceBase, IModbusAddress
 
             if (!@this.MulStation && modbusRequest.Station != @this.Station)
                 return;
+
+            if (@this.Logger != null)
+                client.SetDataHandlingAdapterLogger(@this.Logger);
 
             var function = NormalizeFunctionCode(modbusRequest.FunctionCode);
 
