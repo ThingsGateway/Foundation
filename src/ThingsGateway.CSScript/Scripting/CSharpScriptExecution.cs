@@ -33,8 +33,61 @@ namespace Westwind.Scripting
     {
         static CSharpScriptExecution()
         {
+
+
             DeleteBackup();
             TimerX = new TimerX(Do, null, 120_000, 120_000) { Async = false };
+
+            string version;
+            version = ((AssemblyInformationalVersionAttribute?)Assembly.GetEntryAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false).FirstOrDefault())?.InformationalVersion;
+            version ??= Assembly.GetEntryAssembly().GetName().Version?.ToString();
+            if (!string.IsNullOrEmpty(version))
+            {
+                var index = version.IndexOf('+');
+                if (index > 0)
+                {
+                    version = version[..index];
+                }
+            }
+
+            var path = Path.Combine(AppContext.BaseDirectory, "CSSCRIPT", "version.txt");
+            bool deletable = false;
+            try
+            {
+                if (File.Exists(path))
+                {
+                    var data = File.ReadAllText(path, Encoding.UTF8);
+                    if (data != null && data != version)
+                    {
+                        deletable = true;
+                    }
+                }
+                else
+                {
+                    deletable = true;
+                }
+
+            }
+            catch
+            {
+                deletable = true;
+            }
+            try
+            {
+                if (deletable)
+                {
+                    var dir = Path.Combine(AppContext.BaseDirectory, "CSSCRIPT");
+                    var di = dir.AsDirectory();
+                    foreach (var item in di.GetAllFiles())
+                    {
+                        item.Delete();
+                    }
+                }
+            }
+            catch
+            {
+            }
+            File.WriteAllText(path, version, Encoding.UTF8);
         }
 
         private static void Do(object? state)

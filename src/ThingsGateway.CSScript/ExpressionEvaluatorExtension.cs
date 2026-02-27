@@ -8,6 +8,7 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
+using System.Runtime.ExceptionServices;
 using System.Runtime.Loader;
 using System.Text;
 using ThingsGateway.Foundation.Common;
@@ -23,7 +24,7 @@ namespace ThingsGateway.Gateway.Application.Extensions;
 public abstract class ReadWriteExpressions
 {
     public WeakReference<TouchSocket.Core.ILog> Log { get; set; }
-    public TouchSocket.Core.ILog? Logger => Log.TryGetTarget(out var log) ? log : null;
+    public TouchSocket.Core.ILog? Logger => Log?.TryGetTarget(out var log) == true ? log : null;
 
     /// <summary>
     /// 获取新值
@@ -84,7 +85,7 @@ public static class ExpressionEvaluatorExtension
         }
     }
 
-    private static MemoryCache Instance { get; set; } = new MemoryCache();
+    private static MemoryCache Instance { get; } = new MemoryCache();
     static TimeSpan time = TimeSpan.FromHours(1);
 
     /// <summary>
@@ -149,8 +150,6 @@ $@"
             }}
         }}
     ";
-
-
                     var readWriteExpressions = script.CompileClassWithFile(code) as ReadWriteExpressions;
                     if (readWriteExpressions == null)
                     {
@@ -181,7 +180,8 @@ $@"
         if (runScript.Obj == null)
         {
             var exfield = $"Exception-{key}";
-            throw (Instance.Get<Exception>(exfield) ?? new Exception("compilation error"));
+           var ex= ((Instance.Get<Exception>(exfield)) ?? new Exception("compilation error"));
+            ExceptionDispatchInfo.Capture(ex).Throw();
         }
         return (ReadWriteExpressions)runScript.Obj;
     }
