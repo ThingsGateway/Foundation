@@ -169,7 +169,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
     /// <inheritdoc/>
     protected override Task OnTcpClosing(ClosingEventArgs e)
     {
-        Logger?.Trace($"{ToString()}  Closing{(e.Message.IsNullOrEmpty() ? string.Empty : $" -{e.Message}")}");
+        Logger?.Debug($"{ToString()}  Closing{(e.Message.IsNullOrEmpty() ? string.Empty : $" -{e.Message}")}");
 
         return base.OnTcpClosing(e);
     }
@@ -177,7 +177,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
     /// <inheritdoc/>
     protected override Task OnTcpConnecting(ConnectingEventArgs e)
     {
-        Logger?.Trace($"{ToString()}  Connecting{(e.Message.IsNullOrEmpty() ? string.Empty : $"-{e.Message}")}");
+        Logger?.Debug($"{ToString()}  Connecting{(e.Message.IsNullOrEmpty() ? string.Empty : $"-{e.Message}")}");
         return base.OnTcpConnecting(e);
     }
 

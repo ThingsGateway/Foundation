@@ -94,8 +94,8 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
         var byteBlock = new PooledBytesReader();
         try
         {
-            if (Logger?.LogLevel <= LogLevel.Trace)
-                Logger?.Trace($"{remoteEndPoint}- Receive:{(IsHexLog ? memory.Span.ToHexString(' ') : memory.Span.ToString(Encoding.UTF8))}");
+            if (Logger?.LogLevel <= LogLevel.Debug)
+                Logger?.Debug($"{remoteEndPoint}- Receive:{(IsHexLog ? memory.Span.ToHexString(' ') : memory.Span.ToString(Encoding.UTF8))}");
 
             TRequest request;
             if (IsSingleThread)
@@ -139,14 +139,14 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
                 var result = request.CheckBody(ref byteBlock);
                 if (result == FilterResult.Cache)
                 {
-                    if (Logger?.LogLevel <= LogLevel.Trace)
-                        Logger?.Trace($"{ToString()}-Received incomplete, cached message, need length:{request.HeaderLength + request.BodyLength} ,current length:{byteBlock.BytesRead + byteBlock.BytesRemaining}  {request?.ErrorMessage}");
+                    if (Logger?.LogLevel <= LogLevel.Debug)
+                        Logger?.Debug($"{ToString()}-Received incomplete, cached message, need length:{request.HeaderLength + request.BodyLength} ,current length:{byteBlock.BytesRead + byteBlock.BytesRemaining}  {request?.ErrorMessage}");
                     request!.OperCode = -1;
                 }
                 else if (result == FilterResult.GoOn)
                 {
-                    if (Logger?.LogLevel <= LogLevel.Trace)
-                        Logger?.Trace($"{ToString()}-{request?.ToString()}");
+                    if (Logger?.LogLevel <= LogLevel.Debug)
+                        Logger?.Debug($"{ToString()}-{request?.ToString()}");
                     request!.OperCode = -1;
                 }
                 else if (result == FilterResult.Success)
@@ -190,8 +190,8 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (Logger?.LogLevel <= LogLevel.Trace)
-            Logger?.Trace($"{ToString()}- Send:{(IsHexLog ? memory.Span.ToHexString(' ') : (memory.Span.ToString(Encoding.UTF8)))}");
+        if (Logger?.LogLevel <= LogLevel.Debug)
+            Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? memory.Span.ToHexString(' ') : (memory.Span.ToString(Encoding.UTF8)))}");
         //发送
         return GoSendAsync(endPoint, memory, cancellationToken);
     }
@@ -209,8 +209,8 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
         try
         {
             sendMessage.Build(ref byteBlock);
-            if (Logger?.LogLevel <= LogLevel.Trace)
-                Logger?.Trace($"{endPoint}- Send:{(IsHexLog ? byteBlock.Span.ToHexString(' ') : (byteBlock.Span.ToString(Encoding.UTF8)))}");
+            if (Logger?.LogLevel <= LogLevel.Debug)
+                Logger?.Debug($"{endPoint}- Send:{(IsHexLog ? byteBlock.Span.ToHexString(' ') : (byteBlock.Span.ToString(Encoding.UTF8)))}");
 
             if (IsSingleThread)
             {

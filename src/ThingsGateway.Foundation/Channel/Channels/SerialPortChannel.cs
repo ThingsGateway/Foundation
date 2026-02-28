@@ -185,14 +185,14 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
     /// <inheritdoc/>
     protected override Task OnSerialClosing(ClosingEventArgs e)
     {
-        Logger?.Trace($"{ToString()} Closing{(e.Message.IsNullOrEmpty() ? string.Empty : $" -{e.Message}")}");
+        Logger?.Debug($"{ToString()} Closing{(e.Message.IsNullOrEmpty() ? string.Empty : $" -{e.Message}")}");
         return base.OnSerialClosing(e);
     }
 
     /// <inheritdoc/>
     protected override Task OnSerialConnecting(ConnectingEventArgs e)
     {
-        Logger?.Trace($"{ToString()}  Connecting{(e.Message.IsNullOrEmpty() ? string.Empty : $" -{e.Message}")}");
+        Logger?.Debug($"{ToString()}  Connecting{(e.Message.IsNullOrEmpty() ? string.Empty : $" -{e.Message}")}");
         return base.OnSerialConnecting(e);
     }
     protected override Task OnSerialConnected(ConnectedEventArgs e)

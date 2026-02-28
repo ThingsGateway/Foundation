@@ -74,8 +74,8 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
     /// <inheritdoc />
     protected override FilterResult Filter<TReader>(ref TReader byteBlock, bool beCached, ref TRequest request)
     {
-        if (Logger?.LogLevel <= LogLevel.Trace)
-            Logger?.Trace($"{ToString()}- Receive:{(IsHexLog ? byteBlock.ToHexString(byteBlock.BytesRead, ' ') : byteBlock.ToString(byteBlock.BytesRead))}");
+        if (Logger?.LogLevel <= LogLevel.Debug)
+            Logger?.Debug($"{ToString()}- Receive:{(IsHexLog ? byteBlock.ToHexString(byteBlock.BytesRead, ' ') : byteBlock.ToString(byteBlock.BytesRead))}");
 
         try
         {
@@ -122,16 +122,16 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
                 if (result == FilterResult.Cache)
                 {
                     byteBlock.BytesRead = pos;
-                    if (Logger?.LogLevel <= LogLevel.Trace)
-                        Logger?.Trace($"{ToString()}-Received incomplete, cached message, need length:{request.HeaderLength + request.BodyLength} ,current length:{byteBlock.BytesRead + byteBlock.BytesRemaining}  {request?.ErrorMessage}");
+                    if (Logger?.LogLevel <= LogLevel.Debug)
+                        Logger?.Debug($"{ToString()}-Received incomplete, cached message, need length:{request.HeaderLength + request.BodyLength} ,current length:{byteBlock.BytesRead + byteBlock.BytesRemaining}  {request?.ErrorMessage}");
                     request!.OperCode = -1;
                 }
                 else if (result == FilterResult.GoOn)
                 {
                     var addLen = request.HeaderLength + request.BodyLength;
                     byteBlock.BytesRead = pos + (addLen > 0 ? addLen : 1);
-                    if (Logger?.LogLevel <= LogLevel.Trace)
-                        Logger?.Trace($"{ToString()}-{request?.ToString()}");
+                    if (Logger?.LogLevel <= LogLevel.Debug)
+                        Logger?.Debug($"{ToString()}-{request?.ToString()}");
                     request!.OperCode = -1;
                 }
                 else if (result == FilterResult.Success)
@@ -170,7 +170,7 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
     public override void SendInput<TWriter>(ref TWriter writer, in ReadOnlyMemory<byte> memory)
     {
         if (Logger?.LogLevel <= LogLevel.Trace)
-            Logger?.Trace($"{ToString()}- Send:{(IsHexLog ? memory.Span.ToHexString(' ') : (memory.Span.ToString(Encoding.UTF8)))}");
+            Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? memory.Span.ToHexString(' ') : (memory.Span.ToString(Encoding.UTF8)))}");
 
         writer.Write(memory.Span);
     }
@@ -190,7 +190,7 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
         sendMessage.Build(ref writer);
         if (Logger?.LogLevel <= LogLevel.Trace)
         {
-            Logger?.Trace($"{ToString()}- Send:{(IsHexLog ? span.Slice(0, (int)writer.WrittenCount).ToHexString(' ') : (span.Slice(0, (int)writer.WrittenCount).ToString(Encoding.UTF8)))}");
+            Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? span.Slice(0, (int)writer.WrittenCount).ToHexString(' ') : (span.Slice(0, (int)writer.WrittenCount).ToString(Encoding.UTF8)))}");
         }
         //非并发主从协议
         if (IsSingleThread)
