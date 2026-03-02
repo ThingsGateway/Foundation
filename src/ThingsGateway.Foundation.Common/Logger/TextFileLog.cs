@@ -45,7 +45,7 @@ public class TextFileLog : Logger, IDisposable
         Backups = set.LogFileBackups;
 
         _Timer = new TimerX(DoWriteAndClose, null, 0_000, 60_000) { Async = true };
-        _WriteTimer = new TimerX(DoWrite, null, 0_000, 1000, nameof(TextFileLog)) { Async = true };
+        _WriteTimer = new TimerX(DoWrite, null, 0_000, 1000) { Async = true };
     }
 
     private static readonly NonBlockingDictionary<String, TextFileLog> cache = new(StringComparer.OrdinalIgnoreCase);

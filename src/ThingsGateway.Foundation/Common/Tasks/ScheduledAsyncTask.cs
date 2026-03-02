@@ -49,7 +49,7 @@ public class ScheduledAsyncTask : DisposeBase, IScheduledTask, IScheduledIntInte
     {
         _timer?.Dispose();
         if (!Check())
-            _timer = new TimerX(DoAsync, _state, IntervalMS, IntervalMS, $"{nameof(ScheduledAsyncTask)}{(Interlocked.Increment(ref NextId) / 100)}") { Async = true, Reentrant = false };
+            _timer = new TimerX(DoAsync, _state, IntervalMS, IntervalMS, $"{nameof(IScheduledTask)}{(Interlocked.Increment(ref NextId) / 1024)}") { Async = true, Reentrant = false };
     }
 
     private ValueTask DoAsync(object? state)

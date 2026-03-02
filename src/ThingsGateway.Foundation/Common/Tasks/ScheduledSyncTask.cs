@@ -38,7 +38,7 @@ public class ScheduledSyncTask : DisposeBase, IScheduledTask, IScheduledIntInter
     {
         _timer?.Dispose();
         if (!Check())
-            _timer = new TimerX(TimerCallback, _state, IntervalMS, IntervalMS, $"{nameof(ScheduledSyncTask)}{(Interlocked.Increment(ref NextId) / 100)}") { Async = true, Reentrant = false };
+            _timer = new TimerX(TimerCallback, _state, IntervalMS, IntervalMS, $"{nameof(IScheduledTask)}{(Interlocked.Increment(ref NextId) / 1024)}") { Async = true, Reentrant = false };
     }
 
     private void TimerCallback(object? state)
