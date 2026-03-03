@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Text;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Text;
 using ThingsGateway.Foundation.Common;
@@ -1204,7 +1205,7 @@ namespace Westwind.Scripting
                         XTrace.WriteLine("AddReferences：" + Environment.NewLine + data.ToJsonNetString());
                     foreach (var item in data)
                     {
-                        AddAssemblies(GetFilePath(item));
+                        AddAssembly(GetOrLoadAssemblyByDllName(item));
                     }
                     codeStream.Dispose();
                     return CompileAssembly(source, noLoad, false);
@@ -1301,8 +1302,8 @@ namespace Westwind.Scripting
 
                         foreach (var item in data)
                         {
-                            var file = GetFilePath(item);
-                            AddAssemblies(file);
+                            var file = GetOrLoadAssemblyByDllName (item);
+                            AddAssembly(file);
                         }
                         codeStream.Dispose();
                         return CompileAssembly(codeInputStream, noLoad, false);
@@ -1547,17 +1548,6 @@ namespace Westwind.Scripting
         /// </summary>
         public void AddDefaultReferencesAndNamespaces()
         {
-
-
-#if NETFRAMEWORK
-            AddNetFrameworkDefaultReferences();
-            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
-#endif
-#if NET6_0_OR_GREATER
-            AddNetCoreDefaultReferences();
-            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
-#endif
-
             AddNamespaces(DefaultNamespaces);
         }
 
@@ -1597,6 +1587,34 @@ namespace Westwind.Scripting
         /// </summary>
         public static ReferenceList AllReferences { get; private set; }
 
+        public static Assembly? GetLoadedAssemblyByDllName(string dllName)
+        {
+            if (string.IsNullOrEmpty(dllName))
+                return null;
+
+            var name = Path.GetFileNameWithoutExtension(dllName);
+
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(a =>
+                    string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase));
+        }
+        public static Assembly? GetOrLoadAssemblyByDllName(string dllName)
+        {
+            var asm = GetLoadedAssemblyByDllName(dllName);
+            if (asm != null)
+                return asm;
+
+            var name = Path.GetFileNameWithoutExtension(dllName);
+
+            try
+            {
+                return Assembly.Load(new AssemblyName(name));
+            }
+            catch
+            {
+                return null;
+            }
+        }
         /// <summary>
         /// Explicitly adds all referenced assemblies of the currently executing
         /// process. Also adds default namespaces.
@@ -1629,25 +1647,22 @@ namespace Westwind.Scripting
                     }
                     else
                     {
-                        HashSet<string> locations = new();
 
-                        var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !string.IsNullOrEmpty(assembly.Location) && !assembly.Location.ContainsIgnoreCase("AspNetCore")).Select(a => a.Location);
-                        foreach (var location in assemblies)
+                        HashSet<Assembly> addDll = new();
+                        var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => !assembly.IsDynamic && !assembly.FullName.StartsWithIgnoreCase("microsoft.extensions") && !assembly.FullName.StartsWithIgnoreCase("microsoft.aspnetcore") && !assembly.FullName.StartsWithIgnoreCase("visual studio"));
+
+                        foreach (var assembly in assemblies)
                         {
-                            if (string.IsNullOrEmpty(location)) continue;
-                            locations.Add(GetFilePath(location));
-
+                            addDll.Add(assembly);
                         }
 
-                        locations.Add(GetFilePath("Microsoft.CSharp.dll")); // dynamic
+                        addDll.Add(GetOrLoadAssemblyByDllName("Microsoft.CSharp.dll")); // dynamic
 
-                        locations.Add(GetFilePath("System.Linq.Expressions.dll"));
-                        locations.Add(GetFilePath("System.Text.RegularExpressions.dll"));
-                        locations.Add(GetFilePath("Newtonsoft.Json.dll"));
+                        addDll.Add(GetOrLoadAssemblyByDllName("System.Linq.Expressions.dll"));
+                        addDll.Add(GetOrLoadAssemblyByDllName("System.Text.RegularExpressions.dll"));
+                        addDll.Add(GetOrLoadAssemblyByDllName("Newtonsoft.Json.dll"));
 
-                        var addDll = locations.Where(a => !string.IsNullOrEmpty(a) && !a.ContainsIgnoreCase("AspNetCore") && !a.ContainsIgnoreCase("visual studio")).Order().ToArray();
-
-                        XTrace.WriteLine("AddReferences：" + Environment.NewLine + addDll.ToJsonNetString());
+                        XTrace.WriteLine("AddReferences：" + Environment.NewLine + addDll.Select(a => a.FullName).Order().ToJsonNetString());
 
                         AddAssemblies(addDll);
 
@@ -1659,47 +1674,7 @@ namespace Westwind.Scripting
             AddNamespaces(DefaultNamespaces);
         }
 
-        public void AddNetFrameworkDefaultReferences()
-        {
-            AddAssembly("mscorlib.dll");
-            AddAssembly("System.dll");
-            AddAssembly("System.Core.dll");
-            AddAssembly("Microsoft.CSharp.dll");
-            AddAssembly("System.Net.Http.dll");
 
-            // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList)); // Scripting Library
-        }
-
-        public void AddNetCoreDefaultReferences()
-        {
-            var rtPath = Path.GetDirectoryName(typeof(object).Assembly.Location) +
-                               Path.DirectorySeparatorChar;
-
-            AddAssemblies(
-                rtPath + "System.Private.CoreLib.dll",
-                rtPath + "System.Runtime.dll",
-                rtPath + "System.Console.dll",
-
-                rtPath + "System.Text.RegularExpressions.dll", // IMPORTANT!
-                rtPath + "System.Linq.dll",
-                rtPath + "System.Linq.Expressions.dll", // IMPORTANT!
-
-                rtPath + "System.IO.dll",
-                rtPath + "System.Net.Primitives.dll",
-                rtPath + "System.Net.Http.dll",
-                rtPath + "System.Private.Uri.dll",
-                rtPath + "System.Reflection.dll",
-                rtPath + "System.ComponentModel.Primitives.dll",
-                rtPath + "System.Globalization.dll",
-                rtPath + "System.Collections.Concurrent.dll",
-                rtPath + "System.Collections.NonGeneric.dll",
-                rtPath + "Microsoft.CSharp.dll"
-            );
-
-            // this library and CodeAnalysis libs
-            AddAssembly(typeof(CSharpScriptExecution)); // this scripting Library
-        }
         private string GetFilePath(string assemblyDll)
         {
             if (string.IsNullOrEmpty(assemblyDll)) return null;
@@ -1709,8 +1684,11 @@ namespace Westwind.Scripting
             if (!File.Exists(file))
             {
                 // check framework or dedicated runtime app folder
-                var path = Path.GetDirectoryName(typeof(object).Assembly.Location);
-                file = Path.Combine(path, assemblyDll);
+                var path = RuntimeEnvironment.GetRuntimeDirectory();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    file = Path.Combine(path, assemblyDll);
+                }
                 if (!File.Exists(file))
                 {
                     file = Path.Combine(AppContext.BaseDirectory, assemblyDll);
@@ -1739,22 +1717,9 @@ namespace Westwind.Scripting
         /// <param name="assemblyDll">assembly DLL name. Path is required if not in startup or .NET assembly folder</param>
         public bool AddAssembly(string assemblyDll)
         {
-            var file = GetFilePath(assemblyDll);
-            if (string.IsNullOrEmpty(file)) return false;
-
-            if (References.Any(r => r.FilePath == file)) return true;
-
-            try
-            {
-                var reference = MetadataReference.CreateFromFile(file);
-                References.Add(reference);
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
+            var file = GetOrLoadAssemblyByDllName(assemblyDll);
+            if (file==null) return false;
+            return AddAssembly(file);
         }
 
 
@@ -1810,7 +1775,47 @@ namespace Westwind.Scripting
 
             return true;
         }
+        /// <summary>
+        /// Adds an assembly reference
+        /// </summary>
+        public bool AddAssembly(Assembly assembly)
+        {
+            try
+            {
+                // *** TODO: need a better way to identify for in memory dlls that don't have location
+                if (References.Any(r => r.FilePath == assembly.Location))
+                    return true;
 
+                if (string.IsNullOrEmpty(assembly.Location))
+                {
+#if NET6_0_OR_GREATER
+                    unsafe
+                    {
+                        bool result = assembly.TryGetRawMetadata(out byte* metaData, out int size);
+#pragma warning disable CA2000 // 丢失范围之前释放对象
+                        var moduleMetaData = ModuleMetadata.CreateFromMetadata((nint)metaData, size);
+                        var assemblyMetaData = AssemblyMetadata.Create(moduleMetaData);
+#pragma warning restore CA2000 // 丢失范围之前释放对象
+                        var reference = assemblyMetaData.GetReference();
+                        References.Add(reference);
+                    }
+#else
+            return false;
+#endif
+                }
+                else
+                {
+                    var systemReference = MetadataReference.CreateFromFile(assembly.Location);
+                    References.Add(systemReference);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
         /// <summary>
         /// Add several reference assemblies in batch.
         ///
@@ -1829,7 +1834,13 @@ namespace Westwind.Scripting
                 References.Add(reference);
             }
         }
-
+        public void AddAssemblies(IEnumerable<Assembly> references)
+        {
+            foreach (var reference in references)
+            {
+                AddAssembly(reference);
+            }
+        }
 
         /// <summary>
         /// Adds a list of assemblies to the References
@@ -2095,14 +2106,6 @@ namespace Westwind.Scripting
             return (code).GetHashCode();
         }
 
-        /// <summary>
-        /// Returns path of the runtime or in self contained install local folder
-        /// </summary>
-        /// <returns></returns>
-        private string GetRuntimePath()
-        {
-            return Path.GetDirectoryName(typeof(object).Assembly.Location);
-        }
 
         private Assembly LoadAssembly(byte[] rawAssembly)
         {

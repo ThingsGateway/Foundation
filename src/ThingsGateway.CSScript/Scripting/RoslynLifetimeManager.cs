@@ -56,7 +56,7 @@ namespace Westwind.Scripting
         public static void ShutdownRoslyn(string appStartupPath = null)
         {
             if (string.IsNullOrEmpty(appStartupPath))
-                appStartupPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                appStartupPath = AppContext.BaseDirectory;
 
             var processes = Process.GetProcessesByName("VBCSCompiler");
             foreach (var process in processes)
