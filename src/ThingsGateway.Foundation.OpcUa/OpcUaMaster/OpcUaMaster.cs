@@ -386,6 +386,7 @@ public class OpcUaMaster : IAsyncDisposable
         await DisconnectAsync().ConfigureAwait(false);
         _variableDicts?.Clear();
         _subscriptionDicts?.Clear();
+        DefaultTelemetryContext?.Dispose();
         waitLock?.Dispose();
     }
     /// <summary>

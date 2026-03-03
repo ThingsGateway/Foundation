@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ThingsGateway.Plugin.OpcUa;
 
-public class OpcUaTelemetryContext : TelemetryContextBase
+public class OpcUaTelemetryContext : TelemetryContextBase, IDisposable
 {
     public OpcUaTelemetryContext(Action<byte, object, string, Exception> log)
 #pragma warning disable CA2000 // 丢失范围之前释放对象
@@ -28,26 +28,31 @@ public class OpcUaTelemetryContext : TelemetryContextBase
 #pragma warning restore CA2000 // 丢失范围之前释放对象
     {
     }
+
+    public void Dispose()
+    {
+        base.LoggerFactory?.Dispose();
+    }
 }
 
 public sealed class OpcUaLoggerProvider : ILoggerProvider
 {
-    private Action<byte, object, string, Exception> Log { get; }
+    private Action<byte, object, string, Exception> _log { get; set; }
     public OpcUaLoggerProvider(Action<byte, object, string, Exception> log)
     {
-        Log = log;
+        _log = log;
     }
     public ILogger CreateLogger(string categoryName)
     {
-        return new OpcUaLogger(Log);
+        return new OpcUaLogger(_log);
     }
 
     public void Dispose()
     {
-
+        _log = null;
     }
 }
-internal sealed class OpcUaLogger : ILogger
+internal sealed class OpcUaLogger : ILogger, IDisposable
 {
     private Action<byte, object, string, Exception> _log;
 
@@ -65,6 +70,11 @@ internal sealed class OpcUaLogger : ILogger
     public IDisposable BeginScope<TState>(TState state) where TState : notnull
     {
         return default;
+    }
+
+    public void Dispose()
+    {
+        _log = null;
     }
 
     /// <inheritdoc/>
@@ -87,7 +97,7 @@ internal sealed class OpcUaLogger : ILogger
             var message = formatter(state, exception);
             //if (logLevel > Microsoft.Extensions.Logging.LogLevel.Warning)
             {
-                _log((byte)logLevel, state, message, exception);
+                _log?.Invoke((byte)logLevel, state, message, exception);
             }
         }
     }
