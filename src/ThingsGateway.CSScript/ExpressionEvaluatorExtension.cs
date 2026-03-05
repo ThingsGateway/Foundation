@@ -180,7 +180,7 @@ $@"
         if (runScript.Obj == null)
         {
             var exfield = $"Exception-{key}";
-           var ex= ((Instance.Get<Exception>(exfield)) ?? new Exception("compilation error"));
+            var ex = ((Instance.Get<Exception>(exfield)) ?? new Exception("compilation error"));
             ExceptionDispatchInfo.Capture(ex).Throw();
         }
         return (ReadWriteExpressions)runScript.Obj;

@@ -6,7 +6,7 @@ public static class ScheduledTaskHelper
     {
         if (int.TryParse(interval, out int intervalV))
         {
-            var intervalMilliseconds = intervalV < 10 ? 10 : intervalV;
+            var intervalMilliseconds = intervalV < 1 ? 1 : intervalV;
             return new ScheduledAsyncTask(intervalMilliseconds, func, state, log, cancellationToken);
         }
         else
@@ -18,7 +18,7 @@ public static class ScheduledTaskHelper
     {
         if (int.TryParse(interval, out int intervalV))
         {
-            var intervalMilliseconds = intervalV < 10 ? 10 : intervalV;
+            var intervalMilliseconds = intervalV < 1 ? 1 : intervalV;
             return new ScheduledAsyncTask(intervalMilliseconds, func, state, log, cancellationToken);
         }
         else
@@ -30,7 +30,7 @@ public static class ScheduledTaskHelper
     {
         if (int.TryParse(interval, out int intervalV))
         {
-            var intervalMilliseconds = intervalV < 10 ? 10 : intervalV;
+            var intervalMilliseconds = intervalV < 1 ? 1 : intervalV;
             return new ScheduledSyncTask(intervalMilliseconds, action, state, log, cancellationToken);
         }
         else

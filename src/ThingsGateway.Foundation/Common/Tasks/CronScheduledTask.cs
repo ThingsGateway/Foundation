@@ -6,7 +6,7 @@ namespace ThingsGateway.Foundation;
 
 public class CronScheduledTask : DisposeBase, IScheduledTask
 {
-    private int next = 10;
+
     private string _interval;
     private readonly Func<object?, CancellationToken, Task>? _taskFunc;
     private readonly Func<object?, CancellationToken, ValueTask>? _valueTaskFunc;
@@ -15,8 +15,6 @@ public class CronScheduledTask : DisposeBase, IScheduledTask
     private TimerX? _timer;
     private object? _state;
     private ILog LogMessage;
-    private volatile int _isRunning;
-    private volatile int _pendingTriggers;
     public Int32 Period => _timer?.Period ?? 0;
     public bool Enable => _timer?.Disposed != false ? false : true;
 
@@ -56,15 +54,14 @@ public class CronScheduledTask : DisposeBase, IScheduledTask
         }
         return false;
     }
-    private static volatile int NextId;
     public void Start()
     {
         _timer?.Dispose();
         if (Check()) return;
         if (_taskAction != null)
-            _timer = new TimerX(TimerCallback, _state, _interval, $"{nameof(IScheduledTask)}{(Interlocked.Increment(ref NextId) / 1024)}") { Async = true, Reentrant = false };
+            _timer = new TimerX(TimerCallback, _state, _interval, $"{nameof(IScheduledTask)}") { Async = true, Reentrant = false };
         else if (_taskFunc != null || _valueTaskFunc != null)
-            _timer = new TimerX(TimerCallbackAsync, _state, _interval, $"{nameof(IScheduledTask)}{(Interlocked.Increment(ref NextId) / 1024)}") { Async = true, Reentrant = false };
+            _timer = new TimerX(TimerCallbackAsync, _state, _interval, $"{nameof(IScheduledTask)}") { Async = true, Reentrant = false };
     }
 
     private ValueTask TimerCallbackAsync(object? state)
@@ -78,14 +75,6 @@ public class CronScheduledTask : DisposeBase, IScheduledTask
                 @this.Dispose();
                 return;
             }
-
-            Interlocked.Increment(ref @this._pendingTriggers);
-
-            if (Interlocked.Exchange(ref @this._isRunning, 1) == 1)
-                return;
-
-            // 减少一个触发次数
-            Interlocked.Decrement(ref @this._pendingTriggers);
 
             try
             {
@@ -101,19 +90,7 @@ public class CronScheduledTask : DisposeBase, IScheduledTask
             {
                 @this.LogMessage?.LogWarning(ex);
             }
-            finally
-            {
-                Interlocked.Exchange(ref @this._isRunning, 0);
-            }
 
-            if (Interlocked.Exchange(ref @this._pendingTriggers, 0) >= 1)
-            {
-                if (!@this.Check())
-                {
-                    int nextValue = @this.next;
-                    @this.SetNext(nextValue);
-                }
-            }
         }
     }
 
@@ -126,14 +103,6 @@ public class CronScheduledTask : DisposeBase, IScheduledTask
             return;
         }
 
-        Interlocked.Increment(ref _pendingTriggers);
-
-        if (Interlocked.Exchange(ref _isRunning, 1) == 1)
-            return;
-
-        // 减少一个触发次数
-        Interlocked.Decrement(ref _pendingTriggers);
-
         try
         {
             _taskAction(state, _token);
@@ -145,19 +114,7 @@ public class CronScheduledTask : DisposeBase, IScheduledTask
         {
             LogMessage?.LogWarning(ex);
         }
-        finally
-        {
-            Interlocked.Exchange(ref _isRunning, 0);
-        }
 
-        if (Interlocked.Exchange(ref _pendingTriggers, 0) >= 1)
-        {
-            if (!Check())
-            {
-                int nextValue = next;
-                SetNext(nextValue);
-            }
-        }
     }
 
     public void SetNext(int interval)

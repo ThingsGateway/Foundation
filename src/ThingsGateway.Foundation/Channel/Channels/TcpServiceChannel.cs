@@ -276,7 +276,7 @@ public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChann
     {
         client.ChannelOptions = ChannelOptions;
 
-        client.WaitLock = new WaitLock(nameof(TcpServiceChannelBase<TClient>), ChannelOptions.WaitLock.MaxCount);
+        client.WaitLock = new AsyncConcurrencyLimiter(ChannelOptions.WaitLock.MaxCount);
 
         base.ClientInitialized(client);
     }

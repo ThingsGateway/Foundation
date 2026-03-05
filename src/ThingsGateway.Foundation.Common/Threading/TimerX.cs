@@ -88,7 +88,7 @@ public class TimerX : ITimer, ITimerx
     /// <summary>获取/设置 调用次数</summary>
     public Int32 Timers { get; internal set; }
 
-    /// <summary>获取/设置 间隔周期。毫秒，设为0或-1则只调用一次</summary>
+    /// <summary>获取/设置 间隔周期。毫秒，设为-1则只调用一次</summary>
     public Int32 Period { get; set; }
 
     /// <summary>获取/设置 异步执行任务。默认false</summary>
@@ -441,6 +441,11 @@ public class TimerX : ITimer, ITimerx
         var tick = Runtime.TickCount64;
         _baseTime = Scheduler.GetNow().AddMilliseconds(-tick);
         _nextTick = tick + ms;
+
+        //if (this.Scheduler.Name.StartsWith("IScheduledTask") && Period == 1 && IsAsyncTask)
+        //{
+        //    XTrace.WriteLine("定时器设置 _nextTick {0}", _nextTick);
+        //}
     }
 
     /// <summary>设置下一次运行时间</summary>
@@ -457,10 +462,10 @@ public class TimerX : ITimer, ITimerx
 
     /// <summary>设置下一次执行时间，并获取间隔</summary>
     /// <returns>返回下一次执行的间隔时间，不能小于等于0，否则定时器被销毁</returns>
-    internal Int32 SetAndGetNextTime()
+    internal Int32 SetAndGetNextTime(int ms)
     {
         // 如果已设置
-        var period = Period;
+        var period = Period < 0 ? Period : Math.Max(Period == 1 ? (Timers % 2 == 1 ? 0 : 1) : 1, Period > 50 ? (Scheduler.Count > 256 ? Period - ms - 1 : Period - ms) : (Timers % 2 == 1 ? Period - ms - 1 : Period - ms));
         var nowTick = Runtime.TickCount64;
         if (hasSetNext)
         {

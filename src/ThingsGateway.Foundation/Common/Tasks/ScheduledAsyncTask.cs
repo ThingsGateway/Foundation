@@ -6,7 +6,6 @@ namespace ThingsGateway.Foundation;
 
 public class ScheduledAsyncTask : DisposeBase, IScheduledTask, IScheduledIntIntervalTask
 {
-    private int next = 10;
     public int IntervalMS { get; }
     private readonly Func<object?, CancellationToken, Task>? _taskFunc;
     private readonly Func<object?, CancellationToken, ValueTask>? _valueTaskFunc;
@@ -14,8 +13,6 @@ public class ScheduledAsyncTask : DisposeBase, IScheduledTask, IScheduledIntInte
     private TimerX? _timer;
     private object? _state;
     private ILog LogMessage;
-    private volatile int _isRunning;
-    private volatile int _pendingTriggers;
     public Int32 Period => _timer?.Period ?? 0;
     public bool Enable => _timer?.Disposed != false ? false : true;
     public ScheduledAsyncTask(int interval, Func<object?, CancellationToken, Task> taskFunc, object? state, ILog log, CancellationToken token)
@@ -43,13 +40,36 @@ public class ScheduledAsyncTask : DisposeBase, IScheduledTask, IScheduledIntInte
         }
         return false;
     }
+    static ScheduledAsyncTask()
+    {
+        HighMax = Math.Max(Environment.ProcessorCount / 2, 1);
+    }
+    private readonly static int HighMax; // 允许的最大序号
+    private static int _highIndex;
+    private static string NextHighName()
+    {
+        var v = Interlocked.Increment(ref _highIndex);
 
-    private static volatile int NextId;
+        // 映射到 1..HighMax
+        var index = (v - 1) % HighMax + 1;
+
+        return $"{nameof(IScheduledTask)}High{index}";
+    }
     public void Start()
     {
         _timer?.Dispose();
         if (!Check())
-            _timer = new TimerX(DoAsync, _state, IntervalMS, IntervalMS, $"{nameof(IScheduledTask)}{(Interlocked.Increment(ref NextId) / 1024)}") { Async = true, Reentrant = false };
+        {
+            if (IntervalMS < 1000)
+            {
+                _timer = new TimerX(DoAsync, _state, IntervalMS, IntervalMS, NextHighName()) { Async = true, Reentrant = false };
+            }
+            else
+            {
+                _timer = new TimerX(DoAsync, _state, IntervalMS, IntervalMS, $"{nameof(IScheduledTask)}") { Async = true, Reentrant = false };
+            }
+        }
+
     }
 
     private ValueTask DoAsync(object? state)
@@ -66,14 +86,6 @@ public class ScheduledAsyncTask : DisposeBase, IScheduledTask, IScheduledIntInte
                 return;
             }
 
-            Interlocked.Increment(ref @this._pendingTriggers);
-
-            if (Interlocked.Exchange(ref @this._isRunning, 1) == 1)
-                return;
-
-            // 减少一个触发次数
-            Interlocked.Decrement(ref @this._pendingTriggers);
-
             try
             {
                 if (@this._taskFunc != null)
@@ -88,19 +100,7 @@ public class ScheduledAsyncTask : DisposeBase, IScheduledTask, IScheduledIntInte
             {
                 @this.LogMessage?.LogWarning(ex);
             }
-            finally
-            {
-                Interlocked.Exchange(ref @this._isRunning, 0);
-            }
 
-            if (Interlocked.Exchange(ref @this._pendingTriggers, 0) >= 1)
-            {
-                if (!@this.Check() && @this.IntervalMS > 8)
-                {
-                    int nextValue = @this.next;
-                    @this.SetNext(nextValue);
-                }
-            }
         }
     }
 

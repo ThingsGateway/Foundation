@@ -23,6 +23,18 @@ public class TimerScheduler : IDisposable
 #endif
 
         Host.RegisterExit(ClearAll);
+
+        _processCallback = static state =>
+        {
+            try
+            {
+                Execute(state);
+            }
+            catch (Exception ex)
+            {
+                XTrace.WriteException(ex, "Timer执行错误");
+            }
+        };
     }
     internal static void Init()
     {
@@ -73,17 +85,7 @@ public class TimerScheduler : IDisposable
     private TimerScheduler(String name)
     {
         Name = name;
-        _processCallback = state =>
-        {
-            try
-            {
-                Execute(state);
-            }
-            catch (Exception ex)
-            {
-                XTrace.WriteException(ex, "Timer执行错误");
-            }
-        };
+
     }
     /// <summary>销毁</summary>
     public void Dispose()
@@ -144,6 +146,7 @@ public class TimerScheduler : IDisposable
     private Int32 _tid;
     private volatile Boolean _disposing;
     private TimerX[] Timers = [];
+    private int minPeriod = 60_000;
     #endregion
 
     /// <summary>
@@ -173,7 +176,7 @@ public class TimerScheduler : IDisposable
             list.Add(timer);
 
             Timers = list.ToArray();
-
+            minPeriod = Math.Min(minPeriod, timer.Period);
             Count++;
 
             if (thread == null)
@@ -249,25 +252,49 @@ public class TimerScheduler : IDisposable
             try
             {
                 var now = Runtime.TickCount64;
-
+                //if (Name.StartsWith("IScheduledTask"))
+                //{
+                //    XTrace.WriteLine("定时器更新时间 now {0}", now);
+                //}
                 // 设置一个较大的间隔，内部会根据处理情况调整该值为最合理值
-                _period = 60_000;
+                _period = minPeriod;
                 foreach (var timer in arr)
                 {
                     // 如果正在销毁，跳出循环
                     if (_disposing) break;
-                    if ((timer.Reentrant || !timer.Calling) && CheckTime(timer, now))
+                    long ts = 0;
+                    if ((timer.Reentrant || !timer.Calling) && CheckTime(timer, now, out ts))
                     {
+
+                        //if (Name.StartsWith("IScheduledTask") && timer.Period == 10 && timer.IsAsyncTask)
+                        //{
+                        //    if (_period > 20)
+                        //        XTrace.WriteLine("定时器 {0} 执行，_period {1}", timer, _period);
+                        //}
+
                         // 必须在主线程设置状态，否则可能异步线程还没来得及设置开始状态，主线程又开始了新的一轮调度
                         timer.Calling = true;
                         if (timer.IsAsyncTask)
-                            Task.Factory.StartNew(ExecuteAsync, timer, CancellationToken.None, TaskCreationOptions.None, TaskScheduler.Default);
+                            _ = ExecuteAsync(timer);
                         else if (!timer.Async)
                             Execute(timer);
                         else
                             // 不需要上下文流动，捕获所有异常
                             ThreadPool.UnsafeQueueUserWorkItem(_processCallback, timer);
+
+
                     }
+                    //else
+                    //{
+                    //    if (timer.Calling)
+                    //    {
+                    //        XTrace.WriteLine("定时器 {0} 还没执行完成", timer);
+                    //    }
+                    //    else if (Name.StartsWith("IScheduledTask") && timer.Period == 100 && timer.IsAsyncTask)
+                    //    {
+                    //        XTrace.WriteLine("定时器 {0} 执行，now {1}，还需要{2}ms", timer, now, ts);
+                    //    }
+                    //}
                 }
             }
             catch (ThreadAbortException) { break; }
@@ -280,24 +307,26 @@ public class TimerScheduler : IDisposable
         }
 
     }
-    private readonly WaitCallback _processCallback;
+    private static readonly WaitCallback _processCallback;
     /// <summary>检查定时器是否到期</summary>
     /// <param name="timer"></param>
     /// <param name="now"></param>
+    /// <param name="ts"></param>
     /// <returns></returns>
-    private Boolean CheckTime(TimerX timer, Int64 now)
+    private Boolean CheckTime(TimerX timer, Int64 now, out long ts)
     {
         // 删除过期的，为了避免占用过多CPU资源，TimerX禁止小于10ms的任务调度
         var p = timer.Period;
-        if (p is < 10 and > 0)
-        {
-            // 周期0表示只执行一次
-            if (p is < 10 and > 0) XTrace.WriteLine("为了避免占用过多CPU资源，TimerX禁止小于{1}ms<10ms的任务调度，关闭任务{0}", timer, p);
-            timer.Dispose();
-            return false;
-        }
+        //if (p is < 10 and > 0)
+        //{
+        //    // 周期0表示只执行一次
+        //    if (p is < 10 and > 0) XTrace.WriteLine("为了避免占用过多CPU资源，TimerX禁止小于{1}ms<10ms的任务调度，关闭任务{0}", timer, p);
+        //    timer.Dispose();
+        //    return false;
+        //}
 
-        var ts = timer.NextTick - now;
+        ts = timer.NextTick - now;
+
         if (ts > 0)
         {
             // 缩小间隔，便于快速调用
@@ -311,10 +340,10 @@ public class TimerScheduler : IDisposable
 
     /// <summary>处理每一个定时器</summary>
     /// <param name="state"></param>
-    private void Execute(Object? state)
+    private static void Execute(Object? state)
     {
         if (state is not TimerX timer) return;
-
+        var scheduler = timer.Scheduler;
         timer.hasSetNext = false;
 
         var sw = ValueStopwatch.StartNew();
@@ -324,7 +353,7 @@ public class TimerScheduler : IDisposable
             var target = timer.Target?.Target;
             if (target == null && timer.TimerCallbackDelegate?.Method.IsStatic != true)
             {
-                Remove(timer);
+                scheduler.Remove(timer);
                 timer.Dispose();
                 return;
             }
@@ -342,19 +371,18 @@ public class TimerScheduler : IDisposable
         finally
         {
             var ms = sw.GetElapsedTime().TotalMilliseconds;
-            OnExecuted(timer, (Int32)ms);
+            scheduler.OnExecuted(timer, (Int32)ms);
         }
     }
 
     /// <summary>处理每一个定时器</summary>
-    /// <param name="state"></param>
-    private Task ExecuteAsync(Object? state)
+    /// <param name="timer"></param>
+    private static Task ExecuteAsync(TimerX timer)
     {
-        return ExecuteAsync(this, state);
-        static async PooledTask ExecuteAsync(TimerScheduler @this, Object? state)
+        return ExecuteAsync(timer);
+        static async PooledTask ExecuteAsync(TimerX timer)
         {
-            if (state is not TimerX timer) return;
-
+            var scheduler = timer.Scheduler;
             timer.hasSetNext = false;
 
             var sw = ValueStopwatch.StartNew();
@@ -364,7 +392,7 @@ public class TimerScheduler : IDisposable
                 var target = timer.Target?.Target;
                 if (target == null && timer.ValueTaskDelegate?.Method.IsStatic != true && timer.TaskDelegate?.Method.IsStatic != true)
                 {
-                    @this.Remove(timer);
+                    scheduler.Remove(timer);
 #pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
                     timer.Dispose();
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
@@ -401,7 +429,7 @@ public class TimerScheduler : IDisposable
             {
                 var ms = sw.GetElapsedTime().TotalMilliseconds;
 
-                @this.OnExecuted(timer, (Int32)ms);
+                scheduler.OnExecuted(timer, (Int32)ms);
 
             }
         }
@@ -417,7 +445,7 @@ public class TimerScheduler : IDisposable
         }
 
         timer.Timers++;
-        OnFinish(timer);
+        OnFinish(timer, ms);
 
         timer.Calling = false;
 
@@ -425,17 +453,21 @@ public class TimerScheduler : IDisposable
         Wake();
     }
 
-    private void OnFinish(TimerX timer)
+    private void OnFinish(TimerX timer, int ms)
     {
         // 如果内部设置了下一次时间，则不再递加周期
-        var p = timer.SetAndGetNextTime();
+        var p = timer.SetAndGetNextTime(ms);
 
         // 清理一次性定时器
-        if (p <= 0)
+        if (p < 0)
         {
             Remove(timer);
             timer.Dispose();
         }
+        //else if (p == 1)
+        //{
+        //    _period = 0;
+        //}
         else if (p < _period)
             _period = p;
     }

@@ -1,5 +1,9 @@
 ﻿namespace ThingsGateway.Foundation.Common;
 
+/// <summary>
+/// 池化，保留借出的对象，清空时销毁
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class ObjectPoolT<T> : DisposeBase where T : class
 {
     #region 属性

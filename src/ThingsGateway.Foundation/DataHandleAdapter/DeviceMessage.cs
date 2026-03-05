@@ -13,10 +13,14 @@ using TouchSocket.Core;
 namespace ThingsGateway.Foundation;
 
 /// <inheritdoc cref="IResultMessage"/>
-public class DeviceMessage : OperResultClass<ReadOnlyMemory<byte>>, IResultMessage, IWaitHandle
+public class DeviceMessage : OperResultClass<ReadOnlyMemory<byte>>, IResultMessage, IWaitHandle, IDisposable
 {
+    public IRequestPool RequestPool;
     #region 构造
-
+    ~DeviceMessage()
+    {
+        Dispose();
+    }
     /// <inheritdoc />
     public DeviceMessage() : base()
     {
@@ -56,6 +60,12 @@ public class DeviceMessage : OperResultClass<ReadOnlyMemory<byte>>, IResultMessa
     public virtual bool CheckHead<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesReader
     {
         return true;
+    }
+
+    public void Dispose()
+    {
+        RequestPool?.Put(this);
+        GC.SuppressFinalize(this);
     }
 
     /// <inheritdoc/>

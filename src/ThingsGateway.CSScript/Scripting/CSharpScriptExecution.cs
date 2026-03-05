@@ -1302,7 +1302,7 @@ namespace Westwind.Scripting
 
                         foreach (var item in data)
                         {
-                            var file = GetOrLoadAssemblyByDllName (item);
+                            var file = GetOrLoadAssemblyByDllName(item);
                             AddAssembly(file);
                         }
                         codeStream.Dispose();
@@ -1718,7 +1718,7 @@ namespace Westwind.Scripting
         public bool AddAssembly(string assemblyDll)
         {
             var file = GetOrLoadAssemblyByDllName(assemblyDll);
-            if (file==null) return false;
+            if (file == null) return false;
             return AddAssembly(file);
         }
 

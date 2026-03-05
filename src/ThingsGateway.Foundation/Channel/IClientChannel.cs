@@ -28,7 +28,7 @@ public interface IClientChannel : IChannel, ISender, IClient, IClientSender, IOn
     /// </summary>
     WaitHandlePool<DeviceMessage> WaitHandlePool { get; }
 
-    WaitLock GetLock(string? key);
+    AsyncConcurrencyLimiter GetLock(string? key);
 
     /// <summary>
     /// 设置数据处理适配器

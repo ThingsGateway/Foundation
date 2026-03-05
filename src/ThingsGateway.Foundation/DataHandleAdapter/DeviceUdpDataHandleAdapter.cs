@@ -64,14 +64,14 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
         return Owner.ToString();
     }
 
+    RequestPool<TRequest> Pool = new();
     /// <summary>
     /// 获取泛型实例。
     /// </summary>
     /// <returns></returns>
     protected virtual TRequest GetInstance()
     {
-
-        return new TRequest() { OperCode = -1, Sign = -1 };
+        return Pool.Get();
     }
 
 
@@ -99,7 +99,9 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
 
             TRequest request;
             if (IsSingleThread)
-                request = Request == null ? Request = GetInstance() : Request;
+                request = Request == null ?
+                    Request = GetInstance() :
+                    Request;
             else
             {
                 request = GetInstance();

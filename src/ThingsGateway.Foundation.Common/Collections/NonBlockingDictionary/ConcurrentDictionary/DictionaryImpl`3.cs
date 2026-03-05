@@ -1267,15 +1267,43 @@ namespace System.Collections.Concurrent
             // First up: compute new table size.
             int oldlen = this._entries.Length;
 
-            // First size estimate is 4x of the current size
-            int oldsz = Size;
-            int newsz = oldsz <= (MAX_SIZE / 4) ?
-                                        oldsz * 4 :
-                                        oldsz <= (MAX_SIZE / 2) ?
-                                            oldsz * 2 :
-                                            oldsz;
 
+            int oldsz = Size;
+
+            // ---------- new cautious grow policy ----------
+
+            // 真实占用（更接近真实需求）
+            int required = allocatedSlotCount.Value;
+
+            // 分段增长因子（大表更保守）
+            double factor;
+            if (required < 256 * 1024)
+                factor = 2.0;
+            else if (required < 512 * 1024)
+                factor = 1.5;
+            else
+                factor = 1.2;
+
+            // 目标容量（基于真实需求）
+            long target = (long)(required * factor);
+
+            //if (target <= oldlen)
+            //    target = oldlen + 1;
+
+            // 最多允许翻倍，防止一次跳太大
+            long maxGrow = oldlen <= (MAX_SIZE >> 1) ? (long)oldlen << 1 : oldlen;
+            if (target > maxGrow)
+                target = maxGrow;
+
+            // 上限保护
+            if (target > MAX_SIZE)
+                target = MAX_SIZE;
+
+            int newsz = (int)target;
+
+            // 保底最小容量
             newsz = Math.Max(newsz, MIN_SIZE);
+            // ---------- end new policy ----------
 
             if (isForReprobe)
             {
@@ -1314,7 +1342,9 @@ namespace System.Collections.Concurrent
             }
 
             // Align up to a power of 2
-            newsz = Util.AlignToPowerOfTwo(newsz);
+            int aligned = Util.AlignToPowerOfTwo(newsz);
+
+            newsz = aligned;
 
             // Estimate new array size. This is used for limiting spinwaiting when allocating large tables.
             // Size calculation: 2 64bit words per table entry for simplicity.

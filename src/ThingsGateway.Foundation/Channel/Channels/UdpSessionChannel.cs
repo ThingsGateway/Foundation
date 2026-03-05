@@ -97,8 +97,8 @@ public class UdpSessionChannel : UdpSession, IClientChannel
     public WaitHandlePool<DeviceMessage> WaitHandlePool { get; internal set; } = new(1, ushort.MaxValue - 1);
 
     /// <inheritdoc/>
-    public WaitLock WaitLock => ChannelOptions.WaitLock;
-    public virtual WaitLock GetLock(string? key) => WaitLock;
+    public AsyncConcurrencyLimiter WaitLock => ChannelOptions.WaitLock;
+    public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
 
 
 

@@ -9,11 +9,9 @@
 //------------------------------------------------------------------------------
 
 using System.Text;
-
 using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation;
-
 /// <summary>
 /// TCP/Serial适配器基类
 /// </summary>
@@ -80,7 +78,9 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
         try
         {
             if (IsSingleThread)
-                request = Request == null ? Request = GetInstance() : Request;
+                request = Request == null ?
+                    Request = GetInstance() :
+                    Request;
             else
             {
                 //if (!beCached)
@@ -157,19 +157,19 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
             return FilterResult.GoOn;//放弃解析
         }
     }
-
+    RequestPool<TRequest> Pool = new();
     /// <summary>
     /// 获取泛型实例。
     /// </summary>
     /// <returns></returns>
     protected virtual TRequest GetInstance()
     {
-        return new TRequest() { OperCode = -1, Sign = -1 };
+        return Pool.Get();
     }
 
     public override void SendInput<TWriter>(ref TWriter writer, in ReadOnlyMemory<byte> memory)
     {
-        if (Logger?.LogLevel <= LogLevel.Trace)
+        if (Logger?.LogLevel <= LogLevel.Debug)
             Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? memory.Span.ToHexString(' ') : (memory.Span.ToString(Encoding.UTF8)))}");
 
         writer.Write(memory.Span);
@@ -182,13 +182,13 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
             throw new Exception($"Unable to convert {nameof(requestInfo)} to {nameof(ISendMessage)}");
         }
         Span<byte> span = default;
-        if (Logger?.LogLevel <= LogLevel.Trace)
+        if (Logger?.LogLevel <= LogLevel.Debug)
         {
             span = writer.GetSpan(sendMessage.MaxLength);
         }
 
         sendMessage.Build(ref writer);
-        if (Logger?.LogLevel <= LogLevel.Trace)
+        if (Logger?.LogLevel <= LogLevel.Debug)
         {
             Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? span.Slice(0, (int)writer.WrittenCount).ToHexString(' ') : (span.Slice(0, (int)writer.WrittenCount).ToString(Encoding.UTF8)))}");
         }

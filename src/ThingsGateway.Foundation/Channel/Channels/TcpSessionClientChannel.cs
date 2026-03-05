@@ -29,7 +29,7 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     /// <inheritdoc/>
     public void SetDataHandlingAdapterLogger(ILog? log)
     {
-        if(DataHandlingAdapter==null)
+        if (DataHandlingAdapter == null)
         {
             var adapter = this.ListenOption.Adapter?.Invoke();
             if (adapter != null)
@@ -94,8 +94,8 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     public WaitLock Lock { get; } = new();
 
     /// <inheritdoc/>
-    public WaitLock WaitLock { get; internal set; } = new(nameof(TcpSessionClientChannel));
-    public virtual WaitLock GetLock(string? key) => WaitLock;
+    public AsyncConcurrencyLimiter WaitLock { get; internal set; } = new(1);
+    public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
 
     /// <inheritdoc/>
     public override Task<Result> CloseAsync(string msg, CancellationToken token)

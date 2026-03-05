@@ -28,6 +28,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
         ChannelOptions = channelOptions;
         ResetSign();
     }
+
     public WaitLock Lock { get; } = new();
     public override TouchSocketConfig Config => base.Config ?? ChannelOptions.Config;
     public void ResetSign(int minSign = 1, int maxSign = ushort.MaxValue - 1)
@@ -84,10 +85,10 @@ public class TcpClientChannel : TcpClient, IClientChannel
     /// 等待池
     /// </summary>
     public WaitHandlePool<DeviceMessage> WaitHandlePool { get; internal set; } = new(1, ushort.MaxValue - 1);
-    public virtual WaitLock GetLock(string? key) => WaitLock;
+    public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
 
     /// <inheritdoc/>
-    public WaitLock WaitLock => ChannelOptions.WaitLock;
+    public AsyncConcurrencyLimiter WaitLock => ChannelOptions.WaitLock;
 
 
 

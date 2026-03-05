@@ -497,7 +497,7 @@ public partial class SiemensS7Master : DeviceBase
 
             try
             {
-                var result2 = await SendThenReturnMessageAsync(new S7Send(ISO_CR), channel, channel.ClosedToken).ConfigureAwait(false);
+                using var result2 = await SendThenReturnMessageAsync(new S7Send(ISO_CR), channel, channel.ClosedToken).ConfigureAwait(false);
                 if (!result2.IsSuccess)
                 {
                     await channel.CloseAsync().ConfigureAwait(false);
@@ -515,7 +515,7 @@ public partial class SiemensS7Master : DeviceBase
             }
             try
             {
-                var result2 = await SendThenReturnMessageAsync(new S7Send(S7_PN), channel, channel.ClosedToken).ConfigureAwait(false);
+                using var result2 = await SendThenReturnMessageAsync(new S7Send(S7_PN), channel, channel.ClosedToken).ConfigureAwait(false);
                 if (!result2.IsSuccess)
                 {
                     await channel.CloseAsync().ConfigureAwait(false);

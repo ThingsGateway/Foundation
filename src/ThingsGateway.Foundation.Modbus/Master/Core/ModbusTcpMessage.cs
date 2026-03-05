@@ -87,7 +87,7 @@ public class ModbusTcpMessage : DeviceMessage, IResultMessage
         }
         catch (Exception ex)
         {
-            throw new Exception($"Data length:{byteBlock.TotalSequence.Length} bodyLength:{BodyLength} BytesRead:{byteBlock.BytesRead}", ex);
+            throw new Exception($"Data length:{byteBlock.TotalSequence.Length} bodyLength:{BodyLength} BytesRead:{byteBlock.BytesRead}，Hex: {byteBlock.ToHexString()}", ex);
         }
         return FilterResult.GoOn;
     }

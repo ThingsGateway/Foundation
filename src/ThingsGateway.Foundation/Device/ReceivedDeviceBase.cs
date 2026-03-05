@@ -384,13 +384,15 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             {
                 var channelResult = @this.GetChannel();
                 if (!channelResult.IsSuccess || channelResult.Content == null) return new OperResult<byte[]>(channelResult);
-                WaitLock? waitLock = @this.GetWaitLock(channelResult.Content);
+                var waitLock = @this.GetWaitLock(channelResult.Content);
 
                 try
                 {
                     await @this.BeforeSendAsync(channelResult.Content, cancellationToken).ConfigureAwait(false);
 
-                    await waitLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await waitLock.WaitAsync().ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
                     channelResult.Content.SetDataHandlingAdapterLogger(@this.Logger);
 
 
@@ -417,13 +419,17 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         {
             try
             {
-                WaitLock? waitLock = @this.GetWaitLock(channel);
+                var waitLock = @this.GetWaitLock(channel);
 
                 try
                 {
                     await @this.BeforeSendAsync(channel, cancellationToken).ConfigureAwait(false);
 
-                    await waitLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    await waitLock.WaitAsync().ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     channel.SetDataHandlingAdapterLogger(@this.Logger);
 
 
@@ -536,7 +542,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         {
             try
             {
-                var result = await @this.SendThenReturnMessageAsync(sendMessage, channel, cancellationToken).ConfigureAwait(false);
+                using var result = await @this.SendThenReturnMessageAsync(sendMessage, channel, cancellationToken).ConfigureAwait(false);
                 return new OperResult<ReadOnlyMemory<byte>>(result) { Content = result.Content };
             }
             catch (Exception ex)
@@ -550,7 +556,9 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     protected virtual ValueTask<DeviceMessage> SendThenReturnMessageAsync(ISendMessage sendMessage, CancellationToken cancellationToken = default)
     {
         var channelResult = GetChannel();
+#pragma warning disable CA2000 // 丢失范围之前释放对象
         if (!channelResult.IsSuccess) return EasyValueTask.FromResult(new DeviceMessage(channelResult));
+#pragma warning restore CA2000 // 丢失范围之前释放对象
         return SendThenReturnMessageAsync(sendMessage, channelResult.Content!, cancellationToken);
     }
 
@@ -575,9 +583,8 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
         static async PooledValueTask<DeviceMessage> GetResponsedDataAsync(ReceivedDeviceBase @this, ISendMessage command, IClientChannel clientChannel, int timeout, CancellationToken cancellationToken)
         {
-            var waitData = clientChannel.WaitHandlePool.GetWaitDataAsync(out var sign);
-            command.Sign = sign;
-            WaitLock? waitLock = null;
+            AsyncWaitData<DeviceMessage>? waitData = null;
+            AsyncConcurrencyLimiter? waitLock = null;
 
             try
             {
@@ -585,7 +592,12 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                 waitLock = @this.GetWaitLock(clientChannel);
 
-                await waitLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                await waitLock.WaitAsync().ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                waitData = clientChannel.WaitHandlePool.GetWaitDataAsync(out var sign);
+                command.Sign = sign;
 
                 clientChannel.SetDataHandlingAdapterLogger(@this.Logger);
 
@@ -608,6 +620,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 {
                     if (@this.Channel?.ClosedToken.IsCancellationRequested == true)
                     {
+#pragma warning disable CA2000 // 丢失范围之前释放对象
                         return new DeviceMessage(new Exception("The channel is closed."));
                     }
                     return reusableTimeout.TimeoutStatus
@@ -617,6 +630,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 catch (Exception ex)
                 {
                     return new DeviceMessage(ex);
+#pragma warning restore CA2000 // 丢失范围之前释放对象
                 }
                 finally
                 {
@@ -638,6 +652,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     }
                     else
                     {
+#pragma warning disable CA2000 // 丢失范围之前释放对象
                         return new DeviceMessage(new OperationCanceledException());
                     }
 
@@ -647,6 +662,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             catch (Exception ex)
             {
                 return new DeviceMessage(ex);
+#pragma warning restore CA2000 // 丢失范围之前释放对象
             }
             finally
             {
@@ -658,9 +674,9 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     }
 
 
-    private WaitLock GetWaitLock(IClientChannel clientChannel)
+    private AsyncConcurrencyLimiter GetWaitLock(IClientChannel clientChannel)
     {
-        WaitLock? waitLock = null;
+        AsyncConcurrencyLimiter? waitLock = null;
         if (clientChannel is IDtuUdpSessionChannel udpSessionChannel)
         {
             waitLock = udpSessionChannel.GetLock(this is IDtu dtu1 ? dtu1.DtuId : null);

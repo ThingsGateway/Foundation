@@ -15,7 +15,8 @@ namespace ThingsGateway.Foundation;
 /// <inheritdoc/>
 public class ChannelOptions : ChannelOptionsBase, IChannelOptions, IDisposable
 {
-    public WaitLock WaitLock { get; private set; } = new WaitLock(nameof(ChannelOptions));
+    public AsyncConcurrencyLimiter WaitLock { get; private set; } = new AsyncConcurrencyLimiter(1);
+
     /// <inheritdoc/>
     public override int MaxConcurrentCount
     {
@@ -31,7 +32,7 @@ public class ChannelOptions : ChannelOptionsBase, IChannelOptions, IDisposable
                 if (WaitLock?.MaxCount != MaxConcurrentCount)
                 {
                     var _lock = WaitLock;
-                    WaitLock = new WaitLock(nameof(ChannelOptions), _maxConcurrentCount);
+                    WaitLock = new AsyncConcurrencyLimiter(_maxConcurrentCount);
                     _lock?.SafeDispose();
                 }
             }

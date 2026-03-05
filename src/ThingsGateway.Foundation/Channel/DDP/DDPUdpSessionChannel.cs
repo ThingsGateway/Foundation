@@ -67,12 +67,12 @@ public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSe
 
     public EndPoint? DefaultEndpoint => RemoteIPHost?.EndPoint;
 
-    NonBlockingDictionary<string, WaitLock> WaitLocks { get; } = new();
+    NonBlockingDictionary<string, AsyncConcurrencyLimiter> WaitLocks { get; } = new();
 
-    public override WaitLock GetLock(string? key)
+    public override AsyncConcurrencyLimiter GetLock(string? key)
     {
         if (key.IsNullOrEmpty()) return WaitLock;
-        return WaitLocks.GetOrAdd(key, (a) => new WaitLock(nameof(DDPUdpSessionChannel), WaitLock.MaxCount));
+        return WaitLocks.GetOrAdd(key, (a) => new AsyncConcurrencyLimiter(WaitLock.MaxCount));
     }
 
     public override Task<Result> StopAsync(CancellationToken token)
@@ -95,68 +95,78 @@ public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSe
 
         static async PooledValueTask<bool> OnUdpReceiving(DDPUdpSessionChannel @this, EndPoint endPoint, DDPUdpMessage message)
         {
-            if (message != null)
+            try
             {
-                if (message.IsSuccess)
+
+                if (message != null)
                 {
-                    var id = $"ID={message.Id}";
-                    if (message.Type == 0x09)
+                    if (message.IsSuccess)
                     {
-                        if (@this.DataHandlingAdapter == null)
+                        var id = $"ID={message.Id}";
+                        if (message.Type == 0x09)
                         {
-                            await @this.OnUdpReceived(new UdpReceivedDataEventArgs(endPoint, message.Content, default)).ConfigureAwait(false);
+                            if (@this.DataHandlingAdapter == null)
+                            {
+                                await @this.OnUdpReceived(new UdpReceivedDataEventArgs(endPoint, message.Content, default)).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                await @this.DataHandlingAdapter.ReceivedInputAsync(endPoint, message.Content).ConfigureAwait(false);
+                            }
+
+                            return true;
                         }
                         else
                         {
-                            await @this.DataHandlingAdapter.ReceivedInputAsync(endPoint, message.Content).ConfigureAwait(false);
-                        }
-
-                        return true;
-                    }
-                    else
-                    {
-                        if (message.Type == 0x01)
-                        {
-                            bool log = false;
-
-                            //注册ID
-                            if (!@this.IdDict.TryAdd(endPoint, id))
+                            if (message.Type == 0x01)
                             {
-                                @this.IdDict[endPoint] = id;
+                                bool log = false;
+
+                                //注册ID
+                                if (!@this.IdDict.TryAdd(endPoint, id))
+                                {
+                                    @this.IdDict[endPoint] = id;
+                                }
+                                else
+                                {
+                                    log = true;
+                                }
+                                if (!@this.EndPointDcit.TryAdd(id, endPoint))
+                                {
+                                    @this.EndPointDcit[id] = endPoint;
+                                }
+                                else
+                                {
+                                    log = true;
+                                }
+
+                                //发送成功
+                                await @this.DDPAdapter.SendInputAsync(endPoint, new DDPSend(ReadOnlyMemory<byte>.Empty, id, false, 0x81), @this.ClosedToken).ConfigureAwait(false);
+                                if (log)
+
+                                    @this.Logger?.Info(string.Format(AppResource.DtuConnected, id));
+
                             }
-                            else
+                            else if (message.Type == 0x02)
                             {
-                                log = true;
+                                await @this.DDPAdapter.SendInputAsync(endPoint, new DDPSend(ReadOnlyMemory<byte>.Empty, id, false, 0x82), @this.ClosedToken).ConfigureAwait(false);
+
+                                @this.Logger?.Info(string.Format(AppResource.DtuDisconnecting, id));
+
+                                await Task.Delay(100).ConfigureAwait(false);
+                                @this.IdDict.TryRemove(endPoint, out _);
+                                @this.EndPointDcit.TryRemove(id, out _);
                             }
-                            if (!@this.EndPointDcit.TryAdd(id, endPoint))
-                            {
-                                @this.EndPointDcit[id] = endPoint;
-                            }
-                            else
-                            {
-                                log = true;
-                            }
-
-                            //发送成功
-                            await @this.DDPAdapter.SendInputAsync(endPoint, new DDPSend(ReadOnlyMemory<byte>.Empty, id, false, 0x81), @this.ClosedToken).ConfigureAwait(false);
-                            if (log)
-
-                                @this.Logger?.Info(string.Format(AppResource.DtuConnected, id));
-
-                        }
-                        else if (message.Type == 0x02)
-                        {
-                            await @this.DDPAdapter.SendInputAsync(endPoint, new DDPSend(ReadOnlyMemory<byte>.Empty, id, false, 0x82), @this.ClosedToken).ConfigureAwait(false);
-
-                            @this.Logger?.Info(string.Format(AppResource.DtuDisconnecting, id));
-
-                            await Task.Delay(100).ConfigureAwait(false);
-                            @this.IdDict.TryRemove(endPoint, out _);
-                            @this.EndPointDcit.TryRemove(id, out _);
                         }
                     }
                 }
+
             }
+            finally
+            {
+                message?.Dispose();
+            }
+
             return true;
         }
     }
