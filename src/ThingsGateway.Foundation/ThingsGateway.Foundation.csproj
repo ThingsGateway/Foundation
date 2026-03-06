@@ -23,10 +23,6 @@
 		</EmbeddedResource>
 	</ItemGroup>
 
-	
-	<ItemGroup>
-	  <None Include="OperResult\OperResultHelper.cs" />
-	</ItemGroup>
 
 
 	<ItemGroup>
