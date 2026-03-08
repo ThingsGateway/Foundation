@@ -75,6 +75,17 @@ public interface IChannelOptions
     bool StreamAsync { get; set; }
 
     Handshake Handshake { get; set; }
+
+
+    /// <summary>
+    /// 串口输入缓冲区的大小
+    /// </summary>
+    int SerialPortReadBufferSize { get; set; }
+    /// <summary>
+    /// 串口输出缓冲区的大小
+    /// </summary>
+    int SerialPortWriteBufferSize { get; set; }
+
     #endregion
     /// <summary>
     /// 最大并发数量

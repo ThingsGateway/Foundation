@@ -8,6 +8,8 @@ namespace ThingsGateway.Foundation.Sample
     {
         private static async Task Main(string[] args)
         {
+            SerialPortTest.Run();
+
 
             //XTrace.LogLevel = Common.Log.LogLevel.All;
             //Console.WriteLine($"Aot:\"{Runtime.Aot}");

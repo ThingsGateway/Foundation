@@ -80,6 +80,17 @@ namespace ThingsGateway.Foundation
 
         public virtual bool StreamAsync { get; set; } = true;
 
+
+
+        /// <summary>
+        /// 串口输入缓冲区的大小
+        /// </summary>
+        public virtual int SerialPortReadBufferSize { get; set; } = 4096;
+        /// <summary>
+        /// 串口输出缓冲区的大小
+        /// </summary>
+        public virtual int SerialPortWriteBufferSize { get; set; } = 2048;
+
         /// <inheritdoc/>
         [MinValue(1)]
         public virtual int MaxConcurrentCount { get; set; } = 1;

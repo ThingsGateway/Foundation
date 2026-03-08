@@ -613,6 +613,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 {
 
                     var ctsToken = reusableTimeout.GetTokenSource(timeout, cancellationToken, @this.Channel?.ClosedToken ?? default);
+                    ctsToken.ThrowIfCancellationRequested();
                     await waitData.WaitAsync(ctsToken).ConfigureAwait(false);
 
                 }

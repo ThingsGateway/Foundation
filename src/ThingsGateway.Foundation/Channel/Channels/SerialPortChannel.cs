@@ -197,7 +197,7 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
     }
     protected override Task OnSerialConnected(ConnectedEventArgs e)
     {
-        Logger?.Debug($"{ToString()} Connected");
+        Logger?.Info($"{ToString()} Connected");
         return base.OnSerialConnected(e);
     }
     /// <inheritdoc/>

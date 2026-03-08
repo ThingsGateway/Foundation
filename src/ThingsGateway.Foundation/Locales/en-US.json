@@ -24,7 +24,9 @@
     "RtsEnable": "RtsEnable",
     "StreamAsync": "StreamAsync",
     "Handshake": "Handshake",
-    "StopBits": "StopBits"
+    "StopBits": "StopBits",
+    "SerialPortReadBufferSize": "SerialPortReadBufferSize",
+    "SerialPortWriteBufferSize": "SerialPortWriteBufferSize"
   },
   "ThingsGateway.Foundation.ConverterConfig": {
     "BcdFormat": "BcdFormat",

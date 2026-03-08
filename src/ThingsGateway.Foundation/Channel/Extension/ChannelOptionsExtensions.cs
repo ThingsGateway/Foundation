@@ -207,6 +207,8 @@ public static class ChannelOptionsExtensions
             options.RtsEnable = channelOptions.RtsEnable;
             options.Handshake = channelOptions.Handshake;
             options.StreamAsync = channelOptions.StreamAsync;
+            options.ReadBufferSize = channelOptions.SerialPortReadBufferSize;
+            options.WriteBufferSize = channelOptions.SerialPortWriteBufferSize;
         });
         //载入配置
         SerialPortChannel serialPortChannel = new SerialPortChannel(channelOptions);
