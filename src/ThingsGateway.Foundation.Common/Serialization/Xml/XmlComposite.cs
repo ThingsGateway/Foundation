@@ -7,7 +7,6 @@ using System.Xml.Serialization;
 namespace ThingsGateway.Foundation.Common.Serialization;
 
 /// <summary>Xml复合对象处理器</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public class XmlComposite : XmlHandlerBase
 {
     /// <summary>实例化</summary>

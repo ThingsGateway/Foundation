@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net8.0;$(OtherTargetFrameworks);</TargetFrameworks>
-		<PublishAot>true</PublishAot>
 		<NoWarn> CA1812; CA1852;CA1515;$(NoWarn)</NoWarn>
 	</PropertyGroup>
 

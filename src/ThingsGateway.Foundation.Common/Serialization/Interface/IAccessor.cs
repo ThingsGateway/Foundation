@@ -37,7 +37,6 @@ public interface IAccessor<T>
 }
 
 /// <summary>访问器助手</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public static class AccessorHelper
 {
     /// <summary>支持访问器的对象转数据包</summary>

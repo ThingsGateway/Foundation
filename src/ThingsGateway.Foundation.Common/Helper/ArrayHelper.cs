@@ -366,7 +366,6 @@ public static class ArrayHelper
 #endif
 
 
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static JsonArray ToJsonArray<T>(this T[] array)
     {
         var jsonArray = new JsonArray();
@@ -377,7 +376,6 @@ public static class ArrayHelper
         return jsonArray;
     }
 
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static JsonArray ToJsonArray<T>(this ReadOnlySpan<T> array)
     {
         var jsonArray = new JsonArray();
@@ -1359,7 +1357,7 @@ public static class ArrayHelper
 
     public static ReadOnlyMemory<byte> CombineMemoryBlocks(this ReadOnlySpan<ReadOnlyMemory<byte>> blocks)
     {
-        if (blocks == null || blocks.Length == 0)
+        if (blocks.Length == 0)
             return ReadOnlyMemory<byte>.Empty;
 
         // 计算总长度

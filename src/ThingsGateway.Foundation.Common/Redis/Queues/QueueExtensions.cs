@@ -1,5 +1,5 @@
-﻿using ThingsGateway.Foundation.Common.Log;
-using ThingsGateway.Foundation.Common.Serialization;
+﻿using ThingsGateway.Foundation.Common.Json.Extension;
+using ThingsGateway.Foundation.Common.Log;
 
 namespace ThingsGateway.Foundation.Common.Caching.Queues;
 
@@ -173,8 +173,8 @@ public static class QueueExtensions
                     log?.Info($"[{topic}]消息内容为：{mqMsg}");
 
                     // 解码
-                    var dic = rds.JsonHost.Decode(mqMsg)!;
-                    var msg = rds.JsonHost.Convert<T>(dic);
+                    var dic = mqMsg.DecodeJson()!;
+                    var msg = dic.Convert<T>(rds.JsonHost.JsonSerializerOptions);
 
 
                     // 消息标识

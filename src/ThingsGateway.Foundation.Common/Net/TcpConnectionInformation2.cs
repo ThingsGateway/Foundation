@@ -104,7 +104,6 @@ public class TcpConnectionInformation2 : TcpConnectionInformation
 
     /// <summary>获取所有Tcp连接</summary>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static TcpConnectionInformation2[] GetWindowsTcpConnections()
     {
         //MIB_TCPROW_OWNER_PID[] tTable;

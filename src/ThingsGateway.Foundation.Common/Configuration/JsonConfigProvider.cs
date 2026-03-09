@@ -1,4 +1,4 @@
-﻿using ThingsGateway.Foundation.Common.Serialization;
+﻿using ThingsGateway.Foundation.Common.Json.Extension;
 
 namespace ThingsGateway.Foundation.Common.Configuration;
 
@@ -57,24 +57,7 @@ public class JsonConfigProvider : FileConfigProvider
         var rs = new Dictionary<String, Object?>();
         Map(section, rs);
 
-        var jw = new JsonWriter
-        {
-            //IgnoreNullValues = false,
-            //IgnoreComment = false,
-            //Indented = true,
-            //SmartIndented = true,
-        };
-        jw.Options.IgnoreNullValues = false;
-        jw.Options.WriteIndented = true;
-
-        jw.Write(rs);
-
-        return jw.GetString();
-
-        //var js = new Json();
-        //js.Write(rs);
-
-        //return js.GetBytes().ToStr();
+        return rs.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(true, false));
     }
 
     #region 辅助

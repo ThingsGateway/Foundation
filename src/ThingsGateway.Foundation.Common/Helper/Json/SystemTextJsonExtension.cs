@@ -14,14 +14,12 @@ namespace ThingsGateway.Foundation.Common.Json.Extension;
 /// <summary>
 /// System.Text.Json 扩展
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "使用该序列化时，会和源生成配合使用")]
-[UnconditionalSuppressMessage("AOT", "IL3050:", Justification = "使用该序列化时，会和源生成配合使用")]
 public static class SystemTextJsonExtension
 {
     /// <summary>
     /// 默认Json规则
     /// </summary>
-    public static readonly SystemTextJsonService SystemTextJsonService = new();
+    public static readonly SystemTextJsonService SystemTextJsonService = global::ThingsGateway.Foundation.Common.Json.Extension.SystemTextJsonService.Default;
 
     /// <summary>
     /// 反序列化

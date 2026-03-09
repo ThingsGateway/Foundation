@@ -22,7 +22,7 @@
   <Folder Name="/test/">
     <Project Path="test/ThingsGateway.Foundation.Test/ThingsGateway.Foundation.Test.csproj" />
   </Folder>
-  <Folder Name="/解决方案项/">
+  <Folder Name="/props/">
     <File Path=".gitignore" />
     <File Path="Directory.Build.props" />
     <File Path="PackNuget.props" />

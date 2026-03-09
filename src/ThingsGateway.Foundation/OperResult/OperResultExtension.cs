@@ -8,8 +8,6 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using System.Diagnostics.CodeAnalysis;
-
 namespace ThingsGateway.Foundation;
 
 /// <summary>
@@ -18,7 +16,6 @@ namespace ThingsGateway.Foundation;
 public static class OperResultExtension
 {
 
-    [UnconditionalSuppressMessage("Trimming", "IL2075:使用动态代码可能与修剪不兼容")]
     public static OperResult<object> GetOperResult(this IOperResult data)
     {
         OperResult<object> result = new(data);

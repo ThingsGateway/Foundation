@@ -2,15 +2,13 @@
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-
 using ThingsGateway.Foundation.Common.Collections;
 using ThingsGateway.Foundation.Common.Configuration;
 using ThingsGateway.Foundation.Common.Data;
+using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.Log;
 using ThingsGateway.Foundation.Common.Net;
-
 using ThingsGateway.Foundation.Common.Security;
-using ThingsGateway.Foundation.Common.Serialization;
 
 namespace ThingsGateway.Foundation.Common.Caching;
 
@@ -50,7 +48,7 @@ public abstract class Redis : Cache, IConfigMapping, ILogFeature
     public IPacketEncoder Encoder { get; set; } = new RedisJsonEncoder();
 
     /// <summary>Json序列化主机</summary>
-    public IJsonHost JsonHost { get; set; } = null!;
+    public SystemTextJsonService JsonHost { get; set; } = null!;
 
     /// <summary>SSL协议。决定是否启用SSL连接，默认None不启用</summary>
     public SslProtocols SslProtocol { get; set; } = SslProtocols.None;
@@ -652,7 +650,6 @@ public abstract class Redis : Cache, IConfigMapping, ILogFeature
     /// <summary>为同一服务器创建不同Db的子级库</summary>
     /// <param name="db"></param>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public virtual Redis CreateSub(Int32 db)
     {
         var rds = (GetType().CreateInstance() as Redis)!;

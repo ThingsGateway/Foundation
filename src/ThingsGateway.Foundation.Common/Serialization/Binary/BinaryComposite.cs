@@ -115,7 +115,6 @@ public class BinaryComposite : BinaryHandlerBase
     /// <param name="type"></param>
     /// <param name="value"></param>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public override Boolean TryRead(Type type, ref Object? value)
     {
         if (type == typeof(Object)) return false;

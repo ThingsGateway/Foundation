@@ -8,7 +8,6 @@ using System.Xml.Serialization;
 namespace ThingsGateway.Foundation.Common.Serialization;
 
 /// <summary>数据成员解析器。让System.Text.Json增加对DataMemberAttribute和IgnoreDataMemberAttribute的支持</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public class DataMemberResolver : DefaultJsonTypeInfoResolver
 {
     /// <summary>默认解析器实例</summary>

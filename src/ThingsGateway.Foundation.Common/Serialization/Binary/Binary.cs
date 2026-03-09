@@ -8,7 +8,6 @@ using ThingsGateway.Foundation.Common.Data;
 namespace ThingsGateway.Foundation.Common.Serialization;
 
 /// <summary>二进制序列化</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public class Binary : FormatterBase, IBinary
 {
     #region 属性

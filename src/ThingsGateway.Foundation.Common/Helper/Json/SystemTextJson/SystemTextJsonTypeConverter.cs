@@ -12,7 +12,6 @@ public class SystemTextJsonTypeConverter : JsonConverter<Type>
     /// <param name="typeToConvert"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "AOT环境下不调用")]
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => reader.GetString()?.GetTypeEx();
 
     /// <summary>写入类型</summary>

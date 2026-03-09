@@ -9,10 +9,9 @@ using ThingsGateway.Foundation.Common.Buffers;
 using ThingsGateway.Foundation.Common.Caching.Buffers;
 using ThingsGateway.Foundation.Common.Collections;
 using ThingsGateway.Foundation.Common.Data;
+using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.Log;
 using ThingsGateway.Foundation.Common.Net;
-
-using ThingsGateway.Foundation.Common.Serialization;
 
 namespace ThingsGateway.Foundation.Common.Caching;
 
@@ -856,7 +855,6 @@ public class RedisClient : DisposeBase
     /// <param name="type"></param>
     /// <param name="target"></param>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public virtual Boolean TryChangeType(Object value, Type type, out Object? target)
     {
         target = null;
@@ -1040,7 +1038,7 @@ public class RedisClient : DisposeBase
         var rs = Execute<String>("MSET", ps);
         if (rs != "OK")
         {
-            if (Host.ThrowOnFailure) throw new XException("Redis.SetAll({0})失败。{1}", values.ToJson(), rs);
+            if (Host.ThrowOnFailure) throw new XException("Redis.SetAll({0})失败。{1}", values.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false)), rs);
         }
 
         return rs == "OK";

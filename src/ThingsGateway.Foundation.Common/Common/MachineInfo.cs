@@ -6,16 +6,15 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security;
-
+using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.Log;
-using ThingsGateway.Foundation.Common.Serialization;
-
 
 
 #if NETFRAMEWORK
 using System.Management;
 
 using Microsoft.VisualBasic.Devices;
+
 
 #endif
 #if NETFRAMEWORK || NET6_0_OR_GREATER

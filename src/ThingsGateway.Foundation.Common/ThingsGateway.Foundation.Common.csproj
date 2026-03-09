@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
 	<Import Project="..\..\PackNuget.props" />
 
 	<PropertyGroup>
@@ -12,24 +13,26 @@
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 	</ItemGroup>
-	
+
 	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="$(NET10Version)" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
-		
+		<PackageReference Include="System.ValueTuple" Version="4.6.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.1'">
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="$(NET10Version)" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+		<PackageReference Include="System.ValueTuple" Version="4.6.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)'=='net462'">
 		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="$(NET10Version)" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+		<PackageReference Include="System.ValueTuple" Version="4.6.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)'=='net462'">
@@ -51,6 +54,9 @@
 	<ItemGroup Condition="'$(TargetFramework)'!='net6.0'">
 		<PackageReference Include="System.Text.Json" Version="$(NET10Version)" />
 		<PackageReference Include="System.IO.Pipelines" Version="$(NET10Version)" />
+	</ItemGroup>
+	<ItemGroup>
+		<Folder Include="Serialization\Json\" />
 	</ItemGroup>
 
 </Project>

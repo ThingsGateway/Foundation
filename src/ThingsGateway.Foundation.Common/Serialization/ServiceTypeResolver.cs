@@ -6,7 +6,6 @@ using System.Text.Json.Serialization.Metadata;
 namespace ThingsGateway.Foundation.Common.Serialization;
 
 /// <summary>支持服务提供者的类型解析器</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public class ServiceTypeResolver
 {
     /// <summary>服务提供者</summary>

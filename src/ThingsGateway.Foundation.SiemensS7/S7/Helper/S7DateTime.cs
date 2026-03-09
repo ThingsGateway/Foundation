@@ -120,8 +120,6 @@ public static class S7DateTime
 
     private static System.DateTime FromByteArrayImpl(ReadOnlySpan<byte> bytes)
     {
-        if (bytes == null)
-            throw new ArgumentNullException(nameof(bytes));
         if (bytes.Length != 8)
             throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length,
                 $"Parsing a DateTime requires exactly 8 bytes of input data, input data is {bytes.Length} bytes long.");

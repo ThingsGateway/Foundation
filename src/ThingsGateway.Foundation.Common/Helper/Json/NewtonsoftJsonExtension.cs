@@ -22,7 +22,7 @@ public static class NewtonsoftJsonExtension
     /// <summary>
     /// 默认Json规则
     /// </summary>
-    public static readonly NewtonsoftJsonService NewtonsoftJsonService = new();
+    public static readonly NewtonsoftJsonService NewtonsoftJsonService = global::ThingsGateway.Foundation.Common.Json.Extension.NewtonsoftJsonService.Default;
 
     /// <summary>
     /// 反序列化

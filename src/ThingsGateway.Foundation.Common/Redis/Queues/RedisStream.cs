@@ -1,7 +1,7 @@
 ﻿using ThingsGateway.Foundation.Common.Data;
+using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.Log;
 using ThingsGateway.Foundation.Common.Security;
-using ThingsGateway.Foundation.Common.Serialization;
 
 
 namespace ThingsGateway.Foundation.Common.Caching.Queues;
@@ -430,7 +430,7 @@ public class RedisStream<T> : QueueBase, IProducerConsumer<T>, IDisposable
                         // 当前消费者失败多次，直接删除
                         if (item.Delivery >= MaxRetry)
                         {
-                            var msg = item.ToJson();
+                            var msg = item.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false));
 
                             XTrace.WriteLine("[{0}]删除多次失败死信（当前消费者）：{1}", group, msg);
                             Ack(group, item.Id);
@@ -440,7 +440,7 @@ public class RedisStream<T> : QueueBase, IProducerConsumer<T>, IDisposable
                     {
                         if (item.Delivery >= MaxRetry)
                         {
-                            var msg = item.ToJson();
+                            var msg = item.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false));
 
                             XTrace.WriteLine("[{0}]删除多次失败死信：{1}", group, msg);
                             Claim(group, Consumer, item.Id, msIdle);
@@ -448,7 +448,7 @@ public class RedisStream<T> : QueueBase, IProducerConsumer<T>, IDisposable
                         }
                         else
                         {
-                            var msg = item.ToJson();
+                            var msg = item.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false));
 
                             XTrace.WriteLine("[{0}]定时回滚：{1}", group, msg);
                             // 抢夺消息，所有者更改为当前消费者，Idle从零开始计算。这些消息需要尽快得到处理，否则会再次过期
@@ -477,7 +477,7 @@ public class RedisStream<T> : QueueBase, IProducerConsumer<T>, IDisposable
                 {
                     if (item.Pending == 0 && item.Idle > 3600_000 && !item.Name.IsNullOrEmpty())
                     {
-                        XTrace.WriteLine("[{0}]删除空闲消费者：{1}", group, item.ToJson());
+                        XTrace.WriteLine("[{0}]删除空闲消费者：{1}", group, item.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false)));
                         GroupDeleteConsumer(group, item.Name);
                     }
                 }

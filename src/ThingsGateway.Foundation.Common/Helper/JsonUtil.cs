@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
+﻿using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Globalization;
 using System.Numerics;
@@ -12,10 +10,46 @@ using ThingsGateway.Foundation.Common.Json.Extension;
 
 using JsonArray = System.Text.Json.Nodes.JsonArray;
 
-namespace ThingsGateway.Foundation.Common.Extension;
+namespace ThingsGateway.Foundation.Common.Json.Extension;
 
 public static class JsonUtil
 {
+
+    public static object? Convert(this object obj, Type targetType, JsonSerializerOptions jsonSerializerOptions = null)
+    {
+        if (obj == null) return null;
+        if (targetType == typeof(object) || targetType.IsInstanceOfType(obj)) return obj;
+
+        if (obj is JsonElement element)
+            return SystemTextJsonExtension.FromSystemTextJsonString(element.GetRawText(), targetType, jsonSerializerOptions);
+
+        if (obj is JsonNode node)
+            return SystemTextJsonExtension.FromSystemTextJsonString(node.ToJsonString(), targetType, jsonSerializerOptions);
+
+        if (targetType.IsBaseType())
+            return obj.ChangeTypeEx(targetType);
+
+        if (obj is string json && !json.IsNullOrWhiteSpace())
+        {
+            var trim = json.TrimStart();
+            if (trim.StartsWith('{') || trim.StartsWith('[') || trim.StartsWith('"'))
+                return SystemTextJsonExtension.FromSystemTextJsonString(json, targetType, jsonSerializerOptions);
+
+            return json.ChangeTypeEx(targetType);
+        }
+
+        return SystemTextJsonExtension.FromSystemTextJsonString(JsonSerializer.Serialize(obj, obj.GetType(), jsonSerializerOptions), targetType, jsonSerializerOptions);
+    }
+
+    public static T? Convert<T>(this object obj, JsonSerializerOptions jsonSerializerOptions = null) => (T?)Convert(obj, typeof(T), jsonSerializerOptions);
+
+    /// <summary>分析Json字符串得到字典</summary>
+    public static IDictionary<string, object?> DecodeJson(this string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.ToDictionary();
+    }
+
     /// <summary>目标匿名参数对象转为名值字典</summary>
     /// <param name="source"></param>
     /// <returns></returns>
@@ -33,13 +67,30 @@ public static class JsonUtil
         dic = new NullableDictionary<String, Object?>(StringComparer.OrdinalIgnoreCase);
         if (source != null)
         {
-            // 修正字符串字典的支持问题
-            if (source is IDictionary dic2)
+            if (source is IDictionary<String, Object?> dicStrObj)
+            {
+                foreach (var item in dicStrObj)
+                {
+                    dic[item.Key] = item.Value;
+                }
+            }
+            else if (source is IDictionary dic2)
             {
                 foreach (var item in dic2)
                 {
                     if (item is DictionaryEntry de)
                         dic[de.Key + ""] = de.Value;
+                    else if (item != null)
+                    {
+                        var keyProp = item.GetType().GetProperty("Key");
+                        var valueProp = item.GetType().GetProperty("Value");
+                        if (keyProp != null && valueProp != null)
+                        {
+                            var key = keyProp.GetValue(item)?.ToString();
+                            if (key != null)
+                                dic[key] = valueProp.GetValue(item);
+                        }
+                    }
                 }
             }
 
@@ -55,9 +106,10 @@ public static class JsonUtil
                         JsonValueKind.Number when item.Value.GetRawText().Contains('.') => item.Value.GetDouble(),
                         JsonValueKind.Number => item.Value.GetInt64(),
                         JsonValueKind.True or JsonValueKind.False => item.Value.GetBoolean(),
+                        JsonValueKind.Null => null,
                         _ => item.Value.GetString(),
                     };
-                    if (v is Int64 n && n < Int32.MaxValue) v = (Int32)n;
+                    if (v is Int64 n && n >= Int32.MinValue && n <= Int32.MaxValue) v = (Int32)n;
                     dic[item.Name] = v;
                 }
             }
@@ -100,9 +152,10 @@ public static class JsonUtil
                 JsonValueKind.Number when item.GetRawText().Contains('.') => item.GetDouble(),
                 JsonValueKind.Number => item.GetInt64(),
                 JsonValueKind.True or JsonValueKind.False => item.GetBoolean(),
+                JsonValueKind.Null => null,
                 _ => item.GetString(),
             };
-            if (v is Int64 n && n < Int32.MaxValue) v = (Int32)n;
+            if (v is Int64 n && n >= Int32.MinValue && n <= Int32.MaxValue) v = (Int32)n;
             list.Add(v);
         }
 
@@ -160,7 +213,6 @@ public static class JsonUtil
         }
     }
 
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     private static JToken NumberElementToJToken(JsonElement element)
     {
         // 取原始文本（保持原始表示，方便处理超出标准类型范围的数字）
@@ -216,7 +268,7 @@ public static class JsonUtil
             case JTokenType.Integer:
             case JTokenType.Float:
                 // 保持紧凑数字文本（不加引号）
-                return token.ToString(Formatting.None);
+                return token.ToString(Newtonsoft.Json.Formatting.None);
 
             case JTokenType.Date:
                 {
@@ -224,12 +276,12 @@ public static class JsonUtil
                     var val = token.Value<object>();
                     if (val is DateTimeOffset dto) return dto.ToString("o");
                     if (val is DateTime dt) return dt.ToString("o");
-                    return token.ToString(Formatting.None);
+                    return token.ToString(Newtonsoft.Json.Formatting.None);
                 }
 
             default:
                 // 对象/数组等，返回紧凑 JSON 表示
-                return token.ToString(Formatting.None);
+                return token.ToString(Newtonsoft.Json.Formatting.None);
         }
     }
 
@@ -282,7 +334,7 @@ public static class JsonUtil
                 return ConvertArray(array);
 
             default:
-                return node.ToJsonString(SystemTextJsonExtension.SystemTextJsonService.IndentedOptions);
+                return node.ToJsonString(SystemTextJsonService.Default.IndentedOptions);
         }
     }
     static object? GetPrimitive(JsonValue value)
@@ -353,7 +405,6 @@ public static class JsonUtil
     /// <summary>
     /// 任意对象 → JsonNode
     /// </summary>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static JsonNode? GetJsonNodeFromObj(object? value)
     {
         if (value == null)
@@ -399,7 +450,7 @@ public static class JsonUtil
                 return JsonValue.Create(g);
 
             default:
-                return System.Text.Json.JsonSerializer.SerializeToNode(value, SystemTextJsonExtension.SystemTextJsonService.NoneIndentedOptions);
+                return System.Text.Json.JsonSerializer.SerializeToNode(value, SystemTextJsonService.Default.NoneIndentedOptions);
         }
     }
 
@@ -407,7 +458,6 @@ public static class JsonUtil
     /// <summary>
     /// 转string，对象为null返回空字符串，string返回字符串，其他对象使用System.Text.Json序列化
     /// </summary>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static string GetStringFromObj(object? value, bool parseBoolNumber = false)
     {
         if (value == null)
@@ -425,8 +475,8 @@ public static class JsonUtil
                 {
                     JsonValueKind.String => elem.GetString(),
                     JsonValueKind.Number => elem.GetRawText(),  // 或 elem.GetDecimal().ToString()
-                    JsonValueKind.True => "1",
-                    JsonValueKind.False => "0",
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
                     JsonValueKind.Null => string.Empty,
                     _ => elem.GetRawText(), // 对象、数组等直接输出 JSON
                 };
@@ -487,12 +537,19 @@ public static class JsonUtil
             if (bool.TryParse(item, out bool parseBool))
                 return new JValue(parseBool);
 
-            // 尝试解析字符串为 JToken 对象
+            if (long.TryParse(item, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l))
+                return new JValue(l);
+
+            if (decimal.TryParse(item, NumberStyles.Float, CultureInfo.InvariantCulture, out var dec))
+                return new JValue(dec);
+
+            if (double.TryParse(item, NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
+                return new JValue(d);
+
             return JToken.Parse(item);
         }
         catch
         {
-            // 解析失败时，将其转为 String 类型的 JValue
             return new JValue(item);
         }
     }
@@ -501,7 +558,6 @@ public static class JsonUtil
     /// 根据JToken获取Object类型值<br></br>
     /// 对应返回 对象字典 或 类型数组 或 类型值
     /// </summary>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static object? GetObjectFromJToken(this JToken token)
     {
         if (token == null)
@@ -591,7 +647,6 @@ public static class JsonUtil
     /// 把任意对象转换为 JToken。
     /// 支持 JsonElement、JToken、本地 CLR 类型。
     /// </summary>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static JToken GetJTokenFromObj(this object value)
     {
         if (value == null)

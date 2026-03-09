@@ -897,7 +897,7 @@ public class FullRedis : Redis
 
         if (typeof(T) == typeof(String)) return new Tuple<String, T?>(rs[0], (T)(Object)rs[1]);
 
-        return new Tuple<String, T?>(rs[0], (T?)JsonHost.Read(rs[1], typeof(T)));
+        return new Tuple<String, T?>(rs[0], JsonHost.FromSystemTextJsonString<T>(rs[1]));
     }
 
     /// <summary>从列表末尾弹出一个元素，阻塞</summary>
@@ -936,7 +936,7 @@ public class FullRedis : Redis
 
         if (typeof(T) == typeof(String)) return new Tuple<String, T?>(rs[0], (T)(Object)rs[1]);
 
-        return new Tuple<String, T?>(rs[0], (T?)JsonHost.Read(rs[1], typeof(T)));
+        return new Tuple<String, T?>(rs[0], JsonHost.FromSystemTextJsonString<T>(rs[1]));
     }
 
     /// <summary>从列表头部弹出一个元素，阻塞</summary>

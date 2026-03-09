@@ -7,7 +7,6 @@ using System.Xml.Serialization;
 namespace ThingsGateway.Foundation.Common.Serialization;
 
 /// <summary>Xml序列化</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public class Xml : FormatterBase, IXml
 {
     #region 属性

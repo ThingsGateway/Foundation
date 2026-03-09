@@ -8,7 +8,6 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -21,8 +20,6 @@ public static class ThingsGatewayBitConverterExtension
 {
 
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     public static bool GetChangedDataFormJsonNode(
         JsonNode jToken,
         DataTypeEnum dataType,
@@ -332,8 +329,6 @@ public static class ThingsGatewayBitConverterExtension
     /// </summary>
     /// <exception cref="ArgumentNullException"></exception>
     /// <exception cref="NotSupportedException"></exception>
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public static ReadOnlyMemory<byte> GetBytesFromData(this IThingsGatewayBitConverter byteConverter, JsonNode? value, DataTypeEnum dataType)
     {
         ArgumentNullExceptionEx.ThrowIfNull(value);

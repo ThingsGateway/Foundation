@@ -9,7 +9,7 @@
 // ------------------------------------------------------------------------------
 
 using ThingsGateway.Foundation.Common;
-using ThingsGateway.Foundation.Common.Extension;
+using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.StringExtension;
 using ThingsGateway.Foundation.Modbus;
 using TouchSocket.Core;

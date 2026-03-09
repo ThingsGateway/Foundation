@@ -11,21 +11,4 @@
 global using ThingsGateway.Foundation;
 
 global using TouchSocket.Core;
-using System.Diagnostics.CodeAnalysis;
 
-
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2026:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2055:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2057:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2060:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2062:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2065:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2067:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2070:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2072:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2075:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2077:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2080:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2087:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2090:使用动态代码可能与修剪不兼容")]
-[assembly: UnconditionalSuppressMessage("Trimming", "IL2091:使用动态代码可能与修剪不兼容")]

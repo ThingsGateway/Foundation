@@ -6,7 +6,6 @@ using System.Xml;
 namespace ThingsGateway.Foundation.Common.Serialization;
 
 /// <summary>列表数据编码</summary>
-[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 public class XmlList : XmlHandlerBase
 {
     /// <summary>初始化</summary>

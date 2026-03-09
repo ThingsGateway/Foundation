@@ -536,7 +536,6 @@ public class MemoryCache : Cache
 
         /// <summary>更新访问时间并返回数值</summary>
         /// <returns></returns>
-        [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
         public T? Visit<T>()
         {
             VisitTime = Runtime.TickCount64;
@@ -793,8 +792,6 @@ public class MemoryCache : Cache
     /// <summary>从数据流加载</summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    [UnconditionalSuppressMessage("Trimming", "IL2057:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public void Load(Stream stream)
     {
         var bn = new Binary

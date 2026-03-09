@@ -1,4 +1,4 @@
-﻿using ThingsGateway.Foundation.Common.Serialization;
+﻿using ThingsGateway.Foundation.Common.Json.Extension;
 
 namespace ThingsGateway.Foundation.Common.Caching.Queues;
 
@@ -46,7 +46,7 @@ public class Message
                     //ToJsonEntity,如果对像是中文字串，以object转对像会异常，由ToJsonEntity决定
                     //"内容".ToJsonEntity(typeof(object)) 出错
                     //"888".ToJsonEntity(typeof(object)) 正常
-                    v = val.ToJsonEntity(pi.PropertyType);
+                    v = val.FromSystemTextJsonString(pi.PropertyType);
                 else
                     v = val.ChangeTypeEx(pi.PropertyType);
 

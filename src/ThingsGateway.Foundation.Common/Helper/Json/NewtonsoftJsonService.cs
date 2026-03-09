@@ -19,6 +19,8 @@ namespace ThingsGateway.Foundation.Common.Json.Extension;
 [RequiresUnreferencedCode("此方法可能会使用反射构建，与剪裁不兼容。")]
 public class NewtonsoftJsonService
 {
+    public static NewtonsoftJsonService Default { get; } = new();
+
     /// <summary>
     /// 默认Json规则
     /// </summary>

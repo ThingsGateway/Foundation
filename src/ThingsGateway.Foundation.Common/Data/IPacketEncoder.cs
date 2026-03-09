@@ -1,4 +1,5 @@
-﻿using ThingsGateway.Foundation.Common.Serialization;
+﻿using ThingsGateway.Foundation.Common.Json.Extension;
+using ThingsGateway.Foundation.Common.Serialization;
 
 namespace ThingsGateway.Foundation.Common.Data;
 
@@ -33,7 +34,7 @@ public class DefaultPacketEncoder : IPacketEncoder
 {
     #region 属性
     /// <summary>Json序列化主机</summary>
-    public IJsonHost JsonHost { get; set; } = JsonHelper.Default;
+    public SystemTextJsonService JsonHost { get; set; } = SystemTextJsonService.Default;
 
     /// <summary>解码出错时抛出异常。默认false不抛出异常，仅返回默认值</summary>
     public Boolean ThrowOnError { get; set; }
@@ -63,7 +64,7 @@ public class DefaultPacketEncoder : IPacketEncoder
         var type = value.GetType();
         return type.GetTypeCode() switch
         {
-            TypeCode.Object => JsonHost.Write(value),
+            TypeCode.Object => JsonHost.ToSystemTextJsonString(value, JsonHost.NoneIndentedOptions),
             TypeCode.String => value as String,
             TypeCode.DateTime => ((DateTime)value).ToString("yyyy-MM-dd HH:mm:ss.fff"),
             _ => value + "",
@@ -101,12 +102,11 @@ public class DefaultPacketEncoder : IPacketEncoder
     /// <param name="value"></param>
     /// <param name="type"></param>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     protected virtual Object? OnDecode(String value, Type type)
     {
         if (type.GetTypeCode() == TypeCode.String) return value;
         if (type.IsBaseType()) return value.ChangeTypeEx(type);
 
-        return JsonHost.Read(value, type);
+        return JsonHost.FromSystemTextJsonString(value, type);
     }
 }

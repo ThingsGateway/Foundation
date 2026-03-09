@@ -8,10 +8,7 @@
 		<OtherTargetFrameworks>net10.0</OtherTargetFrameworks>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Riok.Mapperly" Version="4.3.1" ExcludeAssets="runtime" PrivateAssets="all" />
 
-	</ItemGroup>
 	
 	<PropertyGroup>
 		<NoWarn>
@@ -19,7 +16,7 @@
 
 		</NoWarn>
 		<TouchSocketVersion>4.1.7</TouchSocketVersion>
-		<FoundationVersion>12.4.71</FoundationVersion>
+		<FoundationVersion>12.4.72</FoundationVersion>
 		<Version>$(FoundationVersion)</Version>
 		
 		
@@ -29,38 +26,28 @@
 		<NET10Version>10.0.3</NET10Version>
 		<NET8Version>8.0.24</NET8Version>
 		<SatelliteResourceLanguages>zh-Hans;en-US</SatelliteResourceLanguages>
-
+		<!--设置为 true时，删除特定于全球化的代码和数据。 有关详细信息，请参阅固定模式。-->
+		<InvariantGlobalization>false</InvariantGlobalization>
 	</PropertyGroup>
 
 
 	<PropertyGroup>
 
-		<AnalysisModeDesign>None</AnalysisModeDesign>
 		<AnalysisModeDocumentation>All</AnalysisModeDocumentation>
-		<AnalysisModeGlobalization>None</AnalysisModeGlobalization>
 		<AnalysisModeInteroperability>All</AnalysisModeInteroperability>
 		<AnalysisModeMaintainability>All</AnalysisModeMaintainability>
-		<AnalysisModeNaming>None</AnalysisModeNaming>
 		<AnalysisModePerformance>All</AnalysisModePerformance>
 		<AnalysisModeSingleFile>All</AnalysisModeSingleFile>
 		<AnalysisModeReliability>All</AnalysisModeReliability>
 		<AnalysisModeSecurity>All</AnalysisModeSecurity>
-		<AnalysisModeUsage>None</AnalysisModeUsage>
-		<AnalysisModeStyle>None</AnalysisModeStyle>
 
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="$(MSBuildThisFileDirectory)Directory.Build.props" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)Directory.Build.props" Pack="false" PackagePath="\" />
 	</ItemGroup>
 
 
-
-	<PropertyGroup>
-		<DebugSymbols>True</DebugSymbols>
-		<DebugType>Embedded</DebugType>
-		<EmbedAllSources>True</EmbedAllSources>
-	</PropertyGroup>
 
 
 </Project>

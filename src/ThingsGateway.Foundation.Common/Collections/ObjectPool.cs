@@ -246,8 +246,6 @@ public class ObjectPool<T> : DisposeBase, IPool<T> where T : notnull
     #region 重载
     /// <summary>创建实例</summary>
     /// <returns></returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
-    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
     protected virtual T? OnCreate() => (T?)typeof(T).CreateInstance();
     #endregion
     protected object lockThis = new();

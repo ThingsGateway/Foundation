@@ -1,6 +1,6 @@
-﻿using ThingsGateway.Foundation.Common.Log;
+﻿using ThingsGateway.Foundation.Common.Json.Extension;
+using ThingsGateway.Foundation.Common.Log;
 using ThingsGateway.Foundation.Common.Security;
-using ThingsGateway.Foundation.Common.Serialization;
 
 namespace ThingsGateway.Foundation.Common.Caching.Queues;
 
@@ -425,7 +425,7 @@ public class RedisReliableQueue<T> : QueueBase, IProducerConsumer<T>, IDisposabl
 
                 // 删除状态
                 rds.Remove(key);
-                XTrace.WriteLine("删除队列状态：{0} {1}", key, st.ToJson());
+                XTrace.WriteLine("删除队列状态：{0} {1}", key, st.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false)));
             }
         }
 
@@ -436,7 +436,7 @@ public class RedisReliableQueue<T> : QueueBase, IProducerConsumer<T>, IDisposabl
             {
                 var queue = rds.GetList<String>(key) as RedisList<String>;
                 var msgs = queue?.GetAll();
-                XTrace.WriteLine("全局清理死信：{0} {1}", key, msgs?.ToJson());
+                XTrace.WriteLine("全局清理死信：{0} {1}", key, msgs?.ToSystemTextJsonString(SystemTextJsonService.CreateOptions(false, false)));
                 rds.Remove(key);
             }
         }

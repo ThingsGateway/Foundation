@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\ThingsGateway.Foundation\ThingsGateway.Foundation.csproj" />
+		<PackageReference Include="Riok.Mapperly" Version="4.3.1" ExcludeAssets="runtime" PrivateAssets="all" />
 	</ItemGroup>
 
 	<ItemGroup>
