@@ -8,7 +8,6 @@
 // QQ群：605534569
 // ------------------------------------------------------------------------------
 
-using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Json.Extension;
 using ThingsGateway.Foundation.Common.StringExtension;
 using ThingsGateway.Foundation.Modbus;

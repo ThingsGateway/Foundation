@@ -8,7 +8,7 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-namespace ThingsGateway.Foundation.Common;
+namespace ThingsGateway.Foundation;
 
 /// <summary>
 /// 数据类型

@@ -16,4 +16,9 @@ namespace ThingsGateway.Foundation;
 public abstract class DtuDeviceBase : DeviceBase, IDtu
 {
     public string? DtuId { get; set; }
+
+    public override ChannelTypeEnum[] SupportedChannelTypes()
+    {
+        return [ChannelTypeEnum.TcpClient, ChannelTypeEnum.TcpService, ChannelTypeEnum.SerialPort, ChannelTypeEnum.UdpSession];
+    }
 }

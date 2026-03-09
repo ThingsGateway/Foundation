@@ -1,4 +1,3 @@
-using ThingsGateway.Foundation.Common;
 using Xunit;
 
 namespace ThingsGateway.Foundation.Modbus.Tests;

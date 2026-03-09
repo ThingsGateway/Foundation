@@ -67,6 +67,7 @@ public interface IReceivedDevice : IDisposable, IDisposable2, IAsyncDisposable
     bool IsHexLog { get; init; }
 
     #endregion 属性
+    ChannelTypeEnum[] SupportedChannelTypes();
 
     /// <summary>
     /// 获取新的适配器实例

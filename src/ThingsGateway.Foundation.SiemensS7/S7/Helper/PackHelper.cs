@@ -8,8 +8,6 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using ThingsGateway.Foundation.Common;
-
 namespace ThingsGateway.Foundation.SiemensS7;
 #pragma warning disable CA1851
 

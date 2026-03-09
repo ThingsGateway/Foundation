@@ -52,6 +52,11 @@ public class ModbusSlave : DeviceBase, IModbusAddress
     {
         BitConverter.EndianType = EndianType.Big;
     }
+    public override ChannelTypeEnum[] SupportedChannelTypes()
+    {
+        return [ChannelTypeEnum.TcpService, ChannelTypeEnum.SerialPort, ChannelTypeEnum.UdpSession, ChannelTypeEnum.TcpClient];
+    }
+
     /// <inheritdoc/>
     public override void InitChannel(ChannelObject channelObject, ILog? deviceLog = null)
     {

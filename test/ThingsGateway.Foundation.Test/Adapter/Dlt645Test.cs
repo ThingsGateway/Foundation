@@ -9,7 +9,6 @@
 // ------------------------------------------------------------------------------
 
 using System.Diagnostics;
-using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.StringExtension;
 using ThingsGateway.Foundation.Dlt645;
 using TouchSocket.Core;

@@ -11,8 +11,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
-
-using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Modbus;
 
 using TouchSocket.Core;

@@ -31,7 +31,10 @@ public partial class SiemensS7Master : DeviceBase
     protected override void SetChannel()
     {
     }
-
+    public override ChannelTypeEnum[] SupportedChannelTypes()
+    {
+        return [ChannelTypeEnum.TcpClient];
+    }
     public override IThingsGatewayBitConverter BitConverter => s7BitConverter;
     private S7BitConverter s7BitConverter = new S7BitConverter(EndianType.Big);
 

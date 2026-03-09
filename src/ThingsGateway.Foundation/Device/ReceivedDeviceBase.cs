@@ -29,7 +29,10 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     {
         return false;
     }
-
+    public virtual ChannelTypeEnum[] SupportedChannelTypes()
+    {
+        return [ChannelTypeEnum.UdpSession, ChannelTypeEnum.TcpClient, ChannelTypeEnum.SerialPort];
+    }
     /// <inheritdoc/>
     public virtual void InitChannel([NotNullIfNotNull(nameof(channelObject))] ChannelObject channelObject, ILog? deviceLog = default)
     {

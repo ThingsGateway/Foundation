@@ -9,8 +9,6 @@
 //------------------------------------------------------------------------------
 
 using System.Text;
-
-using ThingsGateway.Foundation.Common;
 using ThingsGateway.Foundation.Common.Extension;
 
 namespace ThingsGateway.Foundation.SiemensS7;

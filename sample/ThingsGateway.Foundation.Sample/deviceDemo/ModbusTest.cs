@@ -1,5 +1,4 @@
-﻿using ThingsGateway.Foundation.Common;
-using ThingsGateway.Foundation.Modbus;
+﻿using ThingsGateway.Foundation.Modbus;
 #pragma warning disable CA2000 // 丢失范围之前释放对象
 
 namespace ThingsGateway.Foundation.Sample

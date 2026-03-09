@@ -8,7 +8,7 @@
 // QQ群：605534569
 // ------------------------------------------------------------------------------
 
-namespace ThingsGateway.Foundation.Common;
+namespace ThingsGateway.Foundation;
 
 /// <summary>
 /// 应用于多字节数据的解析或是生成格式

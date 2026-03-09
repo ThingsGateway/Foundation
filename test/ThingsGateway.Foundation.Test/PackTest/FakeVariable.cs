@@ -1,5 +1,4 @@
-﻿using ThingsGateway.Foundation.Common;
-namespace ThingsGateway.Foundation.Modbus.Tests;
+﻿namespace ThingsGateway.Foundation.Modbus.Tests;
 
 public class FakeVariable : IVariable
 {
