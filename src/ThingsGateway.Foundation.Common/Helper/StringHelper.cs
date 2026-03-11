@@ -506,6 +506,83 @@ public static class StringHelper
         return sb.ToString();
     }
 #endif
+
+
+
+
+    /// <summary>从当前字符串开头移除另一字符串，不区分大小写，循环多次匹配前缀</summary>
+    /// <param name="str">当前字符串</param>
+    /// <param name="starts">前缀集合</param>
+    /// <returns>移除后的字符串</returns>
+    public static String TrimStart(this String str, params String[] starts)
+    {
+        if (string.IsNullOrEmpty(str))
+            return str;
+
+        var span = str.AsSpan();
+
+        while (true)
+        {
+            bool matched = false;
+
+            for (int i = 0; i < starts.Length; i++)
+            {
+                var start = starts[i];
+                if (string.IsNullOrEmpty(start)) continue;
+
+                if (span.StartsWith(start, StringComparison.OrdinalIgnoreCase))
+                {
+                    span = span[start.Length..];
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched || span.IsEmpty)
+                break;
+        }
+
+        return span.ToString();
+    }
+
+
+
+    /// <summary>从当前字符串结尾移除另一字符串，不区分大小写，循环多次匹配后缀</summary>
+    /// <param name="str">当前字符串</param>
+    /// <param name="ends">后缀集合</param>
+    /// <returns>移除后的字符串</returns>
+    public static string TrimEnd(this string str, params string[] ends)
+    {
+        if (string.IsNullOrEmpty(str))
+            return str;
+
+        var span = str.AsSpan();
+
+        while (true)
+        {
+            bool matched = false;
+
+            for (int i = 0; i < ends.Length; i++)
+            {
+                var end = ends[i];
+                if (string.IsNullOrEmpty(end)) continue;
+
+                if (span.EndsWith(end, StringComparison.OrdinalIgnoreCase))
+                {
+                    span = span[..^end.Length];
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched || span.IsEmpty)
+                break;
+        }
+
+        return span.ToString();
+    }
+
+
     /// <summary>拆分字符串成为整型数组，默认逗号分号分隔，无效时返回空数组</summary>
     /// <remarks>过滤空格、过滤无效、不过滤重复</remarks>
     /// <param name="value">字符串</param>

@@ -102,6 +102,7 @@ public static class TextFileReader
 
     public static OperResult<LogData[]> LastLogData(string file, TouchSocket.Core.LogLevel logLevel, int lineCount = 200)
     {
+        file = Path.Combine(AppContext.BaseDirectory, file);
         if (!File.Exists(file))
             return new OperResult<LogData[]>("The file path is invalid");
 

@@ -164,7 +164,8 @@ public static class PathHelper
             string name = item.FullName.TrimStart(root).ToString();
             var dst = destDirName.CombinePath(name);
             callback?.Invoke(name);
-            item.CopyTo(dst.EnsureDirectory(true), true);
+            dst.EnsureDirectory(true);
+            item.CopyTo(dst, true);
 
             list.Add(dst);
         }
@@ -191,7 +192,7 @@ public static class PathHelper
         // 遍历目标目录，拷贝同名文件
         foreach (var item in dest.GetAllFiles(exts, allSub))
         {
-            string name = item.FullName.AsSpan().TrimStart(root).ToString();
+            string name = item.FullName.TrimStart(root).ToString();
             var fi = di.FullName.CombinePath(name).AsFile();
             //fi.CopyToIfNewer(item.FullName);
             if (fi.Exists && item.Exists && fi.LastWriteTime > item.LastWriteTime)

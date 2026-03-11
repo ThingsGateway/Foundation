@@ -47,7 +47,7 @@ public static class LoggerHelper
     /// </summary>
     public static string GetDebugLogBasePath()
     {
-        return PathHelper.CombinePathReplace("Logs", "DebugLog");
+        return PathHelper.CombinePathReplace(AppContext.BaseDirectory, "Logs", "DebugLog");
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public static class LoggerHelper
     /// </summary>
     public static string GetChannelLogBasePath()
     {
-        return PathHelper.CombinePathReplace("Logs", "ChannelLog");
+        return PathHelper.CombinePathReplace(AppContext.BaseDirectory, "Logs", "ChannelLog");
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public static class LoggerHelper
     /// </summary>
     public static string GetDeviceLogBasePath()
     {
-        return PathHelper.CombinePathReplace("Logs", "DeviceLog");
+        return PathHelper.CombinePathReplace(AppContext.BaseDirectory, "Logs", "DeviceLog");
     }
 
     /// <summary>

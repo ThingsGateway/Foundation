@@ -16,15 +16,15 @@
 
 		</NoWarn>
 		<TouchSocketVersion>4.1.7</TouchSocketVersion>
-		<FoundationVersion>12.4.73</FoundationVersion>
+		<FoundationVersion>12.4.74</FoundationVersion>
 		<Version>$(FoundationVersion)</Version>
 		
 		
 		<LangVersion>preview</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<NET10Version>10.0.3</NET10Version>
-		<NET8Version>8.0.24</NET8Version>
+		<NET10Version>10.0.4</NET10Version>
+		<NET8Version>8.0.25</NET8Version>
 		<SatelliteResourceLanguages>zh-Hans;en-US</SatelliteResourceLanguages>
 		<!--设置为 true时，删除特定于全球化的代码和数据。 有关详细信息，请参阅固定模式。-->
 		<InvariantGlobalization>false</InvariantGlobalization>
