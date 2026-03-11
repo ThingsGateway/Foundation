@@ -4,6 +4,7 @@ using ThingsGateway.Foundation.Common;
 
 public sealed class AsyncConcurrencyLimiter : DisposeBase
 {
+    const int MaxPoolSize = 1024;
     public readonly int MaxCount;
     private int _currentCount;
 
@@ -24,8 +25,16 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ValueTask WaitAsync()
     {
+        if (DisposedValue)
+        {
+            throw new ObjectDisposedException(nameof(AsyncConcurrencyLimiter));
+        }
         lock (_lock)
         {
+            if (DisposedValue)
+            {
+                throw new ObjectDisposedException(nameof(AsyncConcurrencyLimiter));
+            }
             if (_currentCount < MaxCount)
             {
                 _currentCount++;
@@ -41,6 +50,10 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Release()
     {
+        if (DisposedValue)
+        {
+            return;
+        }
         Waiter? w = null;
 
         lock (_lock)
@@ -51,7 +64,8 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
             }
             else
             {
-                _currentCount--;
+                if (_currentCount > 0)
+                    _currentCount--;
                 return;
             }
         }
@@ -69,6 +83,8 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
                 var w = _waiters.Dequeue();
                 w.TrySetCanceled();
             }
+            _pool.Clear();
+            _currentCount = 0;
         }
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -86,7 +102,8 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
 
     private void Return(Waiter waiter)
     {
-        _pool.Push(waiter);
+        if (_pool.Count < MaxPoolSize)
+            _pool.Push(waiter);
     }
 
     // -------------------------
@@ -126,7 +143,8 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
                 // 归还对象池
                 lock (_owner._lock)
                 {
-                    _owner.Return(this);
+                    if (!_owner.DisposedValue)
+                        _owner.Return(this);
                 }
             }
         }
