@@ -74,6 +74,42 @@ public class ModbusTest
         await Task.WhenAll(task1, task2);
     }
 
+    [Fact]
+    public async Task ModbusTcp_ReadMul_OK()
+    {
+        var modbusMaster = new ModbusMaster() { ModbusType = ModbusTypeEnum.ModbusTcp, Timeout = 10000 };
+        var modbusChannel = modbusMaster.CreateChannel(new TouchSocketConfig(), new ChannelOptions() { ChannelType = ChannelTypeEnum.Other }) as IClientChannel;
+
+        modbusChannel.Config.ConfigureContainer(a =>
+        {
+            a.AddEasyLogger((a, b, c, d) =>
+            {
+                _output.WriteLine($"{c}{Environment.NewLine}{d?.ToString()}");
+            }, LogLevel.Trace);
+        });
+        modbusMaster.InitChannel(new(modbusChannel));
+        await modbusChannel.SetupAsync(modbusChannel.Config);
+        await modbusMaster.ConnectAsync(CancellationToken.None);
+        var adapter = modbusChannel.ReadOnlyDataHandlingAdapter as SingleStreamDataHandlingAdapter;
+
+        var task1 = Task.Run(async () =>
+        {
+            var result = await modbusMaster.ReadByteAsync("400001").ConfigureAwait(false);
+            Assert.True(result.IsSuccess, result.ToString());
+        });
+        var task2 = Task.Run(async () =>
+        {
+            var result = await modbusMaster.ReadByteAsync("400001").ConfigureAwait(false);
+            Assert.True(result.IsSuccess, result.ToString());
+        });
+        await Task.Delay(100);
+        var task3 = Task.Run(async () =>
+        {
+            SingleStreamDataHandlingAdapterTest singleStreamDataHandlingAdapterTest = new();
+            await singleStreamDataHandlingAdapterTest.SendCallback("0002000000CB0103C800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003000000CB0103C80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".HexStringToBytes(), (a) => singleStreamDataHandlingAdapterTest.ReceivedAsync(adapter, CancellationToken.None), 1, CancellationToken.None).ConfigureAwait(false);
+        });
+        await Task.WhenAll(task1, task2, task3);
+    }
     [Theory]
     [InlineData("400045", true, "01032C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000007859")]
     [InlineData("300045", true, "01042C00000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ADE")]

@@ -647,7 +647,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
         if (modbusRtu)
             byteBlock.Write(CrcHelper.Crc16Only(byteBlock.Memory.Span));
         else
-            ByteBlockHelper.WriteBackValue(ref byteBlock, (byte)(byteBlock.Length - 6), EndianType.Big, 5);
+            ByteBlockHelper.WriteBackValue(ref byteBlock, (ushort)(byteBlock.Length - 6), EndianType.Big, 4);
     }
 
     private Task ReturnData(IClientChannel client, ReadOnlyMemory<byte> sendData, ReceivedDataEventArgs e)
@@ -685,7 +685,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                 {
                     ByteBlockHelper.Write(ref byteBlock, bytes.Slice(0, 8));
                     WriterExtension.WriteValue(ref byteBlock, (byte)1);
-                    ByteBlockHelper.WriteBackValue(ref byteBlock, (byte)(byteBlock.Length - 6), EndianType.Big, 5);
+                    ByteBlockHelper.WriteBackValue(ref byteBlock, (ushort)(byteBlock.Length - 6), EndianType.Big, 4);
                     ByteBlockHelper.WriteBackValue(ref byteBlock, (byte)(byteBlock.Span[7] + 128), EndianType.Big, 7);
                 }
                 await @this.ReturnData(client, byteBlock.Memory, e).ConfigureAwait(false);
@@ -714,7 +714,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                 else
                 {
                     ByteBlockHelper.Write(ref byteBlock, bytes.Slice(0, 12));
-                    ByteBlockHelper.WriteBackValue(ref byteBlock, (byte)(byteBlock.Length - 6), EndianType.Big, 5);
+                    ByteBlockHelper.WriteBackValue(ref byteBlock, (ushort)(byteBlock.Length - 6), EndianType.Big, 4);
                 }
                 await @this.ReturnData(client, byteBlock.Memory, e).ConfigureAwait(false);
             }

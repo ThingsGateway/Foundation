@@ -25,7 +25,23 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
         this.SafeDispose();
     }
 
-
+    public override async Task ClearAsync()
+    {
+        foreach (var id in this.GetIds())
+        {
+            if (this.TryGetClient(id, out var client))
+            {
+                try
+                {
+                    await client.CloseAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+                client.SafeDispose();
+            }
+        }
+    }
 
     public async Task ClientDisposeAsync(string id)
     {

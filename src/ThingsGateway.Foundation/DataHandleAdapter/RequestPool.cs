@@ -15,7 +15,7 @@ namespace ThingsGateway.Foundation;
 public class RequestPool<TRequest> : Pool<TRequest>, IRequestPool where TRequest : DeviceMessage, new()
 {
     /// <summary>实例化字符串池。GC2时回收</summary>
-    public RequestPool() : base(0, true) { }
+    public RequestPool() : base(0, true) { Max = 1024; }
 
     /// <summary>创建</summary>
     /// <returns></returns>
