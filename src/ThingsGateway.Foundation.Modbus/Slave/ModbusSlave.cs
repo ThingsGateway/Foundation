@@ -354,7 +354,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
 
     #region 核心
 
-    private readonly ReaderWriterLockSlim _lockSlim = new();
+    private readonly Lock _lock = new();
 
     /// <inheritdoc/>
     public OperResult<ReadOnlyMemory<byte>> ModbusRequest(ModbusRequest mAddress, bool read, CancellationToken cancellationToken = default)
@@ -382,10 +382,9 @@ public class ModbusSlave : DeviceBase, IModbusAddress
             var ModbusServer04ByteBlock = ModbusServer04ByteBlocks[mAddress.Station];
             if (read)
             {
-                using (new ReadLock(_lockSlim))
+                int len = mAddress.Length;
+                lock (_lock)
                 {
-                    int len = mAddress.Length;
-
                     switch (f)
                     {
                         case 1:
@@ -408,7 +407,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
             }
             else
             {
-                using (new WriteLock(_lockSlim))
+                lock (_lock)
                 {
                     switch (f)
                     {

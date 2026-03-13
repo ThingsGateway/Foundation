@@ -26,11 +26,10 @@ namespace ThingsGateway.Foundation;
 /// </remarks>
 public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDisposable
 {
-    private readonly Action m_cancel;
     private readonly Action<int> m_remove;
     private T m_completedData;
     private ManualResetValueTaskSourceCore<T> m_core;
-    private volatile int m_isCompleted;
+    private int m_isCompleted;
     private T m_pendingData;
     private CancellationTokenRegistration m_registration;
 
@@ -52,7 +51,6 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
 
         this.m_pendingData = pendingData;
         this.m_core.RunContinuationsAsynchronously = true;
-        this.m_cancel = this.Cancel;
     }
 
     /// <summary>
@@ -86,12 +84,16 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     /// <inheritdoc/>
     public void Dispose()
     {
+        Cancel();
+
         // 确保取消令牌已释放
         this.m_registration.Dispose();
         this.m_registration = default;
 
         var sign = this.m_sign;
-        this.Clear();
+        this.m_pendingData = default;
+        this.m_completedData = default;
+        this.m_status = WaitDataStatus.Default;
         this.m_remove(sign);
     }
 
@@ -104,7 +106,7 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     ValueTaskSourceStatus IValueTaskSource<WaitDataStatus>.GetStatus(short token)
             => this.m_core.GetStatus(token);
 
-    void IValueTaskSource<WaitDataStatus>.OnCompleted(Action<object> continuation, object? state,
+    void IValueTaskSource<WaitDataStatus>.OnCompleted(Action<object?> continuation, object? state,
             short token, ValueTaskSourceOnCompletedFlags flags)
             => this.m_core.OnCompleted(continuation, state, token, flags);
 
@@ -130,6 +132,9 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
             return; // 已经完成,直接返回
         }
 
+        this.m_registration.Dispose();
+        this.m_registration = default;
+
         this.m_status = status;
         this.m_completedData = result;
 
@@ -152,25 +157,21 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     {
         if (cancellationToken.CanBeCanceled)
         {
-            this.m_registration = cancellationToken.Register(this.m_cancel);
+            if (Volatile.Read(ref m_isCompleted) == 0)
+                this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).Cancel(), this);
         }
 
         return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void Clear()
-    {
-        this.m_pendingData = default;
-        this.m_completedData = default;
-        this.m_status = WaitDataStatus.Default;
-        this.m_isCompleted = 0;
-    }
+ 
 
     internal void Reset(int sign, T pendingData)
     {
         this.m_pendingData = pendingData;
         this.m_sign = sign;
         this.m_core.Reset();
+        //应该在重置时将完成状态重置为未完成，以允许再次使用此实例进行等待。
+        Interlocked.Exchange(ref this.m_isCompleted, 0);
     }
 }

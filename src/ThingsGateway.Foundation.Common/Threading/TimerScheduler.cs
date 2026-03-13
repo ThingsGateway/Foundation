@@ -275,7 +275,10 @@ public class TimerScheduler : IDisposable
                         // 必须在主线程设置状态，否则可能异步线程还没来得及设置开始状态，主线程又开始了新的一轮调度
                         timer.Calling = true;
                         if (timer.IsAsyncTask)
-                            _ = ExecuteAsync(timer);
+                        {
+                            timer.Task.GetAwaiter().GetResult();
+                            ExecuteAsync(timer);
+                        }
                         else if (!timer.Async)
                             Execute(timer);
                         else
@@ -377,10 +380,10 @@ public class TimerScheduler : IDisposable
 
     /// <summary>处理每一个定时器</summary>
     /// <param name="timer"></param>
-    private static Task ExecuteAsync(TimerX timer)
+    private static void ExecuteAsync(TimerX timer)
     {
-        return ExecuteAsync(timer);
-        static async PooledTask ExecuteAsync(TimerX timer)
+        timer.Task = ExecuteAsync(timer);
+        static async PooledValueTask ExecuteAsync(TimerX timer)
         {
             var scheduler = timer.Scheduler;
             timer.hasSetNext = false;

@@ -8,6 +8,7 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
+using System.IO.Pipelines;
 using ThingsGateway.Foundation.Common.PooledAwait;
 using ThingsGateway.Foundation.Common.StringExtension;
 
@@ -44,10 +45,13 @@ public static class ChannelOptionsExtensions
                 {
                     var func = funcs[i];
                     if (func == null) continue;
-                    var taskResult = func.Invoke(clientChannel, e, i == funcs.Count - 1);
-                    if (!taskResult.IsCompletedSuccessfully)
+                    try
                     {
-                        await taskResult.ConfigureAwait(false);
+                        await func.Invoke(clientChannel, e, i == funcs.Count - 1).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        clientChannel.Logger?.LogWarning(ex, "ChannelReceivedEvent fail");
                     }
                     if (e.Handled)
                     {
@@ -172,20 +176,29 @@ public static class ChannelOptionsExtensions
         {
             a.MaxBufferSize = 1024;
             a.MinBufferSize = 512;
-            a.SendPipeOptions = new System.IO.Pipelines.PipeOptions(
-             minimumSegmentSize: 512,
-             pauseWriterThreshold: 1024,
-             resumeWriterThreshold: 512,
-             useSynchronizationContext: false);
-            a.ReceivePipeOptions = new System.IO.Pipelines.PipeOptions(
-            minimumSegmentSize: 512,
-             pauseWriterThreshold: 1024,
-             resumeWriterThreshold: 512,
-                useSynchronizationContext: false);
+            a.ReceivePipeOptions = CreateDefaultReadPipeOptions();
+            a.SendPipeOptions = CreateDefaultWritePipeOptions();
         });
         return channelType;
     }
 
+    private static PipeOptions CreateDefaultReadPipeOptions()
+    {
+        return new PipeOptions(
+                pauseWriterThreshold: 1024 * 1024,
+                resumeWriterThreshold: 1024 * 512,
+                minimumSegmentSize: -1,
+                useSynchronizationContext: false);
+    }
+
+    private static PipeOptions CreateDefaultWritePipeOptions()
+    {
+        return new PipeOptions(
+                pauseWriterThreshold: 64 * 1024,
+                resumeWriterThreshold: 32 * 1024,
+                minimumSegmentSize: -1,
+                useSynchronizationContext: false);
+    }
     /// <summary>
     /// 获取一个新的串口通道。传入串口配置信息
     /// </summary>

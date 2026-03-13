@@ -158,7 +158,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
         if (RemoteEndPoint == null)
             return RemoteIPHost.ToString();
         else
-            return $"{IP}:{Port}";
+            return $"{IP}:{Port}[{LocalEndPoint.GetIP()}:{LocalEndPoint.GetPort()}]";
     }
 
     protected override Task OnTcpClosed(ClosedEventArgs e)
@@ -199,7 +199,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
 
         await this.OnChannelReceivedEvent(e, ChannelReceived).ConfigureAwait(false);
     }
-
+    
     /// <inheritdoc/>
     protected override void SafetyDispose(bool disposing)
     {

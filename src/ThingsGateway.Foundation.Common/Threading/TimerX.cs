@@ -567,7 +567,7 @@ public class TimerX : ITimer, ITimerx
         }
     }
 
-
+    public ValueTask Task { get; internal set; }
 
     private static void CopyNow(Object? state) => _Now = TimerScheduler.Default.GetNow();
     #endregion

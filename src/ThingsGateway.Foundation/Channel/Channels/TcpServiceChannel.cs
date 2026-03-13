@@ -278,8 +278,14 @@ public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChann
 
         if (e.Handled)
             return;
+        try
+        {
+            await socketClient.OnChannelReceivedEvent(e, ChannelReceived).ConfigureAwait(false);
+        }
+        catch (TaskCanceledException)
+        {
 
-        await socketClient.OnChannelReceivedEvent(e, ChannelReceived).ConfigureAwait(false);
+        }
 
     }
 

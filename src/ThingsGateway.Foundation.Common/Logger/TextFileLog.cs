@@ -228,20 +228,30 @@ public class TextFileLog : Logger, IDisposable
             // 初始化日志读写器
             writer ??= InitLog(logFile);
             if (writer == null) return;
-
-            // 依次把队列日志写入文件
-            while (_Logs.TryDequeue(out var str))
+            try
             {
-                Interlocked.Decrement(ref _logCount);
+                // 依次把队列日志写入文件
+                while (_Logs.TryDequeue(out var str))
+                {
+                    Interlocked.Decrement(ref _logCount);
 
-                // 写日志。TextWriter.WriteLine内需要拷贝，浪费资源
-                //writer.WriteLine(str);
-                writer.Write(str);
-                writer.WriteLine();
+                    // 写日志。TextWriter.WriteLine内需要拷贝，浪费资源
+                    //writer.WriteLine(str);
+                    writer.Write(str);
+                    writer.WriteLine();
+                }
+
+
+                // 写完一批后，刷一次磁盘
+                writer.Flush();
+
+            }
+            catch (ObjectDisposedException)
+            {
+
             }
 
-            // 写完一批后，刷一次磁盘
-            writer.Flush();
+
 
             // 连续5秒没日志，就关闭
             _NextClose = now.AddSeconds(5);
