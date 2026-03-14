@@ -8,8 +8,6 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using ThingsGateway.Foundation.Common.Extension;
-
 using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation.SiemensS7;
@@ -186,20 +184,28 @@ public class S7Send : ISendMessage
         }
         ushort dataLen = 0;
         //data
-        foreach (var address in addresss)
+
+        for (int i = 0; i < addresss.Length; i++)
         {
+            var address = addresss[i];
             var data = address.Data;
             byte len = (byte)address.Length;
             bool isBit = (address.IsBit && len == 1);
-            data = data.ArrayExpandToLengthEven();
+            //data = data.ArrayExpandToLengthEven();
             //后面跟的是写入的数据信息
             WriterExtension.WriteValue(ref byteBlock, (byte)0);
             WriterExtension.WriteValue(ref byteBlock, (byte)(isBit ? address.DataCode == S7Area.CT ? 9 : 3 : 4));//Bit:3;Byte:4;Counter或者Timer:9
             WriterExtension.WriteValue(ref byteBlock, (ushort)(isBit ? (byte)address.BitLength : len * 8), EndianType.Big);
             byteBlock.Write(data.Span);
+            if (i < addresss.Length - 1 && data.Span.Length % 2 == 1)
+            {
+                WriterExtension.WriteValue(ref byteBlock, (byte)0);
+                dataLen++;
+            }
 
             dataLen = (ushort)(dataLen + data.Length + 4);
         }
+
         ushort telegramLen = (ushort)(itemLen * 12 + 19 + dataLen);
 
         TouchSocketBitConverter.GetBitConverter(EndianType.Big).WriteBytes(span.Slice(2), (ushort)telegramLen);
