@@ -93,7 +93,7 @@ public interface IReceivedDevice : IDisposable, IDisposable2, IAsyncDisposable
     /// <param name="sendMessage">发送字节数组</param>
     /// <param name="cancellationToken">取消令箭</param>
     /// <returns>返回消息体</returns>
-    ValueTask<OperResult> SendAsync(ISendMessage sendMessage, CancellationToken cancellationToken);
+    ValueTask<OperResult> SendAsync(SendMessage sendMessage, CancellationToken cancellationToken);
 
     /// <summary>
     /// 发送并等待返回，会经过适配器，可传入<see cref="IClientChannel"/>，如果为空，则默认通道必须为<see cref="IClientChannel"/>类型
@@ -102,7 +102,7 @@ public interface IReceivedDevice : IDisposable, IDisposable2, IAsyncDisposable
     /// <param name="cancellationToken">取消令箭</param>
     /// <param name="channel">通道</param>
     /// <returns>返回消息体</returns>
-    ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(ISendMessage command, IClientChannel? channel, CancellationToken cancellationToken = default);
+    ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(SendMessage command, IClientChannel? channel, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 支持通道多设备

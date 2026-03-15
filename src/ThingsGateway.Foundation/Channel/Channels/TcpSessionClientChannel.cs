@@ -54,7 +54,7 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     {
         var pool = WaitHandlePool;
         WaitHandlePool = new WaitHandlePool<DeviceMessage>(minSign, maxSign);
-        pool?.CancelAll();
+        pool?.Dispose();
     }
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();
@@ -96,13 +96,6 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     /// <inheritdoc/>
     public AsyncConcurrencyLimiter WaitLock { get; internal set; } = new(1);
     public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
-
-    /// <inheritdoc/>
-    public override Task<Result> CloseAsync(string msg, CancellationToken token)
-    {
-        WaitHandlePool?.CancelAll();
-        return base.CloseAsync(msg, token);
-    }
 
     /// <inheritdoc/>
     public Task ConnectAsync(CancellationToken token) => Task.CompletedTask;

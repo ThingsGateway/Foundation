@@ -35,7 +35,7 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
     {
         var pool = WaitHandlePool;
         WaitHandlePool = new WaitHandlePool<DeviceMessage>(minSign, maxSign);
-        pool?.CancelAll();
+        pool?.Dispose();
     }
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();
@@ -214,7 +214,7 @@ public class SerialPortChannel : SerialPortClient, IClientChannel
     /// <inheritdoc/>
     protected override void SafetyDispose(bool disposing)
     {
-        WaitHandlePool?.CancelAll();
+        WaitHandlePool?.Dispose();
         base.SafetyDispose(disposing);
     }
 }

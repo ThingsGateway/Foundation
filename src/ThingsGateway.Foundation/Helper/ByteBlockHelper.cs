@@ -376,6 +376,22 @@ public static class ByteBlockHelper
     {
         return byteBlock.Sequence.Slice(0, length).ToArray();
     }
+    private static ArrayPool<byte> arrayPool = ArrayPool<byte>.Shared;
+
+    public static Memory<byte> ToArrayTakePool<TByteBlock>(this TByteBlock byteBlock, long length) where TByteBlock : IBytesReader
+    {
+        var len = (int)length;
+        var bytes = arrayPool.Rent(len);
+        byteBlock.Sequence.Slice(0, length).CopyTo(bytes);
+        return bytes.AsMemory().Slice(0, len);
+    }
+    public static Memory<byte> ToArrayPool(in this ReadOnlySequence<byte> readOnlyMemories)
+    {
+        var length = (int)readOnlyMemories.Length;
+        var bytes = arrayPool.Rent(length);
+        readOnlyMemories.Slice(0, length).CopyTo(bytes);
+        return bytes.AsMemory().Slice(0, (int)length);
+    }
     public static void Write<TByteBlock>(ref TByteBlock byteBlock, ReadOnlySequence<byte> bytes) where TByteBlock : IBytesWriter
     {
         foreach (var item in bytes)

@@ -8,8 +8,6 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using System.Buffers;
-
 using ThingsGateway.Foundation.Common.Extension;
 
 using TouchSocket.Core;
@@ -127,7 +125,7 @@ public class Dlt645_2007Message : DeviceMessage, IResultMessage
             }
 
             OperCode = 0;
-            Content = byteBlock.TotalSequence.Slice(HeadCodeIndex + 10, BodyLength - 2).ToArray();
+            Content = byteBlock.TotalSequence.Slice(HeadCodeIndex + 10, BodyLength - 2).ToArrayPool();
             return FilterResult.Success;
         }
 
@@ -135,7 +133,7 @@ public class Dlt645_2007Message : DeviceMessage, IResultMessage
     }
 
 
-    public override void SendInfo(ISendMessage sendMessage)
+    public override void SendInfo(SendMessage sendMessage)
     {
         Dlt645_2007Send = ((Dlt645_2007Send)sendMessage);
         Request = Dlt645_2007Send.Dlt645_2007Address;

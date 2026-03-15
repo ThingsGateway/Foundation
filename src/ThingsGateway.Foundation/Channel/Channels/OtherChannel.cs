@@ -42,7 +42,7 @@ public class OtherChannel : SetupConfigObject, IClientChannel
     {
         var pool = WaitHandlePool;
         WaitHandlePool = new WaitHandlePool<DeviceMessage>(minSign, maxSign);
-        pool?.CancelAll();
+        pool?.Dispose();
     }
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();

@@ -83,7 +83,7 @@ public class Dlt645_2007Request
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public class Dlt645_2007Send : ISendMessage
+public class Dlt645_2007Send : SendMessage
 {
     internal ControlCode ControlCode = default;
 
@@ -99,7 +99,16 @@ public class Dlt645_2007Send : ISendMessage
 
     private ReadOnlyMemory<byte> Fehead = default;
 
-    public Dlt645_2007Send(Dlt645_2007Address dlt645_2007Address, ControlCode controlCode, ReadOnlyMemory<byte> fehead = default, ReadOnlyMemory<byte> codes = default, ReadOnlyMemory<string> datas = default)
+    public override void Reset()
+    {
+        Dlt645_2007Address = default;
+        ControlCode = default;
+        Fehead = default;
+        Codes = default;
+        Datas = default;
+    }
+
+    public Dlt645_2007Send SetData(Dlt645_2007Address dlt645_2007Address, ControlCode controlCode, ReadOnlyMemory<byte> fehead = default, ReadOnlyMemory<byte> codes = default, ReadOnlyMemory<string> datas = default)
     {
         Dlt645_2007Address = dlt645_2007Address;
         ControlCode = controlCode;
@@ -107,14 +116,16 @@ public class Dlt645_2007Send : ISendMessage
         Fehead = fehead;
         Codes = codes;
         Datas = datas;
+
+        return this;
     }
 
-    public int MaxLength => 300;
-    public int SendHeadCodeIndex { get; private set; }
-    public int Sign { get; set; }
-    internal Dlt645_2007Address Dlt645_2007Address { get; }
 
-    public void Build<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesWriter
+    public override int MaxLength => 300;
+    public int SendHeadCodeIndex { get; private set; }
+    internal Dlt645_2007Address Dlt645_2007Address { get; private set; }
+
+    public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {
         if (Dlt645_2007Address?.DataId.Length < 4)
         {

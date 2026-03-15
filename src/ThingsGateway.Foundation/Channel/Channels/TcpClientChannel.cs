@@ -35,7 +35,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
     {
         var pool = WaitHandlePool;
         WaitHandlePool = new WaitHandlePool<DeviceMessage>(minSign, maxSign);
-        pool?.CancelAll();
+        pool?.Dispose();
     }
     public void SetDataHandlingAdapterLogger(ILog? log)
     {
@@ -199,11 +199,11 @@ public class TcpClientChannel : TcpClient, IClientChannel
 
         await this.OnChannelReceivedEvent(e, ChannelReceived).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc/>
     protected override void SafetyDispose(bool disposing)
     {
-        WaitHandlePool?.CancelAll();
+        WaitHandlePool?.Dispose();
         base.SafetyDispose(disposing);
     }
 }

@@ -147,15 +147,17 @@ public partial class ModbusMaster : DtuDeviceBase, IModbusAddress
         return mAddress;
     }
 
-    protected virtual ISendMessage GetSendMessage(ModbusAddress modbusAddress, bool read)
+    private Lazy<SendPool<ModbusRtuSend>> ModbusRtuSendPool { get; } = new Lazy<SendPool<ModbusRtuSend>>();
+    private Lazy<SendPool<ModbusTcpSend>> ModbusTcpSendPool { get; } = new Lazy<SendPool<ModbusTcpSend>>();
+    protected virtual SendMessage GetSendMessage(ModbusAddress modbusAddress, bool read)
     {
         if (ModbusType == ModbusTypeEnum.ModbusRtu)
         {
-            return new ModbusRtuSend(modbusAddress, read);
+            return ModbusRtuSendPool.Value.Get().SetData(modbusAddress, read);
         }
         else
         {
-            return new ModbusTcpSend(modbusAddress, read);
+            return ModbusTcpSendPool.Value.Get().SetData(modbusAddress, read);
         }
     }
 

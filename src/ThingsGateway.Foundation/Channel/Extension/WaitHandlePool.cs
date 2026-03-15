@@ -25,7 +25,7 @@ namespace ThingsGateway.Foundation;
 /// 使用线程安全的并发字典来存储等待数据，支持高并发场景下的操作。
 /// 签名生成采用原子递增方式，确保在指定范围内的唯一性。
 /// </remarks>
-public sealed class WaitHandlePool<T>
+public sealed class WaitHandlePool<T> : IDisposable
     where T : class, IWaitHandle
 {
     private readonly int m_maxSign;
@@ -35,11 +35,7 @@ public sealed class WaitHandlePool<T>
     private readonly Stack<AsyncWaitData<T>> s_pool = new();
     private int m_currentSign;
 
-#if NET9_0_OR_GREATER
     private Lock _lock = new();
-#else
-    private object _lock = new();
-#endif
     /// <summary>
     /// 初始化<see cref="WaitHandlePool{T}"/>类的新实例。
     /// </summary>
@@ -92,7 +88,20 @@ public sealed class WaitHandlePool<T>
             }
         }
     }
-
+    public void Dispose()
+    {
+        lock (_lock)
+        {
+            var signs = this.m_waitDic.Keys.ToList();
+            foreach (var sign in signs)
+            {
+                if (this.m_waitDic.TryRemove(sign, out var item))
+                {
+                    item.Dispose();
+                }
+            }
+        }
+    }
     /// <summary>
     /// 获取与指定结果关联的异步等待数据。
     /// </summary>

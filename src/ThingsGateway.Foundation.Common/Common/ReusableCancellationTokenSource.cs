@@ -9,25 +9,30 @@ public sealed class ReusableCancellationTokenSource : IDisposable
     {
         Dispose();
     }
-
+    private int _timeoutEnabled;
     private readonly Timer _timer;
     private CancellationTokenSource? _cts;
 
     public ReusableCancellationTokenSource()
     {
-        _timer = new Timer(OnTimeout, null, Timeout.Infinite, Timeout.Infinite);
+        _timer = new Timer(OnTimeout, this, Timeout.Infinite, Timeout.Infinite);
     }
 
     public bool TimeoutStatus;
 
-    private void OnTimeout(object? state)
+    private static void OnTimeout(object? state)
     {
+        if (state is not ReusableCancellationTokenSource @this) return;
+
+        if (Volatile.Read(ref @this._timeoutEnabled) == 0) return;
         try
         {
-            TimeoutStatus = true;
 
-            if (_cts?.IsCancellationRequested == false)
-                _cts?.Cancel();
+
+            @this.TimeoutStatus = true;
+
+            if (@this._cts?.IsCancellationRequested == false)
+                @this._cts?.Cancel();
         }
         catch
         {
@@ -45,8 +50,13 @@ public sealed class ReusableCancellationTokenSource : IDisposable
         TimeoutStatus = false;
 
         // 创建新的 CTS
-        _cts = _linkedCtsCache.GetLinkedTokenSource(external1, external2, external3);
-
+        var data = _linkedCtsCache.GetLinkedTokenSource(external1, external2, external3);
+        if (!data.Equals(_cts))
+        {
+            _cts?.Dispose();
+            _cts = data;
+        }
+        Volatile.Write(ref _timeoutEnabled, 1);
         // 启动 Timer
         _timer.Change(timeout, Timeout.Infinite);
 
@@ -56,6 +66,7 @@ public sealed class ReusableCancellationTokenSource : IDisposable
 
     public void Set()
     {
+        Volatile.Write(ref _timeoutEnabled, 0);
         _timer?.Change(Timeout.Infinite, Timeout.Infinite);
     }
 

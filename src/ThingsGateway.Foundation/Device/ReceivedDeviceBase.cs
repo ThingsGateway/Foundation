@@ -101,6 +101,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         }
     }
 
+
     protected virtual void SetChannel()
     {
         Channel?.ChannelOptions?.MaxConcurrentCount = 1;
@@ -276,7 +277,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     }
     public bool AutoConnect { get; protected set; } = true;
     /// <inheritdoc/>
-    private Task SendAsync(ISendMessage sendMessage, IClientChannel channel, CancellationToken token = default)
+    private ValueTask SendAsync(SendMessage sendMessage, IClientChannel channel, CancellationToken token = default)
     {
         if (!channel.Online)
         {
@@ -284,8 +285,10 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         }
         return SendAsync(this, sendMessage, channel, token);
 
-        static async PooledTask SendAsync(ReceivedDeviceBase @this, ISendMessage sendMessage, IClientChannel channel, CancellationToken token)
+        static async PooledValueTask SendAsync(ReceivedDeviceBase @this, SendMessage sendMessage, IClientChannel channel, CancellationToken token)
         {
+
+
             if (@this.SendDelayTime != 0)
                 await Task.Delay(@this.SendDelayTime, token).ConfigureAwait(false);
 
@@ -299,6 +302,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             {
                 await channel.SendAsync(sendMessage, token).ConfigureAwait(false);
             }
+
         }
     }
 
@@ -377,11 +381,11 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     }
 
     /// <inheritdoc/>
-    public virtual ValueTask<OperResult> SendAsync(ISendMessage sendMessage, CancellationToken cancellationToken)
+    public virtual ValueTask<OperResult> SendAsync(SendMessage sendMessage, CancellationToken cancellationToken)
     {
         return SendAsync(this, sendMessage, cancellationToken);
 
-        static async PooledValueTask<OperResult> SendAsync(ReceivedDeviceBase @this, ISendMessage sendMessage, CancellationToken cancellationToken)
+        static async PooledValueTask<OperResult> SendAsync(ReceivedDeviceBase @this, SendMessage sendMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -414,11 +418,11 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         }
     }
     /// <inheritdoc/>
-    public virtual ValueTask<OperResult> SendAsync(IClientChannel channel, ISendMessage sendMessage, CancellationToken cancellationToken)
+    public virtual ValueTask<OperResult> SendAsync(IClientChannel channel, SendMessage sendMessage, CancellationToken cancellationToken)
     {
         return SendAsync(this, channel, sendMessage, cancellationToken);
 
-        static async PooledValueTask<OperResult> SendAsync(ReceivedDeviceBase @this, IClientChannel channel, ISendMessage sendMessage, CancellationToken cancellationToken)
+        static async PooledValueTask<OperResult> SendAsync(ReceivedDeviceBase @this, IClientChannel channel, SendMessage sendMessage, CancellationToken cancellationToken)
         {
             try
             {
@@ -524,13 +528,13 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         return null;
     }
     /// <inheritdoc/>
-    public virtual ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(ISendMessage sendMessage, CancellationToken cancellationToken = default)
+    public virtual ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(SendMessage sendMessage, CancellationToken cancellationToken = default)
     {
         return SendThenReturnAsync(sendMessage, null, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc/>
-    public virtual ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(ISendMessage sendMessage, IClientChannel? channel, CancellationToken cancellationToken = default)
+    public virtual ValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturnAsync(SendMessage sendMessage, IClientChannel? channel, CancellationToken cancellationToken = default)
     {
         if (channel == null)
         {
@@ -541,7 +545,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
         return SendThenReturn(this, sendMessage, channel, cancellationToken);
 
-        static async PooledValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturn(ReceivedDeviceBase @this, ISendMessage sendMessage, IClientChannel channel, CancellationToken cancellationToken)
+        static async PooledValueTask<OperResult<ReadOnlyMemory<byte>>> SendThenReturn(ReceivedDeviceBase @this, SendMessage sendMessage, IClientChannel channel, CancellationToken cancellationToken)
         {
             try
             {
@@ -556,7 +560,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     }
 
     /// <inheritdoc/>
-    protected virtual ValueTask<DeviceMessage> SendThenReturnMessageAsync(ISendMessage sendMessage, CancellationToken cancellationToken = default)
+    protected virtual ValueTask<DeviceMessage> SendThenReturnMessageAsync(SendMessage sendMessage, CancellationToken cancellationToken = default)
     {
         var channelResult = GetChannel();
 #pragma warning disable CA2000 // 丢失范围之前释放对象
@@ -566,7 +570,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     }
 
     /// <inheritdoc/>
-    protected virtual ValueTask<DeviceMessage> SendThenReturnMessageAsync(ISendMessage command, IClientChannel clientChannel, CancellationToken cancellationToken = default)
+    protected virtual ValueTask<DeviceMessage> SendThenReturnMessageAsync(SendMessage command, IClientChannel clientChannel, CancellationToken cancellationToken = default)
     {
         return GetResponsedDataAsync(command, clientChannel, Timeout, cancellationToken);
     }
@@ -577,21 +581,23 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     /// 发送并等待数据
     /// </summary>
     protected ValueTask<DeviceMessage> GetResponsedDataAsync(
-        ISendMessage command,
+        SendMessage command,
         IClientChannel clientChannel,
         int timeout = 3000,
         CancellationToken cancellationToken = default)
     {
         return GetResponsedDataAsync(this, command, clientChannel, timeout, cancellationToken);
 
-        static async PooledValueTask<DeviceMessage> GetResponsedDataAsync(ReceivedDeviceBase @this, ISendMessage command, IClientChannel clientChannel, int timeout, CancellationToken cancellationToken)
+        static async PooledValueTask<DeviceMessage> GetResponsedDataAsync(ReceivedDeviceBase @this, SendMessage command, IClientChannel clientChannel, int timeout, CancellationToken cancellationToken)
         {
             AsyncWaitData<DeviceMessage>? waitData = null;
             AsyncConcurrencyLimiter? waitLock = null;
 
             try
             {
-                await @this.BeforeSendAsync(clientChannel, cancellationToken).ConfigureAwait(false);
+                var beforeSendVT = @this.BeforeSendAsync(clientChannel, cancellationToken);
+                if (!beforeSendVT.IsCompletedSuccessfully)
+                    await beforeSendVT.ConfigureAwait(false);
 
                 waitLock = @this.GetWaitLock(clientChannel);
 
@@ -604,20 +610,28 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                 clientChannel.SetDataHandlingAdapterLogger(@this.Logger);
 
-                await @this.SendAsync(command, clientChannel, cancellationToken).ConfigureAwait(false);
+                var sendVT = @this.SendAsync(command, clientChannel, cancellationToken);
+                if (!sendVT.IsCompletedSuccessfully)
+                    await sendVT.ConfigureAwait(false);
+
 
                 if (waitData.Status == WaitDataStatus.Success)
                     return waitData.CompletedData;
 
 #pragma warning disable CA2000 // 丢失范围之前释放对象
-                var reusableTimeout = @this._reusableTimeouts.Get() ?? new();
+                var reusableTimeout = @this._reusableTimeouts.Get();
+                if (reusableTimeout == null)
+                    reusableTimeout = new ReusableCancellationTokenSource();
 #pragma warning restore CA2000 // 丢失范围之前释放对象
                 try
                 {
 
                     var ctsToken = reusableTimeout.GetTokenSource(timeout, cancellationToken, @this.Channel?.ClosedToken ?? default);
                     ctsToken.ThrowIfCancellationRequested();
-                    await waitData.WaitAsync(ctsToken).ConfigureAwait(false);
+
+                    var waitVT = waitData.WaitAsync(ctsToken);
+                    if (!waitVT.IsCompletedSuccessfully)
+                        await waitVT.ConfigureAwait(false);
 
                 }
                 catch (OperationCanceledException ex)
@@ -671,8 +685,8 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             finally
             {
                 waitLock?.Release();
-                waitData?.SafeDispose();
-
+                waitData?.ReturnPool();
+                command.Dispose();
             }
         }
     }

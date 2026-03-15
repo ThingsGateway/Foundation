@@ -55,7 +55,7 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
     public TRequest? Request { get; set; }
 
     /// <inheritdoc />
-    public void SetRequest(ISendMessage sendMessage)
+    public void SetRequest(SendMessage sendMessage)
     {
         var request = GetInstance();
         request.Sign = sendMessage.Sign;
@@ -177,9 +177,9 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
 
     public override void SendInput<TWriter>(ref TWriter writer, IRequestInfo requestInfo)
     {
-        if (!(requestInfo is ISendMessage sendMessage))
+        if (!(requestInfo is SendMessage sendMessage))
         {
-            throw new Exception($"Unable to convert {nameof(requestInfo)} to {nameof(ISendMessage)}");
+            throw new Exception($"Unable to convert {nameof(requestInfo)} to {nameof(SendMessage)}");
         }
         Span<byte> span = default;
         if (Logger?.LogLevel <= LogLevel.Debug)

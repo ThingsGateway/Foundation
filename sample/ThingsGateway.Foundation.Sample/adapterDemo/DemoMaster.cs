@@ -77,12 +77,12 @@ public partial class DemoMaster : DeviceBase
     {
         return false;
     }
-
+    private SendPool<DemoSend> SendPool { get; } = new SendPool<DemoSend>();
     public override ValueTask<OperResult<ReadOnlyMemory<byte>>> ReadAsync(IDeviceAddress address, DataTypeEnum dataType, IThingsGatewayBitConverter bitConverter, CancellationToken cancellationToken = default)
     {
         if (address is DemoAddress mAddress)
         {
-            var send = new DemoSend(Station, mAddress.StartAddress, (ushort)mAddress.Length);
+            var send = SendPool.Get().SetData(Station, mAddress.StartAddress, (ushort)mAddress.Length);
             return SendThenReturnAsync(send, cancellationToken);
         }
         else
@@ -97,7 +97,7 @@ public partial class DemoMaster : DeviceBase
         {
             //解析自己的地址字符串，转换成起始地址等信息
             ushort startAddress = (ushort)address.ToInt();
-            var send = new DemoSend(Station, startAddress, (ushort)length);
+            var send = SendPool.Get().SetData(Station, startAddress, (ushort)length);
             return SendThenReturnAsync(send, cancellationToken);
         }
         catch (Exception ex)

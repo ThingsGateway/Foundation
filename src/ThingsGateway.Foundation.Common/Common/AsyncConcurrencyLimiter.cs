@@ -118,7 +118,7 @@ public sealed class AsyncConcurrencyLimiter : DisposeBase
         public Waiter(AsyncConcurrencyLimiter owner)
         {
             _owner = owner;
-            _core.RunContinuationsAsynchronously = true;
+            _core.RunContinuationsAsynchronously = false;
         }
 
         public void Reset(AsyncConcurrencyLimiter owner)

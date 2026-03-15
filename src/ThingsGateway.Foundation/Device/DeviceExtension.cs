@@ -8,9 +8,10 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
+using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-
 using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation;
@@ -490,6 +491,7 @@ public static partial class DeviceExtension
     /// 在返回的字节数组中解析每个变量的值
     /// 根据每个变量的<see cref="IVariable.Index"/>
     /// 不支持变长字符串类型变量，不能存在于变量List中
+    /// 注意结束后会将字节数组返回到内存池中，如果外部需要使用请自行复制一份，或者在调用前先将字节数组转换为其他类型。
     /// </summary>
     /// <param name="device">设备</param>
     /// <param name="variables">设备变量List</param>
@@ -498,14 +500,25 @@ public static partial class DeviceExtension
     /// <returns>解析结果</returns>
     public static OperResult PraseStructContent<T>(this IEnumerable<T> variables, IDevice device, ReadOnlyMemory<byte> buffer, bool exWhenAny) where T : IVariable
     {
-        var time = DateTime.Now;
-        if (variables is IList<T> collection)
+        try
         {
-            return PraseCollection(collection, device, buffer, exWhenAny, time);
+
+
+            var time = DateTime.Now;
+            if (variables is IList<T> collection)
+            {
+                return PraseCollection(collection, device, buffer, exWhenAny, time);
+            }
+            else
+            {
+                return PraseEnumerable(variables, device, buffer, exWhenAny, time);
+
+            }
         }
-        else
+        finally
         {
-            return PraseEnumerable(variables, device, buffer, exWhenAny, time);
+
+            if (buffer.Length > 0 && MemoryMarshal.TryGetArray(buffer, out var bytes) && bytes.Array.Length > 0) ArrayPool<byte>.Shared.Return(bytes.Array);
 
         }
         static OperResult PraseEnumerable(IEnumerable<T> variables, IDevice device, ReadOnlyMemory<byte> buffer, bool exWhenAny, DateTime time)

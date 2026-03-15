@@ -55,8 +55,6 @@
 		<PackageReference Include="System.Text.Json" Version="$(NET10Version)" />
 		<PackageReference Include="System.IO.Pipelines" Version="$(NET10Version)" />
 	</ItemGroup>
-	<ItemGroup>
-		<Folder Include="Serialization\Json\" />
-	</ItemGroup>
+
 
 </Project>

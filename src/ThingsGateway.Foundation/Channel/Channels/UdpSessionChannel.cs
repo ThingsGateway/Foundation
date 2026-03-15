@@ -53,7 +53,7 @@ public class UdpSessionChannel : UdpSession, IClientChannel
     {
         var pool = WaitHandlePool;
         WaitHandlePool = new WaitHandlePool<DeviceMessage>(minSign, maxSign);
-        pool?.CancelAll();
+        pool?.Dispose();
     }
 
     public WaitLock Lock { get; } = new();
@@ -226,7 +226,7 @@ public class UdpSessionChannel : UdpSession, IClientChannel
         m_transport?.SafeCancel();
         m_transport?.SafeDispose();
         m_transport = null;
-        WaitHandlePool?.CancelAll();
+        WaitHandlePool?.Dispose();
         base.SafetyDispose(disposing);
     }
 }

@@ -17,34 +17,42 @@ namespace ThingsGateway.Foundation.Modbus;
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public class ModbusTcpSend : ISendMessage
+public class ModbusTcpSend : SendMessage
 {
     private ModbusAddress ModbusAddress;
 
     private bool Read;
 
-    public ModbusTcpSend(ModbusAddress modbusAddress, bool read, ushort deviceId = 0)
+    public override void Reset()
+    {
+        ModbusAddress = default;
+        Read = default;
+        DeviceId = default;
+        TransactionId = default;
+    }
+    public ModbusTcpSend SetData(ModbusAddress modbusAddress, bool read, ushort deviceId = 0)
     {
         DeviceId = deviceId;
         ModbusAddress = modbusAddress;
         Read = read;
+
+        return this;
     }
 
-    public int MaxLength => 300;
+    public override int MaxLength => 300;
 
     /// <summary>
     /// 协议标识符
     /// </summary>
     public ushort DeviceId { get; set; }
 
-    public int Sign { get; set; }
 
     /// <summary>
     /// 事务处理标识符。即序号
     /// </summary>
     public ushort TransactionId { get; private set; }
 
-    public void Build<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesWriter
+    public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {
         TransactionId = (ushort)Sign;
         var f = ModbusAddress.FunctionCode > 0x30 ? ModbusAddress.FunctionCode - 0x30 : ModbusAddress.FunctionCode;

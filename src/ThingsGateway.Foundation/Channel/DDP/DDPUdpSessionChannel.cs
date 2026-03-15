@@ -26,6 +26,7 @@ namespace ThingsGateway.Foundation;
 /// </summary>
 public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSessionChannel
 {
+    private SendPool<DDPSend> SendPool { get; } = new SendPool<DDPSend>();
     public DDPUdpSessionChannel(IChannelOptions channelOptions) : base(channelOptions)
     {
     }
@@ -53,7 +54,7 @@ public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSe
     {
         if (TryGetId(endPoint, out var id))
         {
-            return DDPAdapter.SendInputAsync(endPoint, new DDPSend(memory, id, false), token);
+            return DDPAdapter.SendInputAsync(endPoint, SendPool.Get().SetData(memory, id, false), token);
         }
         else
         {
@@ -141,7 +142,7 @@ public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSe
                                 }
 
                                 //发送成功
-                                await @this.DDPAdapter.SendInputAsync(endPoint, new DDPSend(ReadOnlyMemory<byte>.Empty, id, false, 0x81), @this.ClosedToken).ConfigureAwait(false);
+                                await @this.DDPAdapter.SendInputAsync(endPoint, @this.SendPool.Get().SetData(ReadOnlyMemory<byte>.Empty, id, false, 0x81), @this.ClosedToken).ConfigureAwait(false);
                                 if (log)
 
                                     @this.Logger?.Info(string.Format(AppResource.DtuConnected, id));
@@ -149,7 +150,7 @@ public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSe
                             }
                             else if (message.Type == 0x02)
                             {
-                                await @this.DDPAdapter.SendInputAsync(endPoint, new DDPSend(ReadOnlyMemory<byte>.Empty, id, false, 0x82), @this.ClosedToken).ConfigureAwait(false);
+                                await @this.DDPAdapter.SendInputAsync(endPoint, @this.SendPool.Get().SetData(ReadOnlyMemory<byte>.Empty, id, false, 0x82), @this.ClosedToken).ConfigureAwait(false);
 
                                 @this.Logger?.Info(string.Format(AppResource.DtuDisconnecting, id));
 

@@ -40,6 +40,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
 
         return base.OnTcpConnected(e);
     }
+    private SendPool<DDPSend> SendPool { get; } = new SendPool<DDPSend>();
 
     #region 发送
 
@@ -71,7 +72,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
             else
             {
                 var byteBlock = new ByteBlock(1024);
-                var ddpSend = new DDPSend(memory, Id, true);
+                var ddpSend = SendPool.Get().SetData(memory, Id, true);
                 ddpSend.Build(ref byteBlock);
                 var newMemory = byteBlock.Memory;
                 var writer = new PipeBytesWriter(transport.Writer);
@@ -115,7 +116,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
                 throw new Exception();
             }
             requestInfoBuilder.Build(ref byteBlock);
-            var ddpSend = new DDPSend(byteBlock.Memory, Id, true);
+            var ddpSend = SendPool.Get().SetData(byteBlock.Memory, Id, true);
 
             var writer = new PipeBytesWriter(transport.Writer);
             adapter.SendInput(ref writer, ddpSend);
@@ -208,13 +209,13 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
                                 await @this.ResetIdAsync(id, @this.ClosedToken).ConfigureAwait(false);
 
                                 //发送成功
-                                await @this.ProtectedSendAsync(new DDPSend(ReadOnlyMemory<byte>.Empty, id, true, 0x81), @this.ClosedToken).ConfigureAwait(false);
+                                await @this.ProtectedSendAsync(@this.SendPool.Get().SetData(ReadOnlyMemory<byte>.Empty, id, true, 0x81), @this.ClosedToken).ConfigureAwait(false);
                                 if (log)
                                     @this.Logger?.Info(string.Format(AppResource.DtuConnected, @this.Id));
                             }
                             else if (message.Type == 0x02)
                             {
-                                await @this.ProtectedSendAsync(new DDPSend(ReadOnlyMemory<byte>.Empty, @this.Id, true, 0x82), @this.ClosedToken).ConfigureAwait(false);
+                                await @this.ProtectedSendAsync(@this.SendPool.Get().SetData(ReadOnlyMemory<byte>.Empty, @this.Id, true, 0x82), @this.ClosedToken).ConfigureAwait(false);
                                 @this.Logger?.Info(string.Format(AppResource.DtuDisconnecting, @this.Id));
                                 await Task.Delay(100).ConfigureAwait(false);
                                 await @this.CloseAsync().ConfigureAwait(false);

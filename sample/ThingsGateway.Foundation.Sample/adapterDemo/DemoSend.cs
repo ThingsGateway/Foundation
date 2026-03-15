@@ -17,21 +17,28 @@ namespace ThingsGateway.Foundation.Demo;
 /// <summary>
 /// 演示例子，报文构建格式
 /// </summary>
-public class DemoSend : ISendMessage
+public class DemoSend : SendMessage
 {
-    public DemoSend(byte station, ushort address, ushort length)
+
+    public override void Reset()
+    {
+        station = 0;
+        address = 0;
+        length = 0;
+    }
+    public DemoSend SetData(byte station, ushort address, ushort length)
     {
         this.station = station;
         this.address = address;
         this.length = length;
+        return this;
     }
     byte station;
     ushort address;
     ushort length;
-    public int MaxLength => 300;
-    public int Sign { get; set; }
+    public override int MaxLength => 300;
 
-    public void Build<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesWriter
+    public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {
         //假设发送格式是 [站号][地址高字节][地址低字节][长度高字节][长度低字节][CRC低字节][CRC高字节]
 

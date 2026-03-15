@@ -8,8 +8,6 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
-using System.Buffers;
-
 using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation.SiemensS7;
@@ -53,7 +51,7 @@ public class S7Message : DeviceMessage, IResultMessage
             }
             else
             {
-                Content = byteBlock.TotalSequence.Slice(byteBlock.BytesRead + byteBlock.BytesRemaining - 2, 2).ToArray();
+                Content = byteBlock.TotalSequence.Slice(byteBlock.BytesRead + byteBlock.BytesRemaining - 2, 2).ToArrayPool();
                 OperCode = 0;
                 return FilterResult.Success;
             }
@@ -142,7 +140,7 @@ public class S7Message : DeviceMessage, IResultMessage
                 }
 
                 OperCode = 0;
-                Content = data.ToArray();
+                Content = data.TotalSequence.Slice(0, data.Length).ToArrayPool();
                 data.SafeDispose();
                 return FilterResult.Success;
             }

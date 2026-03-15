@@ -10,7 +10,6 @@
 // 感谢您的下载和使用
 // ------------------------------------------------------------------------------
 
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks.Sources;
 using TouchSocket.Core;
 
@@ -50,7 +49,7 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
         this.m_remove = remove;
 
         this.m_pendingData = pendingData;
-        this.m_core.RunContinuationsAsynchronously = true;
+        this.m_core.RunContinuationsAsynchronously = false;
     }
 
     /// <summary>
@@ -80,15 +79,37 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     {
         this.Set(WaitDataStatus.Canceled, default!);
     }
-
+    /// <summary>
+    /// 取消当前等待，标记为已取消并触发等待任务的异常（<see cref="OperationCanceledException"/>）。
+    /// </summary>
+    private void TokenCancel()
+    {
+        this.Set(WaitDataStatus.Canceled, default!);
+    }
     /// <inheritdoc/>
     public void Dispose()
     {
         Cancel();
 
-        // 确保取消令牌已释放
+        //// 确保取消令牌已释放
         this.m_registration.Dispose();
         this.m_registration = default;
+
+        var sign = this.m_sign;
+        this.m_pendingData = default;
+        this.m_completedData = default;
+        this.m_status = WaitDataStatus.Default;
+        this.m_remove(sign);
+    }
+
+    /// <inheritdoc/>
+    public void ReturnPool()
+    {
+        Cancel();
+
+        //// 确保取消令牌已释放
+        //this.m_registration.Dispose();
+        //this.m_registration = default;
 
         var sign = this.m_sign;
         this.m_pendingData = default;
@@ -132,8 +153,8 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
             return; // 已经完成,直接返回
         }
 
-        this.m_registration.Dispose();
-        this.m_registration = default;
+        //this.m_registration.Dispose();
+        //this.m_registration = default;
 
         this.m_status = status;
         this.m_completedData = result;
@@ -158,13 +179,31 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
         if (cancellationToken.CanBeCanceled)
         {
             if (Volatile.Read(ref m_isCompleted) == 0)
-                this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).Cancel(), this);
+            {
+#if NET6_0_OR_GREATER
+                if (!this.m_registration.Token.Equals(cancellationToken))
+                {
+                    if (this.m_registration != default)
+                    {
+#pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
+                        this.m_registration.Dispose();
+#pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
+                    }
+                    this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
+                }
+#else
+                if (this.m_registration != default)
+                {
+                    this.m_registration.Dispose();
+                }
+                this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
+#endif
+            }
         }
-
         return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
     }
 
- 
+
 
     internal void Reset(int sign, T pendingData)
     {

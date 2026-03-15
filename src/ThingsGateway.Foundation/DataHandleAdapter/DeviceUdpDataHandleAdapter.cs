@@ -50,7 +50,7 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
     public TRequest? Request { get; set; }
 
     /// <inheritdoc />
-    public void SetRequest(ISendMessage sendMessage)
+    public void SetRequest(SendMessage sendMessage)
     {
         var request = GetInstance();
         request.Sign = sendMessage.Sign;
@@ -201,9 +201,9 @@ public class DeviceUdpDataHandleAdapter<TRequest> : UdpDataHandlingAdapter, IDev
     /// <inheritdoc/>
     protected override Task PreviewSendAsync(EndPoint endPoint, IRequestInfo requestInfo, CancellationToken cancellationToken)
     {
-        if (!(requestInfo is ISendMessage sendMessage))
+        if (!(requestInfo is SendMessage sendMessage))
         {
-            throw new Exception($"Unable to convert {nameof(requestInfo)} to {nameof(ISendMessage)}");
+            throw new Exception($"Unable to convert {nameof(requestInfo)} to {nameof(SendMessage)}");
         }
         cancellationToken.ThrowIfCancellationRequested();
 

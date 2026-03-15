@@ -337,9 +337,10 @@ public class Dlt645_2007Master : DtuDeviceBase
         }
     }
 
-    private static Dlt645_2007Send GetSendMessage(Dlt645_2007Address dAddress, ControlCode read, string feHead, ReadOnlyMemory<byte> codes = default, ReadOnlyMemory<string> datas = default)
+    private SendPool<Dlt645_2007Send> SendPool { get; } = new SendPool<Dlt645_2007Send>();
+    private Dlt645_2007Send GetSendMessage(Dlt645_2007Address dAddress, ControlCode read, string feHead, ReadOnlyMemory<byte> codes = default, ReadOnlyMemory<string> datas = default)
     {
-        return new Dlt645_2007Send(dAddress, read, feHead.HexStringToBytes(), codes, datas);
+        return SendPool.Get().SetData(dAddress, read, feHead.HexStringToBytes(), codes, datas);
     }
 
 

@@ -15,12 +15,9 @@ namespace ThingsGateway.Foundation;
 /// <inheritdoc cref="IResultMessage"/>
 public class DeviceMessage : OperResultClass<ReadOnlyMemory<byte>>, IResultMessage, IWaitHandle, IDisposable
 {
-    public IRequestPool RequestPool;
+    public IRequestPool RequestPool { get; internal set; }
     #region 构造
-    ~DeviceMessage()
-    {
-        Dispose();
-    }
+
     /// <inheritdoc />
     public DeviceMessage() : base()
     {
@@ -65,11 +62,10 @@ public class DeviceMessage : OperResultClass<ReadOnlyMemory<byte>>, IResultMessa
     public void Dispose()
     {
         RequestPool?.Put(this);
-        GC.SuppressFinalize(this);
     }
 
     /// <inheritdoc/>
-    public virtual void SendInfo(ISendMessage sendMessage)
+    public virtual void SendInfo(SendMessage sendMessage)
     {
     }
 }

@@ -149,6 +149,7 @@ public partial class SiemensS7Master : DeviceBase
     {
         return PackHelper.LoadSourceRead<T, T2>(this, deviceVariables, maxPack, defaultIntervalTime);
     }
+    private SendPool<S7Send> SendPool { get; } = new SendPool<S7Send>();
 
     /// <summary>
     /// 此方法并不会智能分组以最大化效率，减少传输次数，因为返回值是byte[]，所以一切都按地址数组的顺序执行，最后合并数组
@@ -180,7 +181,7 @@ public partial class SiemensS7Master : DeviceBase
                             address.Length = chunkLength;
 
                             var result = await @this.SendThenReturnAsync(
-                                new S7Send([address], true),
+                                @this.SendPool.Get().SetData([address], true),
                                 cancellationToken: cancellationToken
                             ).ConfigureAwait(false);
 
@@ -257,7 +258,7 @@ public partial class SiemensS7Master : DeviceBase
                 try
                 {
                     var writeResult = await @this.SendThenReturnAsync(
-                        new S7Send([firstAddress], false),
+                         @this.SendPool.Get().SetData([firstAddress], false),
                         cancellationToken: cancellationToken
                     ).ConfigureAwait(false);
 
@@ -327,7 +328,7 @@ public partial class SiemensS7Master : DeviceBase
                     try
                     {
                         var result = await @this.SendThenReturnAsync(
-                            new S7Send(chunk.ToArray(), false),
+                            @this.SendPool.Get().SetData(chunk.ToArray(), false),
                             cancellationToken: cancellationToken
                         ).ConfigureAwait(false);
 
@@ -500,7 +501,7 @@ public partial class SiemensS7Master : DeviceBase
 
             try
             {
-                using var result2 = await SendThenReturnMessageAsync(new S7Send(ISO_CR), channel, channel.ClosedToken).ConfigureAwait(false);
+                using var result2 = await SendThenReturnMessageAsync(SendPool.Get().SetData(ISO_CR), channel, channel.ClosedToken).ConfigureAwait(false);
                 if (!result2.IsSuccess)
                 {
                     await channel.CloseAsync().ConfigureAwait(false);
@@ -518,7 +519,7 @@ public partial class SiemensS7Master : DeviceBase
             }
             try
             {
-                using var result2 = await SendThenReturnMessageAsync(new S7Send(S7_PN), channel, channel.ClosedToken).ConfigureAwait(false);
+                using var result2 = await SendThenReturnMessageAsync(SendPool.Get().SetData(S7_PN), channel, channel.ClosedToken).ConfigureAwait(false);
                 if (!result2.IsSuccess)
                 {
                     await channel.CloseAsync().ConfigureAwait(false);

@@ -12,14 +12,21 @@ using ThingsGateway.Foundation.Common.Collections;
 
 namespace ThingsGateway.Foundation;
 
-public class RequestPool<TRequest> : Pool<TRequest>, IRequestPool where TRequest : DeviceMessage, new()
+public class SendPool<TRequest> : Pool<TRequest>, ISendPool where TRequest : SendMessage, new()
 {
     /// <summary>实例化字符串池。GC2时回收</summary>
-    public RequestPool() : base(0, true) { Max = 256; }
+    public SendPool() : base(0, true) { Max = 256; }
 
     /// <summary>创建</summary>
     /// <returns></returns>
-    protected override TRequest OnCreate() => new TRequest() { RequestPool = this, OperCode = -1, Sign = -1 };
+    protected override TRequest OnCreate() => new TRequest() { SendPool = this, Sign = -1 };
+
+    public override TRequest Get()
+    {
+        var data = base.Get();
+        data.Reset();
+        return data;
+    }
 
     /// <summary>归还</summary>
     /// <param name="value"></param>
@@ -27,11 +34,9 @@ public class RequestPool<TRequest> : Pool<TRequest>, IRequestPool where TRequest
     public override Boolean Return(TRequest value)
     {
         value.Sign = -1;
-        value.OperCode = -1;
         return base.Return(value);
     }
-
-    public Boolean Put(DeviceMessage value)
+    public Boolean Put(SendMessage value)
     {
         if (value is TRequest request)
         {
@@ -39,9 +44,9 @@ public class RequestPool<TRequest> : Pool<TRequest>, IRequestPool where TRequest
         }
         return false;
     }
-}
 
-public interface IRequestPool
+}
+public interface ISendPool
 {
-    public Boolean Put(DeviceMessage value);
+    public Boolean Put(SendMessage value);
 }

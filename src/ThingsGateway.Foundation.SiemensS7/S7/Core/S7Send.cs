@@ -54,29 +54,36 @@ public class S7Request
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public class S7Send : ISendMessage
+public class S7Send : SendMessage
 {
     internal bool Handshake;
     internal byte[] HandshakeBytes;
     internal bool Read;
     internal SiemensS7Address[] SiemensS7Address;
-
-    public S7Send(byte[] handshakeBytes)
+    public override void Reset()
+    {
+        Handshake = false;
+        HandshakeBytes = default;
+        Read = false;
+        SiemensS7Address = default;
+    }
+    public S7Send SetData(byte[] handshakeBytes)
     {
         HandshakeBytes = handshakeBytes;
         Handshake = true;
+        return this;
     }
 
-    public S7Send(SiemensS7Address[] siemensS7Address, bool read)
+    public S7Send SetData(SiemensS7Address[] siemensS7Address, bool read)
     {
         SiemensS7Address = siemensS7Address;
         Read = read;
+        return this;
     }
 
-    public int MaxLength => 2048;
-    public int Sign { get; set; }
+    public override int MaxLength => 2048;
 
-    public void Build<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesWriter
+    public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {
         if (Handshake == true)
         {

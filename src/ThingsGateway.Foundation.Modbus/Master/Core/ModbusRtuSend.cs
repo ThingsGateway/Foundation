@@ -17,21 +17,27 @@ namespace ThingsGateway.Foundation.Modbus;
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public class ModbusRtuSend : ISendMessage
+public class ModbusRtuSend : SendMessage
 {
     private bool Read;
+    public override void Reset()
+    {
+        Read = false;
+        ModbusAddress = default;
 
-    public ModbusRtuSend(ModbusAddress modbusAddress, bool read)
+    }
+    public ModbusRtuSend SetData(ModbusAddress modbusAddress, bool read)
     {
         ModbusAddress = modbusAddress;
         Read = read;
+        return this;
+
     }
 
-    public int MaxLength => 300;
-    public ModbusAddress ModbusAddress { get; }
-    public int Sign { get; set; }
+    public override int MaxLength => 300;
+    public ModbusAddress ModbusAddress { get; private set; }
 
-    public void Build<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesWriter
+    public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {
         var span = byteBlock.GetSpan(512);
         var f = ModbusAddress.FunctionCode > 0x30 ? ModbusAddress.FunctionCode - 0x30 : ModbusAddress.FunctionCode;

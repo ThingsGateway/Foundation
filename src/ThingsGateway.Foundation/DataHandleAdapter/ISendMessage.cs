@@ -15,6 +15,16 @@ namespace ThingsGateway.Foundation;
 /// <summary>
 /// 发送消息
 /// </summary>
-public interface ISendMessage : IRequestInfo, IWaitHandle, IRequestInfoBuilder
+public abstract class SendMessage : IRequestInfo, IWaitHandle, IRequestInfoBuilder, IDisposable
 {
+    public ISendPool SendPool { get; internal set; }
+    public int Sign { get; set; }
+    public abstract int MaxLength { get; }
+
+    public void Dispose()
+    {
+        SendPool?.Put(this);
+    }
+    public abstract void Reset();
+    public abstract void Build<TWriter>(ref TWriter writer) where TWriter : IBytesWriter;
 }

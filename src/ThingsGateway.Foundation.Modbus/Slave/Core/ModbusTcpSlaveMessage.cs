@@ -36,6 +36,10 @@ public class ModbusTcpSlaveMessage : DeviceMessage, IResultMessage
         Sign = ReaderExtension.ReadValue<TByteBlock, ushort>(ref byteBlock, EndianType.Big);
         byteBlock.BytesRead += 2;
         BodyLength = ReaderExtension.ReadValue<TByteBlock, ushort>(ref byteBlock, EndianType.Big) - 6;
+        if(BodyLength  < 0)
+        {
+            throw new Exception($"Data length:{byteBlock.TotalSequence.Length} bodyLength:{BodyLength} BytesRead:{byteBlock.BytesRead}，Hex: {byteBlock.ToHexString()}");
+        }
         Request.Station = ReaderExtension.ReadValue<TByteBlock, byte>(ref byteBlock);
         Request.FunctionCode = ReaderExtension.ReadValue<TByteBlock, byte>(ref byteBlock);
         var f = Request.FunctionCode > 0x30 ? Request.FunctionCode - 0x30 : Request.FunctionCode;

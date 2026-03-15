@@ -18,24 +18,30 @@ namespace ThingsGateway.Foundation;
 /// <summary>
 /// <inheritdoc/>
 /// </summary>
-public class DDPSend : ISendMessage
+public class DDPSend : SendMessage
 {
-    public int MaxLength => 300;
-    public int Sign { get; set; }
+    public override int MaxLength => 300;
     ReadOnlyMemory<byte> ReadOnlyMemory;
     string Id;
     byte Command;
     bool Tcp;
-
-    public DDPSend(ReadOnlyMemory<byte> readOnlyMemory, string id, bool tcp, byte command = 0x89)
+    public override void Reset()
+    {
+        ReadOnlyMemory = default;
+        Id = default;
+        Command = default;
+        Tcp = default;
+    }
+    public DDPSend SetData(ReadOnlyMemory<byte> readOnlyMemory, string id, bool tcp, byte command = 0x89)
     {
         Tcp = tcp;
         ReadOnlyMemory = readOnlyMemory;
         Id = id;
         Command = command;
+        return this;
     }
 
-    public void Build<TByteBlock>(ref TByteBlock byteBlock) where TByteBlock : IBytesWriter
+    public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {
         WriterExtension.WriteValue(ref byteBlock, (byte)0x7b);
         WriterExtension.WriteValue(ref byteBlock, (byte)Command);

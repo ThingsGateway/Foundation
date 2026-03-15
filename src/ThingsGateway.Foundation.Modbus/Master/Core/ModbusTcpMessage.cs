@@ -58,7 +58,7 @@ public class ModbusTcpMessage : DeviceMessage, IResultMessage
             {
                 OperCode = 0;
                 Response.Length = ReaderExtension.ReadValue<TByteBlock, byte>(ref byteBlock);
-                Content = byteBlock.ToArrayTake(BodyLength - 1);
+                Content = byteBlock.ToArrayTakePool(BodyLength - 1);
                 Response.MasterWriteDatas = Content;
                 return FilterResult.Success;
             }
@@ -66,7 +66,7 @@ public class ModbusTcpMessage : DeviceMessage, IResultMessage
             {
                 Response.StartAddress = ReaderExtension.ReadValue<TByteBlock, ushort>(ref byteBlock, EndianType.Big);
                 OperCode = 0;
-                Content = byteBlock.ToArrayTake(BodyLength - 2);
+                Content = byteBlock.ToArrayTakePool(BodyLength - 2);
                 Response.MasterWriteDatas = Content;
                 return FilterResult.Success;
             }

@@ -97,7 +97,7 @@ public class ModbusRtuMessage : DeviceMessage, IResultMessage
         if (f <= 4)
         {
             OperCode = 0;
-            Content = byteBlock.ToArrayTake(BodyLength - 2);
+            Content = byteBlock.ToArrayTakePool(BodyLength - 2);
             Response.MasterWriteDatas = Content;
             crcLen = 3 + Response.Length;
         }
@@ -106,7 +106,7 @@ public class ModbusRtuMessage : DeviceMessage, IResultMessage
             byteBlock.BytesRead = HeaderLength - 1;
             Response.StartAddress = ReaderExtension.ReadValue<TByteBlock, ushort>(ref byteBlock, EndianType.Big);
             OperCode = 0;
-            Content = byteBlock.ToArrayTake(BodyLength - 4);
+            Content = byteBlock.ToArrayTakePool(BodyLength - 4);
             Response.MasterWriteDatas = Content;
             crcLen = 6;
         }
@@ -159,7 +159,7 @@ public class ModbusRtuMessage : DeviceMessage, IResultMessage
     }
 
 
-    public override void SendInfo(ISendMessage sendMessage)
+    public override void SendInfo(SendMessage sendMessage)
     {
         Request = ((ModbusRtuSend)sendMessage).ModbusAddress;
     }
