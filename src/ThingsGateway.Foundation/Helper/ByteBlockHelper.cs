@@ -399,6 +399,14 @@ public static class ByteBlockHelper
             byteBlock.Write(item.Span);
         }
     }
+    public static void Write( ByteBlock byteBlock, ReadOnlySequence<byte> bytes)
+    {
+        foreach (var item in bytes)
+        {
+            byteBlock.Write(item.Span);
+        }
+    }
+
     public static void WriteBackValue<TWriter, T>(ref TWriter writer, T value, EndianType endianType, int pos)
     where T : unmanaged
     where TWriter : IByteBlockWriter

@@ -174,11 +174,13 @@ public static class ChannelOptionsExtensions
 
         config.SetTransportOption(a =>
         {
-            a.MaxBufferSize = 1024;
-            a.MinBufferSize = 512;
             a.ReceivePipeOptions = CreateDefaultReadPipeOptions();
             a.SendPipeOptions = CreateDefaultWritePipeOptions();
         });
+
+
+
+
         return channelType;
     }
 
@@ -187,16 +189,14 @@ public static class ChannelOptionsExtensions
         return new PipeOptions(
                 pauseWriterThreshold: 1024 * 1024,
                 resumeWriterThreshold: 1024 * 512,
-                minimumSegmentSize: -1,
                 useSynchronizationContext: false);
     }
 
     private static PipeOptions CreateDefaultWritePipeOptions()
     {
         return new PipeOptions(
-                pauseWriterThreshold: 64 * 1024,
-                resumeWriterThreshold: 32 * 1024,
-                minimumSegmentSize: -1,
+                pauseWriterThreshold: 1024 * 1024,
+                resumeWriterThreshold: 1024 * 512,
                 useSynchronizationContext: false);
     }
     /// <summary>

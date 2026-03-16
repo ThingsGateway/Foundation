@@ -20,7 +20,7 @@ namespace ThingsGateway.Foundation;
 /// </summary>
 public class DDPSend : SendMessage
 {
-    public override int MaxLength => 300;
+    public override int MaxLength => 512;
     ReadOnlyMemory<byte> ReadOnlyMemory;
     string Id;
     byte Command;

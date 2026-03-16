@@ -41,11 +41,11 @@ public class Pool<T> : IPool<T> where T : class
     {
         var now = Runtime.TickCount64;
         if (_next <= 0)
-            _next = now + 60000;
+            _next = now + 300000;
         else if (_next < now)
         {
             Clear();
-            _next = now + 60000;
+            _next = now + 300000;
         }
 
         return true;

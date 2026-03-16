@@ -8,7 +8,7 @@ namespace ThingsGateway.Foundation.Common.PooledAwait
     /// </summary>
     internal static class Pool<T> where T : class
     {
-        private static ThingsGateway.Foundation.Common.PoolT<T> pool = new();
+        private static ThingsGateway.Foundation.Common.ObjectPool<T> pool = new();
 
         /// <summary>
         /// Gets an instance from the pool if possible

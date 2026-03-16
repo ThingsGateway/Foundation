@@ -383,61 +383,98 @@ public class ModbusSlave : DeviceBase, IModbusAddress
             if (read)
             {
                 int len = mAddress.Length;
-                lock (_lock)
+
+                switch (f)
                 {
-                    switch (f)
-                    {
-                        case 1:
+                    case 1:
+                        lock (ModbusServer01ByteBlock)
+                        {
                             ModbusServer01ByteBlock.Position = mAddress.StartAddress;
-                            return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer01ByteBlock.GetMemory(len).Slice(0, len));
-
-                        case 2:
+                            ModbusServer01ByteBlock.ExtendSize(len);
+                        }
+                        break;
+                    case 2:
+                        lock (ModbusServer02ByteBlock)
+                        {
                             ModbusServer02ByteBlock.Position = mAddress.StartAddress;
-                            return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer02ByteBlock.GetMemory(len).Slice(0, len));
+                            ModbusServer02ByteBlock.ExtendSize(len);
+                        }
+                        break;
 
-                        case 3:
+                    case 3:
+                        lock (ModbusServer03ByteBlock)
+                        {
                             ModbusServer03ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
-                            return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer03ByteBlock.GetMemory(len).Slice(0, len));
+                            ModbusServer03ByteBlock.ExtendSize(len);
+                        }
+                        break;
 
-                        case 4:
+                    case 4:
+                        lock (ModbusServer04ByteBlock)
+                        {
                             ModbusServer04ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
-                            return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer04ByteBlock.GetMemory(len).Slice(0, len));
-                    }
+                            ModbusServer04ByteBlock.ExtendSize(len);
+                        }
+                        break;
+                }
+
+                switch (f)
+                {
+                    case 1:
+                        return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer01ByteBlock.TotalMemory.Slice(mAddress.StartAddress, len));
+
+                    case 2:
+                        return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer02ByteBlock.TotalMemory.Slice(mAddress.StartAddress, len));
+
+                    case 3:
+                        return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer03ByteBlock.TotalMemory.Slice(mAddress.StartAddress * RegisterByteLength, len));
+
+                    case 4:
+                        return OperResult.CreateSuccessResult((ReadOnlyMemory<byte>)ModbusServer04ByteBlock.TotalMemory.Slice(mAddress.StartAddress * RegisterByteLength, len));
                 }
             }
             else
             {
-                lock (_lock)
+
+                switch (f)
                 {
-                    switch (f)
-                    {
-                        case 2:
+                    case 2:
+                        lock (ModbusServer02ByteBlock)
+                        {
                             ModbusServer02ByteBlock.Position = mAddress.StartAddress;
-                            ByteBlockHelper.Write(ref ModbusServer02ByteBlock, mAddress.SlaveWriteDatas);
+                            ByteBlockHelper.Write(ModbusServer02ByteBlock, mAddress.SlaveWriteDatas);
                             return new();
-
-                        case 1:
-                        case 5:
-                        case 15:
+                        }
+                    case 1:
+                    case 5:
+                    case 15:
+                        lock (ModbusServer01ByteBlock)
+                        {
                             ModbusServer01ByteBlock.Position = mAddress.StartAddress;
-                            ByteBlockHelper.Write(ref ModbusServer01ByteBlock, mAddress.SlaveWriteDatas);
+                            ByteBlockHelper.Write(ModbusServer01ByteBlock, mAddress.SlaveWriteDatas);
 
                             return new();
+                        }
 
-                        case 4:
+                    case 4:
+                        lock (ModbusServer04ByteBlock)
+                        {
                             ModbusServer04ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
-                            ByteBlockHelper.Write(ref ModbusServer04ByteBlock, mAddress.SlaveWriteDatas);
+                            ByteBlockHelper.Write(ModbusServer04ByteBlock, mAddress.SlaveWriteDatas);
 
                             return new();
+                        }
 
-                        case 3:
-                        case 6:
-                        case 16:
+                    case 3:
+                    case 6:
+                    case 16:
+                        lock (ModbusServer03ByteBlock)
+                        {
                             ModbusServer03ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
-                            ByteBlockHelper.Write(ref ModbusServer03ByteBlock, mAddress.SlaveWriteDatas);
+                            ByteBlockHelper.Write(ModbusServer03ByteBlock, mAddress.SlaveWriteDatas);
 
                             return new();
-                    }
+                        }
                 }
             }
 
@@ -470,22 +507,31 @@ public class ModbusSlave : DeviceBase, IModbusAddress
 
         static async PooledValueTask HandleChannelReceivedAsync(ModbusSlave @this, IClientChannel client, ReceivedDataEventArgs e)
         {
-            if (!TryParseRequest(e.RequestInfo, out var modbusRequest, out var sequences, out var modbusRtu))
+            try
+            {
+
+
+                if (!TryParseRequest(e.RequestInfo, out var modbusRequest, out var sequences, out var modbusRtu))
+                    return;
+
+                if (!@this.MulStation && modbusRequest.Station != @this.Station)
+                    return;
+
+                if (@this.Logger != null)
+                    client.SetDataHandlingAdapterLogger(@this.Logger);
+
+                var function = NormalizeFunctionCode(modbusRequest.FunctionCode);
+
+                if (function <= 4)
+                    await @this.HandleReadRequestAsync(client, e, modbusRequest, sequences, modbusRtu).ConfigureAwait(false);
+                else
+                    await @this.HandleWriteRequestAsync(client, e, modbusRequest, sequences, modbusRtu, function).ConfigureAwait(false);
                 return;
-
-            if (!@this.MulStation && modbusRequest.Station != @this.Station)
-                return;
-
-            if (@this.Logger != null)
-                client.SetDataHandlingAdapterLogger(@this.Logger);
-
-            var function = NormalizeFunctionCode(modbusRequest.FunctionCode);
-
-            if (function <= 4)
-                await @this.HandleReadRequestAsync(client, e, modbusRequest, sequences, modbusRtu).ConfigureAwait(false);
-            else
-                await @this.HandleWriteRequestAsync(client, e, modbusRequest, sequences, modbusRtu, function).ConfigureAwait(false);
-            return;
+            }
+            finally
+            {
+                e.RequestInfo.TryDispose();
+            }
         }
     }
 
@@ -534,20 +580,17 @@ public class ModbusSlave : DeviceBase, IModbusAddress
 
         static async PooledTask Write(ModbusSlave @this, IClientChannel client, ReceivedDataEventArgs e, ModbusRequest modbusRequest, ReadOnlySequence<byte> sequences, bool modbusRtu, OperResult<ReadOnlyMemory<byte>> data)
         {
-            ValueByteBlock byteBlock = new(1024);
             try
             {
-                WriteReadResponse(modbusRequest, sequences, data.Content, ref byteBlock, modbusRtu);
-                await @this.ReturnData(client, byteBlock.Memory, e).ConfigureAwait(false);
+                var bytes = WriteReadResponse(modbusRequest, sequences, data.Content, modbusRtu);
+                await @this.ReturnData(client, bytes.Memory, e).ConfigureAwait(false);
+                bytes.Dispose();
             }
             catch
             {
                 await @this.WriteError(modbusRtu, client, sequences, e).ConfigureAwait(false);
             }
-            finally
-            {
-                byteBlock.SafeDispose();
-            }
+
         }
     }
 
@@ -617,13 +660,13 @@ public class ModbusSlave : DeviceBase, IModbusAddress
         }
     }
 
-    private static void WriteReadResponse(
+    private static ValueByteBlock WriteReadResponse(
         ModbusRequest modbusRequest,
         ReadOnlySequence<byte> sequences,
         ReadOnlyMemory<byte> content,
-        ref ValueByteBlock byteBlock,
         bool modbusRtu)
     {
+        ValueByteBlock byteBlock = new(1024);
         if (modbusRtu)
             ByteBlockHelper.Write(ref byteBlock, sequences.Slice(0, 2));
         else
@@ -647,6 +690,8 @@ public class ModbusSlave : DeviceBase, IModbusAddress
             byteBlock.Write(CrcHelper.Crc16Only(byteBlock.Memory.Span));
         else
             ByteBlockHelper.WriteBackValue(ref byteBlock, (ushort)(byteBlock.Length - 6), EndianType.Big, 4);
+
+        return byteBlock;
     }
 
     private Task ReturnData(IClientChannel client, ReadOnlyMemory<byte> sendData, ReceivedDataEventArgs e)

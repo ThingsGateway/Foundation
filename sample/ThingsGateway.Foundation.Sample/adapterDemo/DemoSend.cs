@@ -36,7 +36,7 @@ public class DemoSend : SendMessage
     byte station;
     ushort address;
     ushort length;
-    public override int MaxLength => 300;
+    public override int MaxLength => 512;
 
     public override void Build<TByteBlock>(ref TByteBlock byteBlock)
     {

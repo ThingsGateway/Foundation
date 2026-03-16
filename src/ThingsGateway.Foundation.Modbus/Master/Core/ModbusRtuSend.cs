@@ -34,7 +34,7 @@ public class ModbusRtuSend : SendMessage
 
     }
 
-    public override int MaxLength => 300;
+    public override int MaxLength => 512;
     public ModbusAddress ModbusAddress { get; private set; }
 
     public override void Build<TByteBlock>(ref TByteBlock byteBlock)

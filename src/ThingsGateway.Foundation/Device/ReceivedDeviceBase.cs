@@ -575,7 +575,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         return GetResponsedDataAsync(command, clientChannel, Timeout, cancellationToken);
     }
 
-    private ObjectPoolT<ReusableCancellationTokenSource> _reusableTimeouts = new();
+    private DisposeObjectPool<ReusableCancellationTokenSource> _reusableTimeouts = new();
 
     /// <summary>
     /// 发送并等待数据

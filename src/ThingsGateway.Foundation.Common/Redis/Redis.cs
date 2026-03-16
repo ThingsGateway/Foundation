@@ -264,7 +264,7 @@ public abstract class Redis : Cache, IConfigMapping, ILogFeature
     #endregion
 
     #region 客户端池
-    private class MyPool : ObjectPool<RedisClient>
+    private class MyPool : IdleObjectPool<RedisClient>
     {
         public Redis Instance { get; set; } = null!;
 

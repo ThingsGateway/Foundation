@@ -121,7 +121,7 @@ public class Dlt645_2007Send : SendMessage
     }
 
 
-    public override int MaxLength => 300;
+    public override int MaxLength => 512;
     public int SendHeadCodeIndex { get; private set; }
     internal Dlt645_2007Address Dlt645_2007Address { get; private set; }
 

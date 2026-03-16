@@ -39,7 +39,7 @@ public class ModbusTcpSend : SendMessage
         return this;
     }
 
-    public override int MaxLength => 300;
+    public override int MaxLength => 512;
 
     /// <summary>
     /// 协议标识符
