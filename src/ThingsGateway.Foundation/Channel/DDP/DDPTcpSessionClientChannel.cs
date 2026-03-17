@@ -144,6 +144,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
 
     private DeviceSingleStreamDataHandleAdapter<DDPTcpMessage> DDPAdapter = new();
 
+    protected virtual ReceivedDataEventArgs DDPReceivedDataEventArgs { get; } = new ReceivedDataEventArgs();
     protected override ValueTask<bool> OnTcpReceiving(IBytesReader byteBlock)
     {
         if (!DDPAdapter.TryParseRequest(ref byteBlock, out var message))
@@ -168,7 +169,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
                             reader.Reset(message.Content);
                             if (@this.DataHandlingAdapter == null)
                             {
-                                await @this.OnTcpReceived(new ReceivedDataEventArgs(message.Content, default)).ConfigureAwait(false);
+                                await @this.OnTcpReceived(@this.DDPReceivedDataEventArgs.SetData(message.Content, default)).ConfigureAwait(false);
                             }
                             else
                             {

@@ -130,8 +130,10 @@ public class OtherChannel : SetupConfigObject, IClientChannel
     private async Task PrivateHandleReceivedData(ReadOnlyMemory<byte> byteBlock, IRequestInfo requestInfo)
     {
         LastReceivedTime = DateTime.UtcNow;
-        await this.OnChannelReceivedEvent(new ReceivedDataEventArgs(byteBlock, requestInfo), ChannelReceived).ConfigureAwait(false);
+        await this.OnChannelReceivedEvent(ReceivedDataEventArgs.SetData(byteBlock, requestInfo), ChannelReceived).ConfigureAwait(false);
     }
+
+    protected virtual ReceivedDataEventArgs ReceivedDataEventArgs { get; } = new ReceivedDataEventArgs();
 
     /// <summary>
     /// 异步发送数据，保护方法。

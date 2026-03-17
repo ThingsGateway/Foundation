@@ -186,30 +186,40 @@ public class ModbusSlave : DeviceBase, IModbusAddress
     {
         foreach (var item in ModbusServer01ByteBlocks)
         {
-            item.Value.SafeDispose();
+            lock (item.Value)
+            {
+                item.Value.SafeDispose();
+            }
         }
         foreach (var item in ModbusServer02ByteBlocks)
         {
-            item.Value.SafeDispose();
+            lock (item.Value)
+            {
+                item.Value.SafeDispose();
+            }
         }
         foreach (var item in ModbusServer03ByteBlocks)
         {
-            item.Value.SafeDispose();
+            lock (item.Value)
+            {
+                item.Value.SafeDispose();
+            }
         }
         foreach (var item in ModbusServer04ByteBlocks)
         {
-            item.Value.SafeDispose();
+            lock (item.Value)
+            {
+                item.Value.SafeDispose();
+            }
         }
-        ModbusServer01ByteBlocks.Clear();
-        ModbusServer02ByteBlocks.Clear();
-        ModbusServer03ByteBlocks.Clear();
-        ModbusServer04ByteBlocks.Clear();
+
         return base.DisposeAsync(disposing);
     }
 
     /// <inheritdoc/>
     private void Init(ModbusRequest mAddress)
     {
+
         if (ModbusServer01ByteBlocks.ContainsKey(mAddress.Station))
             return;
         else
@@ -361,6 +371,8 @@ public class ModbusSlave : DeviceBase, IModbusAddress
     {
         try
         {
+            if (DisposedValue) return new(AppResource.FunctionError);
+
             var f = mAddress.FunctionCode > 0x30 ? mAddress.FunctionCode - 0x30 : mAddress.FunctionCode;
 
             if (MulStation)
@@ -389,6 +401,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 1:
                         lock (ModbusServer01ByteBlock)
                         {
+                            if (ModbusServer01ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer01ByteBlock.Position = mAddress.StartAddress;
                             ModbusServer01ByteBlock.ExtendSize(len);
                         }
@@ -396,6 +409,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 2:
                         lock (ModbusServer02ByteBlock)
                         {
+                            if (ModbusServer02ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer02ByteBlock.Position = mAddress.StartAddress;
                             ModbusServer02ByteBlock.ExtendSize(len);
                         }
@@ -404,6 +418,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 3:
                         lock (ModbusServer03ByteBlock)
                         {
+                            if (ModbusServer03ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer03ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
                             ModbusServer03ByteBlock.ExtendSize(len);
                         }
@@ -412,6 +427,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 4:
                         lock (ModbusServer04ByteBlock)
                         {
+                            if (ModbusServer04ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer04ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
                             ModbusServer04ByteBlock.ExtendSize(len);
                         }
@@ -441,6 +457,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 2:
                         lock (ModbusServer02ByteBlock)
                         {
+                            if (ModbusServer02ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer02ByteBlock.Position = mAddress.StartAddress;
                             ByteBlockHelper.Write(ModbusServer02ByteBlock, mAddress.SlaveWriteDatas);
                             return new();
@@ -450,6 +467,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 15:
                         lock (ModbusServer01ByteBlock)
                         {
+                            if (ModbusServer01ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer01ByteBlock.Position = mAddress.StartAddress;
                             ByteBlockHelper.Write(ModbusServer01ByteBlock, mAddress.SlaveWriteDatas);
 
@@ -459,6 +477,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 4:
                         lock (ModbusServer04ByteBlock)
                         {
+                            if (ModbusServer04ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer04ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
                             ByteBlockHelper.Write(ModbusServer04ByteBlock, mAddress.SlaveWriteDatas);
 
@@ -470,6 +489,7 @@ public class ModbusSlave : DeviceBase, IModbusAddress
                     case 16:
                         lock (ModbusServer03ByteBlock)
                         {
+                            if (ModbusServer03ByteBlock.Capacity == 0) return new(AppResource.FunctionError);
                             ModbusServer03ByteBlock.Position = mAddress.StartAddress * RegisterByteLength;
                             ByteBlockHelper.Write(ModbusServer03ByteBlock, mAddress.SlaveWriteDatas);
 

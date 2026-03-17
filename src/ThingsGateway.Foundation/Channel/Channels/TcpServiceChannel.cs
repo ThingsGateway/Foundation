@@ -33,7 +33,7 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
             {
                 try
                 {
-                    await client.CloseAsync().ConfigureAwait(false);
+                    await client.CloseAsync().WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -47,9 +47,13 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
     {
         if (this.TryGetClient(id, out var client))
         {
-            //if (ShutDownEnable)
-            //    await client.ShutdownAsync(System.Net.Sockets.SocketShutdown.Both).ConfigureAwait(false);
-            await client.CloseAsync().ConfigureAwait(false);
+            try
+            {
+                await client.CloseAsync().WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            }
+            catch
+            {
+            }
             client.SafeDispose();
         }
     }
@@ -100,7 +104,6 @@ public abstract class TcpServiceChannelBase<TClient> : TcpService<TClient>, ITcp
                 await _connectLock.WaitAsync(token).ConfigureAwait(false);
                 if (Monitors.Any())
                 {
-                    await ClearAsync().ConfigureAwait(false);
                     var iPHost = Monitors.FirstOrDefault()?.Option.IpHost;
                     var result = await base.StopAsync(token).ConfigureAwait(false);
                     if (!result.IsSuccess)

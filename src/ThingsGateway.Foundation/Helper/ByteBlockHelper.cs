@@ -399,7 +399,7 @@ public static class ByteBlockHelper
             byteBlock.Write(item.Span);
         }
     }
-    public static void Write( ByteBlock byteBlock, ReadOnlySequence<byte> bytes)
+    public static void Write(ByteBlock byteBlock, ReadOnlySequence<byte> bytes)
     {
         foreach (var item in bytes)
         {
