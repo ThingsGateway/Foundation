@@ -450,6 +450,13 @@ public static class ReflectHelper
 
         throw new ArgumentException($"The [{name}] property or field does not exist in class [{type.FullName}].");
     }
+
+    [DebuggerHidden]
+    public static Object? GetValueEx(this Object target, String name, Boolean throwOnError = true)
+    {
+        return GetValueEx(target, target.GetType(), name, throwOnError);
+    }
+
     /// <summary>获取目标对象指定名称的属性/字段值</summary>
     /// <param name="target">目标对象</param>
     /// <param name="type"></param>
@@ -529,6 +536,12 @@ public static class ReflectHelper
         target.SetValueEx(mi, value);
 
         return true;
+    }
+
+    [DebuggerHidden]
+    public static Boolean SetValueEx(this Object target, String name, Object? value)
+    {
+        return SetValueEx(target, target.GetType(), name, value);
     }
     /// <summary>设置目标对象的成员值</summary>
     /// <param name="target">目标对象</param>
