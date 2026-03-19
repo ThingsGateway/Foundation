@@ -1,7 +1,4 @@
-﻿using ThingsGateway.Foundation.Common.StringExtension;
-using TouchSocket.Core;
-using TouchSocket.Sockets;
-#pragma warning disable CA2007 // 考虑对等待的任务调用 ConfigureAwait
+﻿#pragma warning disable CA2007 // 考虑对等待的任务调用 ConfigureAwait
 
 namespace ThingsGateway.Foundation.Sample
 {
@@ -10,36 +7,12 @@ namespace ThingsGateway.Foundation.Sample
     {
         private static async Task Main(string[] args)
         {
-            List<TcpClient> tcpClients = new();
-            for (int i = 0; i < 1000; i++)
-            {
-                TcpClient tcpClient = new();
-                await tcpClient.SetupAsync(new TouchSocket.Core.TouchSocketConfig().SetRemoteIPHost("127.0.0.1:502")).ConfigureAwait(false);
-
-                tcpClients.Add(tcpClient);
-            }
-            while (true)
-            {
 
 
-                foreach (var tcpClient in tcpClients)
-                {
-                    try
-                    {
-                        await tcpClient.TryConnectAsync();
-                        await tcpClient.SendAsync("000100000006010300000064".HexStringToBytes());
-                    }
-                    catch (Exception)
-                    {
+            SerialPortReadTest_M.Run();
+            await SerialPortSendTest.Run().ConfigureAwait(false);
 
-                    }
-                }
-                await Task.Delay(10);
-            }
-
-
-            await SerialPortTest.Run().ConfigureAwait(false);
-
+            Console.ReadLine();
 
             //XTrace.LogLevel = Common.Log.LogLevel.All;
             //Console.WriteLine($"Aot:\"{Runtime.Aot}");

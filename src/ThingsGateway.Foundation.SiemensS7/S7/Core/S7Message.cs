@@ -65,8 +65,6 @@ public class S7Message : DeviceMessage, IResultMessage
             Sign = sign;
             byteBlock.BytesRead = pos;
 
-            int length = sequence.GetByte(pos + 17);
-            int itemLen = sequence.GetByte(pos + 16);
 
             //添加错误代码校验
             // 其余情况判断错误代码
@@ -90,6 +88,8 @@ public class S7Message : DeviceMessage, IResultMessage
                     ErrorMessage = string.Format(AppResource.ValidateDataError, sequence.GetByte(pos + 17), SiemensHelper.GetCpuError(sequence.GetByte(pos + 17)));
                     return FilterResult.Success;
                 }
+                int length = sequence.GetByte(pos + 17);
+                int itemLen = sequence.GetByte(pos + 16);
 
                 ValueByteBlock data = new(length);
                 var dataIndex = pos + 17;
