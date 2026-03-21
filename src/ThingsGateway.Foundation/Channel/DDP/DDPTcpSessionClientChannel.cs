@@ -169,7 +169,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
                             reader.Reset(message.Content);
                             if (@this.DataHandlingAdapter == null)
                             {
-                                await @this.OnTcpReceived(@this.DDPReceivedDataEventArgs.SetData(message.Content, default)).ConfigureAwait(false);
+                                await @this.OnTcpReceived(@this.DDPReceivedDataEventArgs.Reset(message.Content, default)).ConfigureAwait(false);
                             }
                             else
                             {
