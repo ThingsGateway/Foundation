@@ -33,7 +33,8 @@ public class ProtectedKey
         if (key.IsNullOrEmpty())
         {
             var config = JsonConfigProvider.LoadAppSettings();
-            key = config["ProtectedKey"];
+            if (config.Keys.Contains("ProtectedKey"))
+                key = config["ProtectedKey"];
         }
 
         if (!key.IsNullOrEmpty())

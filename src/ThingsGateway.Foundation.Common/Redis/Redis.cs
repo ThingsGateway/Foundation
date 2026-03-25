@@ -198,10 +198,12 @@ public abstract class Redis : Cache, IConfigMapping, ILogFeature
         if (dic.Count > 0)
         {
             Server = dic["Server"]?.Trim();
-            UserName = dic["UserName"]?.Trim();
-            Password = dic["Password"]?.Trim();
+            if (dic.TryGetValue("UserName", out var str))
+                UserName = str?.Trim();
+            if (dic.TryGetValue("Password", out str))
+                Password = str?.Trim();
             //Db = dic["Db"].ToInt();
-            if (dic.TryGetValue("Db", out var str))
+            if (dic.TryGetValue("Db", out str))
                 Db = str.ToInt();
 
             if (Server.IsNullOrEmpty() && dic.TryGetValue("[0]", out var svr)) Server = svr;
