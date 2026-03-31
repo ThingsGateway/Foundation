@@ -276,8 +276,7 @@ public class TimerScheduler : IDisposable
                         timer.Calling = true;
                         if (timer.IsAsyncTask)
                         {
-                            timer.Task.GetAwaiter().GetResult();
-                            ExecuteAsync(timer);
+                            _ = Task.Run(() => ExecuteAsync(timer));
                         }
                         else if (!timer.Async)
                             Execute(timer);
@@ -380,10 +379,10 @@ public class TimerScheduler : IDisposable
 
     /// <summary>处理每一个定时器</summary>
     /// <param name="timer"></param>
-    private static void ExecuteAsync(TimerX timer)
+    private static Task ExecuteAsync(TimerX timer)
     {
-        timer.Task = ExecuteAsync(timer);
-        static async PooledValueTask ExecuteAsync(TimerX timer)
+        return ExecuteAsync(timer);
+        static async PooledTask ExecuteAsync(TimerX timer)
         {
             var scheduler = timer.Scheduler;
             timer.hasSetNext = false;
