@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Reflection;
 
 namespace ThingsGateway.Foundation.Common.Extension;
@@ -139,6 +140,6 @@ public static class AttributeHelper
 
 internal static class AttributeCache<T> where T : Attribute
 {
-    internal static readonly Dictionary<Type, T?> TypeCache = new(128);
-    internal static readonly Dictionary<PropertyInfo, T?> PropertyInfoCache = new(128);
+    internal static readonly NonBlockingDictionary<Type, T?> TypeCache = new(128);
+    internal static readonly NonBlockingDictionary<PropertyInfo, T?> PropertyInfoCache = new(128);
 }
