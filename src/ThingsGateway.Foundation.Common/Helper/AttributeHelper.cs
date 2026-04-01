@@ -140,6 +140,6 @@ public static class AttributeHelper
 
 internal static class AttributeCache<T> where T : Attribute
 {
-    internal static readonly NonBlockingDictionary<Type, T?> TypeCache = new(128);
-    internal static readonly NonBlockingDictionary<PropertyInfo, T?> PropertyInfoCache = new(128);
+    internal static readonly NonBlockingDictionary<Type, T?> TypeCache = new();
+    internal static readonly NonBlockingDictionary<PropertyInfo, T?> PropertyInfoCache = new();
 }
