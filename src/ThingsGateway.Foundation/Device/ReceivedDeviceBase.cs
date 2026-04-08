@@ -601,7 +601,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                 waitLock = @this.GetWaitLock(clientChannel);
 
-                cancellationToken.ThrowIfCancellationRequested();
                 await waitLock.WaitAsync().ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -684,9 +683,9 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             }
             finally
             {
-                waitLock?.Release();
                 waitData?.ReturnPool();
                 command.Dispose();
+                waitLock?.Release();
             }
         }
     }
