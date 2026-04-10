@@ -105,17 +105,21 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     /// <inheritdoc/>
     public void ReturnPool()
     {
-        Cancel();
+        lock (_lock)
+        {
+            if (m_isCompleted == 0)
+                Cancel();
 
-        //// 确保取消令牌已释放
-        //this.m_registration.Dispose();
-        //this.m_registration = default;
+            //// 确保取消令牌已释放
+            //this.m_registration.Dispose();
+            //this.m_registration = default;
 
-        var sign = this.m_sign;
-        this.m_pendingData = default;
-        this.m_completedData = default;
-        this.m_status = WaitDataStatus.Default;
-        this.m_remove(sign);
+            var sign = this.m_sign;
+            this.m_pendingData = default;
+            this.m_completedData = default;
+            this.m_status = WaitDataStatus.Default;
+            this.m_remove(sign);
+        }
     }
 
     WaitDataStatus IValueTaskSource<WaitDataStatus>.GetResult(short token)
@@ -147,28 +151,28 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     /// <param name="result">要设置的完成数据。</param>
     public void Set(WaitDataStatus status, T result)
     {
-        // 使用 Interlocked 确保只设置一次
-        if (Interlocked.CompareExchange(ref this.m_isCompleted, 1, 0) != 0)
+        lock (_lock)
         {
-            return; // 已经完成,直接返回
-        }
+            // 使用 Interlocked 确保只设置一次
+            m_isCompleted = 1;
 
-        //this.m_registration.Dispose();
-        //this.m_registration = default;
+            //this.m_registration.Dispose();
+            //this.m_registration = default;
 
-        this.m_status = status;
-        this.m_completedData = result;
+            this.m_status = status;
+            this.m_completedData = result;
 
-        if (status == WaitDataStatus.Canceled)
-        {
-            this.m_core.SetException(new OperationCanceledException());
-        }
-        else
-        {
-            this.m_core.SetResult(result);
+            if (status == WaitDataStatus.Canceled)
+            {
+                this.m_core.SetException(new OperationCanceledException());
+            }
+            else
+            {
+                this.m_core.SetResult(result);
+            }
         }
     }
-
+    private Lock _lock = new Lock();
     /// <summary>
     /// 异步等待此项完成，返回一个 <see cref="ValueTask{WaitDataStatus}"/>，可传入取消令牌以取消等待。
     /// </summary>
@@ -178,19 +182,22 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     {
         if (cancellationToken.CanBeCanceled)
         {
-            if (Volatile.Read(ref m_isCompleted) == 0)
+            lock (_lock)
             {
-#if NET6_0_OR_GREATER
-                if (!this.m_registration.Token.Equals(cancellationToken))
+
+                if (m_isCompleted == 0)
                 {
-                    if (this.m_registration != default)
+#if NET6_0_OR_GREATER
+                    if (!this.m_registration.Token.Equals(cancellationToken))
                     {
+                        if (this.m_registration != default)
+                        {
 #pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
-                        this.m_registration.Dispose();
+                            this.m_registration.Dispose();
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
+                        }
+                        this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
                     }
-                    this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
-                }
 #else
                 if (this.m_registration != default)
                 {
@@ -198,19 +205,22 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
                 }
                 this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
 #endif
+                }
             }
         }
         return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
     }
 
 
-
     internal void Reset(int sign, T pendingData)
     {
-        this.m_pendingData = pendingData;
-        this.m_sign = sign;
-        this.m_core.Reset();
-        //应该在重置时将完成状态重置为未完成，以允许再次使用此实例进行等待。
-        Interlocked.Exchange(ref this.m_isCompleted, 0);
+        lock (_lock)
+        {
+            this.m_pendingData = pendingData;
+            this.m_sign = sign;
+            this.m_core.Reset();
+            //应该在重置时将完成状态重置为未完成，以允许再次使用此实例进行等待。
+            m_isCompleted = 0;
+        }
     }
 }

@@ -609,14 +609,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                 clientChannel.SetDataHandlingAdapterLogger(@this.Logger);
 
-                var sendVT = @this.SendAsync(command, clientChannel, cancellationToken);
-                if (!sendVT.IsCompletedSuccessfully)
-                    await sendVT.ConfigureAwait(false);
-
-
-                if (waitData.Status == WaitDataStatus.Success)
-                    return waitData.CompletedData;
-
 #pragma warning disable CA2000 // 丢失范围之前释放对象
                 var reusableTimeout = @this._reusableTimeouts.Get();
                 if (reusableTimeout == null)
@@ -628,26 +620,42 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     var ctsToken = reusableTimeout.GetTokenSource(timeout, cancellationToken, @this.Channel?.ClosedToken ?? default);
                     ctsToken.ThrowIfCancellationRequested();
 
-                    var waitVT = waitData.WaitAsync(ctsToken);
-                    if (!waitVT.IsCompletedSuccessfully)
-                        await waitVT.ConfigureAwait(false);
 
-                }
-                catch (OperationCanceledException ex)
-                {
-                    if (@this.Channel?.ClosedToken.IsCancellationRequested == true)
+                    var sendVT = @this.SendAsync(command, clientChannel, ctsToken);
+                    if (!sendVT.IsCompletedSuccessfully)
+                        await sendVT.ConfigureAwait(false);
+
+                    @this.Logger?.LogInformation($"SendAsync  sign: {command.Sign}");
+
+                    if (waitData.Status == WaitDataStatus.Success)
+                        return waitData.CompletedData;
+
+                    try
                     {
-#pragma warning disable CA2000 // 丢失范围之前释放对象
-                        return new DeviceMessage(new Exception("The channel is closed."));
+
+                        @this.Logger?.LogInformation($"GetTokenSource  sign: {command.Sign}");
+                        var waitVT = waitData.WaitAsync(ctsToken);
+                        if (!waitVT.IsCompletedSuccessfully)
+                            await waitVT.ConfigureAwait(false);
+                        @this.Logger?.LogInformation($"WaitAsync waitData  sign: {command.Sign}");
+
                     }
-                    return reusableTimeout.TimeoutStatus
-                        ? new DeviceMessage(new TimeoutException($"Timeout, sign: {sign}", ex))
-                        : new DeviceMessage(ex);
-                }
-                catch (Exception ex)
-                {
-                    return new DeviceMessage(ex);
+                    catch (OperationCanceledException ex)
+                    {
+                        if (@this.Channel?.ClosedToken.IsCancellationRequested == true)
+                        {
+#pragma warning disable CA2000 // 丢失范围之前释放对象
+                            return new DeviceMessage(new Exception("The channel is closed."));
+                        }
+                        return reusableTimeout.TimeoutStatus
+                            ? new DeviceMessage(new TimeoutException($"Timeout, sign: {sign}", ex))
+                            : new DeviceMessage(ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new DeviceMessage(ex);
 #pragma warning restore CA2000 // 丢失范围之前释放对象
+                    }
                 }
                 finally
                 {
