@@ -625,7 +625,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     if (!sendVT.IsCompletedSuccessfully)
                         await sendVT.ConfigureAwait(false);
 
-                    @this.Logger?.LogInformation($"SendAsync  sign: {command.Sign}");
 
                     if (waitData.Status == WaitDataStatus.Success)
                         return waitData.CompletedData;
@@ -633,11 +632,9 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     try
                     {
 
-                        @this.Logger?.LogInformation($"GetTokenSource  sign: {command.Sign}");
                         var waitVT = waitData.WaitAsync(ctsToken);
                         if (!waitVT.IsCompletedSuccessfully)
                             await waitVT.ConfigureAwait(false);
-                        @this.Logger?.LogInformation($"WaitAsync waitData  sign: {command.Sign}");
 
                     }
                     catch (OperationCanceledException ex)

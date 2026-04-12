@@ -86,14 +86,14 @@ public static class ExpressionEvaluatorExtension
     }
 
     private static MemoryCache Instance { get; } = new MemoryCache();
-    static TimeSpan time = TimeSpan.FromHours(1);
+    static TimeSpan time = TimeSpan.FromDays(1);
 
     /// <summary>
     /// 添加或获取脚本，非线程安全
     /// </summary>
     /// <param name="source"></param>
     /// <returns></returns>
-    public static ReadWriteExpressions GetOrAddScript(string source)
+    private static ReadWriteExpressions GetOrAddScript(string source)
     {
         if (string.IsNullOrEmpty(source)) return null;
         var key = source.GetHashCode().ToString();
