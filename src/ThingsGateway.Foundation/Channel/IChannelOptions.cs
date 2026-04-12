@@ -105,7 +105,7 @@ public interface IChannelOptions
     /// <summary>
     /// 通道并发控制锁
     /// </summary>
-    AsyncConcurrencyLimiter WaitLock { get; }
+    WaitLock WaitLock { get; }
 
     TouchSocketConfig Config { get; set; }
 

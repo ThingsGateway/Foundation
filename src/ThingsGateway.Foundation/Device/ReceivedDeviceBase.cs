@@ -398,7 +398,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     await @this.BeforeSendAsync(channelResult.Content, cancellationToken).ConfigureAwait(false);
 
                     cancellationToken.ThrowIfCancellationRequested();
-                    await waitLock.WaitAsync().ConfigureAwait(false);
+                    await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
                     cancellationToken.ThrowIfCancellationRequested();
                     channelResult.Content.SetDataHandlingAdapterLogger(@this.Logger);
 
@@ -434,7 +434,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    await waitLock.WaitAsync().ConfigureAwait(false);
+                    await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
                     cancellationToken.ThrowIfCancellationRequested();
 
                     channel.SetDataHandlingAdapterLogger(@this.Logger);
@@ -591,7 +591,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         static async PooledValueTask<DeviceMessage> GetResponsedDataAsync(ReceivedDeviceBase @this, SendMessage command, IClientChannel clientChannel, int timeout, CancellationToken cancellationToken)
         {
             AsyncWaitData<DeviceMessage>? waitData = null;
-            AsyncConcurrencyLimiter? waitLock = null;
+            WaitLock? waitLock = null;
 
             try
             {
@@ -601,25 +601,29 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                 waitLock = @this.GetWaitLock(clientChannel);
 
-                await waitLock.WaitAsync().ConfigureAwait(false);
-                cancellationToken.ThrowIfCancellationRequested();
+
+
+                await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
 
                 waitData = clientChannel.WaitHandlePool.GetWaitDataAsync(out var sign);
                 command.Sign = sign;
 
                 clientChannel.SetDataHandlingAdapterLogger(@this.Logger);
 
+
 #pragma warning disable CA2000 // 丢失范围之前释放对象
                 var reusableTimeout = @this._reusableTimeouts.Get();
                 if (reusableTimeout == null)
                     reusableTimeout = new ReusableCancellationTokenSource();
 #pragma warning restore CA2000 // 丢失范围之前释放对象
+
                 try
                 {
 
+
+
                     var ctsToken = reusableTimeout.GetTokenSource(timeout, cancellationToken, @this.Channel?.ClosedToken ?? default);
                     ctsToken.ThrowIfCancellationRequested();
-
 
                     var sendVT = @this.SendAsync(command, clientChannel, ctsToken);
                     if (!sendVT.IsCompletedSuccessfully)
@@ -688,6 +692,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             }
             finally
             {
+
                 waitData?.ReturnPool();
                 command.Dispose();
                 waitLock?.Release();
@@ -696,9 +701,9 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
     }
 
 
-    private AsyncConcurrencyLimiter GetWaitLock(IClientChannel clientChannel)
+    private WaitLock GetWaitLock(IClientChannel clientChannel)
     {
-        AsyncConcurrencyLimiter? waitLock = null;
+        WaitLock? waitLock = null;
         if (clientChannel is IDtuUdpSessionChannel udpSessionChannel)
         {
             waitLock = udpSessionChannel.GetLock(this is IDtu dtu1 ? dtu1.DtuId : null);

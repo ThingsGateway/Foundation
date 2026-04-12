@@ -76,8 +76,8 @@ public class OtherChannel : SetupConfigObject, IClientChannel
     public WaitHandlePool<DeviceMessage> WaitHandlePool { get; internal set; } = new(1, ushort.MaxValue - 1);
 
     /// <inheritdoc/>
-    public AsyncConcurrencyLimiter WaitLock => ChannelOptions.WaitLock;
-    public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
+    public WaitLock WaitLock => ChannelOptions.WaitLock;
+    public virtual WaitLock GetLock(string? key) => WaitLock;
 
 
 

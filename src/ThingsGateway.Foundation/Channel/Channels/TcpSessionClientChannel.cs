@@ -94,8 +94,8 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     public WaitLock Lock { get; } = new();
 
     /// <inheritdoc/>
-    public AsyncConcurrencyLimiter WaitLock { get; internal set; } = new(1);
-    public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
+    public WaitLock WaitLock { get; internal set; } = new(maxCount: 1);
+    public virtual WaitLock GetLock(string? key) => WaitLock;
 
     /// <inheritdoc/>
     public Task ConnectAsync(CancellationToken token) => Task.CompletedTask;

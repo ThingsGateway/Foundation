@@ -85,10 +85,10 @@ public class TcpClientChannel : TcpClient, IClientChannel
     /// 等待池
     /// </summary>
     public WaitHandlePool<DeviceMessage> WaitHandlePool { get; internal set; } = new(1, ushort.MaxValue - 1);
-    public virtual AsyncConcurrencyLimiter GetLock(string? key) => WaitLock;
+    public virtual WaitLock GetLock(string? key) => WaitLock;
 
     /// <inheritdoc/>
-    public AsyncConcurrencyLimiter WaitLock => ChannelOptions.WaitLock;
+    public WaitLock WaitLock => ChannelOptions.WaitLock;
 
 
 

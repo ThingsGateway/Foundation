@@ -965,7 +965,7 @@ public class OpcUaMaster : IAsyncDisposable
         }
         try
         {
-            await waitLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
             if (m_session != null)
             {
                 return;

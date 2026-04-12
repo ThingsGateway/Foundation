@@ -247,15 +247,6 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfClientNotConnected()
-    {
-        if (Online)
-        {
-            return;
-        }
-        throw new ClientNotConnectedException();
-    }
 
     #endregion Throw
 

@@ -12,7 +12,7 @@
 
 using System.Threading.Tasks.Sources;
 using TouchSocket.Core;
-
+using System.Threading;
 namespace ThingsGateway.Foundation;
 
 /// <summary>
@@ -49,7 +49,7 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
         this.m_remove = remove;
 
         this.m_pendingData = pendingData;
-        this.m_core.RunContinuationsAsynchronously = false;
+        this.m_core.RunContinuationsAsynchronously = true;
     }
 
     /// <summary>
@@ -89,7 +89,8 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     /// <inheritdoc/>
     public void Dispose()
     {
-        Cancel();
+        if (m_isCompleted == 0)
+            Cancel();
 
         //// 确保取消令牌已释放
         this.m_registration.Dispose();
@@ -151,8 +152,10 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     /// <param name="result">要设置的完成数据。</param>
     public void Set(WaitDataStatus status, T result)
     {
+        if (m_isCompleted != 0) return;
         lock (_lock)
         {
+            if (m_isCompleted != 0) return;
             // 使用 Interlocked 确保只设置一次
             m_isCompleted = 1;
 
@@ -180,24 +183,29 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
     /// <returns>表示等待状态的 ValueTask。</returns>
     public ValueTask<WaitDataStatus> WaitAsync(CancellationToken cancellationToken = default)
     {
-        if (cancellationToken.CanBeCanceled)
         {
-            lock (_lock)
+            CancellationTokenRegistration old_registration = default;
+            if (cancellationToken.CanBeCanceled)
             {
+                if (m_isCompleted != 0) return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
 
-                if (m_isCompleted == 0)
+                lock (_lock)
                 {
-#if NET6_0_OR_GREATER
-                    if (!this.m_registration.Token.Equals(cancellationToken))
+
+#pragma warning disable CA1508 // 避免死条件代码
+                    if (m_isCompleted == 0)
                     {
-                        if (this.m_registration != default)
+#if NET6_0_OR_GREATER
+                        if (!this.m_registration.Token.Equals(cancellationToken))
                         {
+                            if (this.m_registration != default)
+                            {
 #pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
-                            this.m_registration.Dispose();
+                                old_registration = this.m_registration;
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
+                            }
+                            this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
                         }
-                        this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
-                    }
 #else
                 if (this.m_registration != default)
                 {
@@ -205,10 +213,20 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
                 }
                 this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
 #endif
+                    }
+#pragma warning restore CA1508 // 避免死条件代码
                 }
             }
+            if (old_registration != default)
+            {
+#if NET8_0_OR_GREATER
+                _ = old_registration.DisposeAsync().AsTask();
+#else
+                old_registration.Dispose();
+#endif
+            }
+            return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
         }
-        return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
     }
 
 

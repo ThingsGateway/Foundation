@@ -68,12 +68,12 @@ public class DDPUdpSessionChannel : UdpSessionChannel, IClientChannel, IDtuUdpSe
 
     public EndPoint? DefaultEndpoint => RemoteIPHost?.EndPoint;
 
-    NonBlockingDictionary<string, AsyncConcurrencyLimiter> WaitLocks { get; } = new();
+    NonBlockingDictionary<string, WaitLock> WaitLocks { get; } = new();
 
-    public override AsyncConcurrencyLimiter GetLock(string? key)
+    public override WaitLock GetLock(string? key)
     {
         if (key.IsNullOrEmpty()) return WaitLock;
-        return WaitLocks.GetOrAdd(key, (a) => new AsyncConcurrencyLimiter(WaitLock.MaxCount));
+        return WaitLocks.GetOrAdd(key, (a) => new WaitLock(maxCount: WaitLock.MaxCount));
     }
 
     public override Task<Result> StopAsync(CancellationToken token)
