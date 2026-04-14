@@ -176,6 +176,8 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
         }
     }
     private Lock _lock = new Lock();
+
+    private CancellationToken _currentToken;
     /// <summary>
     /// 异步等待此项完成，返回一个 <see cref="ValueTask{WaitDataStatus}"/>，可传入取消令牌以取消等待。
     /// </summary>
@@ -196,7 +198,7 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
                     if (m_isCompleted == 0)
                     {
 #if NET6_0_OR_GREATER
-                        if (!this.m_registration.Token.Equals(cancellationToken))
+                        if (_currentToken != cancellationToken)
                         {
                             if (this.m_registration != default)
                             {
@@ -204,6 +206,7 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
                                 old_registration = this.m_registration;
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
                             }
+                            _currentToken = cancellationToken;
                             this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
                         }
 #else
