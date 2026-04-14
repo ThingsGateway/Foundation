@@ -176,7 +176,19 @@ public class TimerScheduler : IDisposable
             list.Add(timer);
 
             Timers = list.ToArray();
-            minPeriod = Math.Min(minPeriod, timer.Period);
+            if (timer.Crons == null)
+            {
+
+                minPeriod = Math.Min(minPeriod, timer.Period);
+                if (minPeriod < 10)
+                {
+
+                }
+            }
+            else
+            {
+
+            }
             Count++;
 
             if (thread == null)
@@ -262,21 +274,14 @@ public class TimerScheduler : IDisposable
                 {
                     // 如果正在销毁，跳出循环
                     if (_disposing) break;
-                    long ts = 0;
-                    if ((timer.Reentrant || !timer.Calling) && CheckTime(timer, now, out ts))
+                    if ((timer.Reentrant || !timer.Calling) && CheckTime(timer, now))
                     {
-
-                        //if (Name.StartsWith("IScheduledTask") && timer.Period == 10 && timer.IsAsyncTask)
-                        //{
-                        //    if (_period > 20)
-                        //        XTrace.WriteLine("定时器 {0} 执行，_period {1}", timer, _period);
-                        //}
 
                         // 必须在主线程设置状态，否则可能异步线程还没来得及设置开始状态，主线程又开始了新的一轮调度
                         timer.Calling = true;
                         if (timer.IsAsyncTask)
                         {
-                            _ = Task.Run(() => ExecuteAsync(timer));
+                            _ = Task.Factory.StartNew(() => ExecuteAsync(timer));
                         }
                         else if (!timer.Async)
                             Execute(timer);
@@ -313,9 +318,8 @@ public class TimerScheduler : IDisposable
     /// <summary>检查定时器是否到期</summary>
     /// <param name="timer"></param>
     /// <param name="now"></param>
-    /// <param name="ts"></param>
     /// <returns></returns>
-    private Boolean CheckTime(TimerX timer, Int64 now, out long ts)
+    private Boolean CheckTime(TimerX timer, Int64 now)
     {
         // 删除过期的，为了避免占用过多CPU资源，TimerX禁止小于10ms的任务调度
         var p = timer.Period;
@@ -327,12 +331,15 @@ public class TimerScheduler : IDisposable
         //    return false;
         //}
 
-        ts = timer.NextTick - now;
+        var ts = timer.NextTick - now;
 
         if (ts > 0)
         {
-            // 缩小间隔，便于快速调用
-            if (ts < _period) _period = (Int32)ts;
+            if (timer.Crons == null)
+            {
+                // 缩小间隔，便于快速调用
+                if (ts < _period) _period = (Int32)ts;
+            }
 
             return false;
         }
@@ -466,6 +473,7 @@ public class TimerScheduler : IDisposable
             Remove(timer);
             timer.Dispose();
         }
+
         //else if (p == 1)
         //{
         //    _period = 0;

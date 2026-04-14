@@ -464,13 +464,32 @@ public class TimerX : ITimer, ITimerx
     /// <returns>返回下一次执行的间隔时间，不能小于等于0，否则定时器被销毁</returns>
     internal Int32 SetAndGetNextTime(int ms)
     {
-        // 如果已设置
-        var period = Period < 0 ? Period : Math.Max(Period == 1 ? (Timers % 2 == 1 ? 0 : 1) : 1, Period > 50 ? (Scheduler.Count > 256 ? Period - ms - 1 : Period - ms) : (Timers % 2 == 1 ? Period - ms - 1 : Period - ms));
+        int minPeriod = (Period == 1) ? ((Timers % 2 == 1) ? 0 : 1) : 1;
+        int adjustedPeriod = Period - ms;
+
+        if (Period > 50 &&( Scheduler.Count > 256 || Timers % 2 == 1))
+            adjustedPeriod -= 1;
+
+        var period = Math.Max(minPeriod, adjustedPeriod);
+
+        // 如果周期为负数，使用默认值
+        if (period < 0) period = 1;
+
+        if(ms> Period)
+        {
+            period = Period;
+        }
+
         var nowTick = Runtime.TickCount64;
         if (hasSetNext)
         {
             var ts = (Int32)(_nextTick - nowTick);
             return ts > 0 ? ts : period;
+        }
+
+        if(period<50&&Period>50)
+        {
+
         }
 
         if (Absolutely)
