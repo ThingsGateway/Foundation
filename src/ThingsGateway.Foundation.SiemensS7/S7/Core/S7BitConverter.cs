@@ -9,7 +9,7 @@
 //------------------------------------------------------------------------------
 
 using Riok.Mapperly.Abstractions;
-
+using ThingsGateway.Foundation.Common.Extension;
 using TouchSocket.Core;
 
 namespace ThingsGateway.Foundation.SiemensS7;
@@ -64,6 +64,11 @@ public class S7BitConverter : ThingsGatewayBitConverter
         s7BitConverter.WStringEnable = sAddress.WStringEnable;
 
         base.OtherPropertySet(thingsGatewayBitConverter, registerAddress);
+    }
+
+    public override byte[] GetBytes(ReadOnlySpan<bool> values)
+    {
+        return values.BoolArrayToByte();
     }
 
     protected override IThingsGatewayBitConverter CreateInstance() => this.Adapt();

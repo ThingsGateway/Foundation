@@ -393,7 +393,8 @@ public partial class SiemensS7Master : DeviceBase
             try
             {
                 var sAddress = SiemensS7Address.ParseFrom(address);
-                sAddress.Data = value.Span.ByteToByteArray();
+                sAddress.Data = value;
+                //sAddress.Data = value.Span.ByteToByteArray();
                 sAddress.Length = sAddress.Data.Length;
                 sAddress.BitLength = value.Length;
                 sAddress.IsBit = true;
