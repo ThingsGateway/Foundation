@@ -68,12 +68,12 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     }
                     else
                     {
-                        channel.Config.SetSerialDataHandlingAdapter(() =>
+                        channel.Config.SetSingleStreamDataHandlingAdapter(() =>
                         {
                             var adapter = GetDataAdapter() as SingleStreamDataHandlingAdapter;
                             return adapter;
                         });
-                        channel.Config.SetTcpDataHandlingAdapter(() =>
+                        channel.Config.SetSingleStreamDataHandlingAdapter(() =>
                         {
                             var adapter = GetDataAdapter() as SingleStreamDataHandlingAdapter;
                             return adapter;
@@ -82,7 +82,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 }
                 else if (channel is ITcpServiceChannel serviceChannel)
                 {
-                    channel.Config.SetTcpDataHandlingAdapter(() =>
+                    channel.Config.SetSingleStreamDataHandlingAdapter(() =>
                     {
                         var adapter = GetDataAdapter() as SingleStreamDataHandlingAdapter;
                         return adapter;

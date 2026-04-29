@@ -181,7 +181,7 @@ public class OtherChannel : SetupConfigObject, IClientChannel
         online = true;
         if (this.m_dataHandlingAdapter == null)
         {
-            var adapter = this.Config.GetValue(SerialPortConfigExtension.SerialDataHandlingAdapterProperty)?.Invoke();
+            var adapter = this.Config.GetValue(TouchSocketConfigExtension.SingleStreamDataHandlingAdapterProperty)?.Invoke();
             if (adapter != null)
             {
                 this.SetAdapter(adapter);

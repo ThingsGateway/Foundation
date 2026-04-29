@@ -169,15 +169,15 @@ public sealed class WaitHandlePool<T> : IDisposable
     /// </remarks>
     public bool Set(T result)
     {
+        AsyncWaitData<T>? waitDataAsync;
+
         lock (_lock)
         {
-            if (this.m_waitDic.TryGetValue(result.Sign, out var waitDataAsync))
-            {
-                waitDataAsync.Set(result);
-                return true;
-            }
+            m_waitDic.TryGetValue(result.Sign, out waitDataAsync);
         }
-        return false;
+
+        waitDataAsync?.Set(result);
+        return waitDataAsync != null;
     }
 
     /// <summary>

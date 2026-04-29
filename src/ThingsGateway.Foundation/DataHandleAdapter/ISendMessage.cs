@@ -15,7 +15,7 @@ namespace ThingsGateway.Foundation;
 /// <summary>
 /// 发送消息
 /// </summary>
-public abstract class SendMessage : IRequestInfo, IWaitHandle, IRequestInfoBuilder, IDisposable
+public abstract class SendMessage : IRequestInfo, IWaitHandle, IBytesBuilder, IDisposable
 {
     public ISendPool SendPool { get; internal set; }
     public int Sign { get; set; }

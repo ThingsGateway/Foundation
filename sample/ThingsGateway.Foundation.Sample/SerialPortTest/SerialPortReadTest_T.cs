@@ -51,7 +51,7 @@ namespace ThingsGateway.Foundation.Sample
             });
 
 
-            config.SetSerialDataHandlingAdapter(() => new FixedSizePackageAdapter(13));
+            config.SetSingleStreamDataHandlingAdapter(() => new FixedSizePackageAdapter(13));
             var client = new SerialPortClient();
             client.Received = ChannelReceived;
             await client.SetupAsync(config).ConfigureAwait(false);

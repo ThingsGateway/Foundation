@@ -111,7 +111,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
         try
         {
             var byteBlock = new ByteBlock(1024);
-            if (requestInfo is not IRequestInfoBuilder requestInfoBuilder)
+            if (requestInfo is not IBytesBuilder requestInfoBuilder)
             {
                 throw new Exception();
             }
