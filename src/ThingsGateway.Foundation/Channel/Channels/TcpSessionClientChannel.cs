@@ -91,7 +91,7 @@ public class TcpSessionClientChannel : TcpSessionClient, IClientChannel
     /// </summary>
     public WaitHandlePool<DeviceMessage> WaitHandlePool { get; private set; } = new(1, ushort.MaxValue - 1);
 
-    public WaitLock Lock { get; } = new();
+ 
 
     /// <inheritdoc/>
     public WaitLock WaitLock { get; internal set; } = new(maxCount: 1);

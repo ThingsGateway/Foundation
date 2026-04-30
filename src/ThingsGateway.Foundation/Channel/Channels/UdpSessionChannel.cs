@@ -56,7 +56,7 @@ public class UdpSessionChannel : UdpSession, IClientChannel
         pool?.Dispose();
     }
 
-    public WaitLock Lock { get; } = new();
+    
 
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();

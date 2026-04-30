@@ -12,7 +12,6 @@
 
 using System.Threading.Tasks.Sources;
 using TouchSocket.Core;
-using System.Threading;
 namespace ThingsGateway.Foundation;
 
 /// <summary>
@@ -210,14 +209,31 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
                             this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
                         }
 #else
-                if (this.m_registration != default)
-                {
-                    this.m_registration.Dispose();
-                }
-                this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
+                        if (this.m_registration != default)
+                        {
+                            this.m_registration.Dispose();
+                        }
+                        this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
 #endif
                     }
 #pragma warning restore CA1508 // 避免死条件代码
+                }
+            }
+            else
+            {
+                if (m_isCompleted != 0) return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
+                lock (_lock)
+                {
+                    if (m_isCompleted == 0)
+                    {
+                        if (this.m_registration != default)
+                        {
+#pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
+                            this.m_registration.Dispose();
+#pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
+                        }
+                        TokenCancel();
+                    }
                 }
             }
             if (old_registration != default)

@@ -58,7 +58,6 @@ public interface IChannel : ISetupConfigObject, IDisposable, IClosableClient, IC
     /// 通道停止前
     /// </summary>
     public ChannelEventHandler Stoping { get; }
-    WaitLock Lock { get; }
 
     void ResetSign(int minSign = 1, int maxSign = ushort.MaxValue - 1);
 

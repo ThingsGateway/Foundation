@@ -329,7 +329,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
             {
                 try
                 {
-                    await @this.Channel.Lock.WaitAsync(token).ConfigureAwait(false);
+                    await @this.ChannelObject.WaitLock.WaitAsync(default).ConfigureAwait(false);
                     if (@this.AutoConnect && @this.Channel != null && (@this.Channel.Online != true || @this.Channel.ClosedToken.IsCancellationRequested == true))
                     {
                         TouchSocketConfig? config = null;
@@ -349,32 +349,16 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                             await @this.Channel.SetupAsync(config ?? @this.Channel.Config.CloneAndDispose()).ConfigureAwait(false);
                         await @this.Channel.CloseAsync().ConfigureAwait(false);
 
-#pragma warning disable CA2000 // 丢失范围之前释放对象
-                        var reusableTimeout = @this._reusableTimeouts.Get() ?? new ReusableCancellationTokenSource();
-#pragma warning restore CA2000 // 丢失范围之前释放对象
-                        try
-                        {
 
-                            var ctsToken = reusableTimeout.GetTokenSource(@this.Channel.ChannelOptions?.ConnectTimeout ?? 3000, token);
+                        using var timeOutCts = new CancellationTokenSource(@this.Channel.ChannelOptions?.ConnectTimeout ?? 3000);
+                        using var ctsToken = CancellationTokenSource.CreateLinkedTokenSource(timeOutCts.Token, token);
 
-                            await @this.Channel.ConnectAsync(ctsToken).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException ex)
-                        {
-                            if (reusableTimeout.TimeoutStatus)
-                                throw new TimeoutException("Channel connect timeout", ex);
-                            else
-                                throw new Exception("Channel connect fail", ex);
-                        }
-                        finally
-                        {
-                            @this._reusableTimeouts.Return(reusableTimeout);
-                        }
+                        await @this.Channel.ConnectAsync(ctsToken.Token).ConfigureAwait(false);
                     }
                 }
                 finally
                 {
-                    @this.Channel.Lock.Release();
+                    @this.ChannelObject.WaitLock.Release();
                 }
             }
         }
@@ -781,7 +765,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         {
             try
             {
-                await Channel.Lock.WaitAsync().ConfigureAwait(false);
+                await ChannelObject.WaitLock.WaitAsync().ConfigureAwait(false);
 
                 Channel.Starting.Remove(ChannelStarting);
                 Channel.Stoped.Remove(ChannelStoped);
@@ -829,7 +813,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
             finally
             {
-                Channel.Lock.Release();
+                ChannelObject.WaitLock.Release();
             }
         }
         _reusableTimeouts?.SafeDispose();

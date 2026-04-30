@@ -9,65 +9,67 @@ public sealed class ReusableCancellationTokenSource : IDisposable
     {
         Dispose();
     }
-    private int _timeoutEnabled;
     private readonly Timer _timer;
+
     private CancellationTokenSource? _cts;
+
+    // 版本号：用于隔离 Timer 回调
+    private int _version;
+
+    // 当前生效版本
+    private int _currentVersion;
+
+    // 超时状态（线程安全）
+    private int _timeoutStatus;
+
+    public bool TimeoutStatus => Volatile.Read(ref _timeoutStatus) == 1;
+
+    private readonly LinkedCancellationTokenSourceCache _linkedCtsCache = new();
 
     public ReusableCancellationTokenSource()
     {
         _timer = new Timer(OnTimeout, this, Timeout.Infinite, Timeout.Infinite);
     }
 
-    public bool TimeoutStatus;
-
-    private static void OnTimeout(object? state)
-    {
-        if (state is not ReusableCancellationTokenSource @this) return;
-
-        if (Volatile.Read(ref @this._timeoutEnabled) == 0) return;
-        try
-        {
-
-
-            @this.TimeoutStatus = true;
-
-            if (@this._cts?.IsCancellationRequested == false)
-                @this._cts?.Cancel();
-        }
-        catch
-        {
-
-        }
-    }
-
-    private readonly LinkedCancellationTokenSourceCache _linkedCtsCache = new();
-
     /// <summary>
-    /// 获取一个 CTS，并启动超时
+    /// 获取 Token，并启动超时控制
     /// </summary>
-    public CancellationToken GetTokenSource(long timeout, CancellationToken external1 = default, CancellationToken external2 = default, CancellationToken external3 = default)
+    public CancellationToken GetTokenSource(
+        long timeout,
+        CancellationToken external1 = default,
+        CancellationToken external2 = default,
+        CancellationToken external3 = default)
     {
-        TimeoutStatus = false;
+        Volatile.Write(ref _timeoutStatus, 0);
 
-        // 创建新的 CTS
-        var data = _linkedCtsCache.GetLinkedTokenSource(external1, external2, external3);
-        if (!data.Equals(_cts))
+        // 获取（或复用）CTS
+        var cts = _linkedCtsCache.GetLinkedTokenSource(external1, external2, external3);
+
+        if (!ReferenceEquals(cts, _cts))
         {
             _cts?.Dispose();
-            _cts = data;
+            _cts = cts;
         }
-        Volatile.Write(ref _timeoutEnabled, 1);
+
+        // 版本号递增（关键）
+        var version = Interlocked.Increment(ref _version);
+        Volatile.Write(ref _currentVersion, version);
+
         // 启动 Timer
         _timer.Change(timeout, Timeout.Infinite);
 
         return _cts.Token;
     }
 
-
+    /// <summary>
+    /// 停止超时（例如成功完成）
+    /// </summary>
     public void Set()
     {
-        Volatile.Write(ref _timeoutEnabled, 0);
-        _timer?.Change(Timeout.Infinite, Timeout.Infinite);
+        // 失效当前版本
+        Interlocked.Increment(ref _version);
+
+        _timer.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
     /// <summary>
@@ -75,18 +77,47 @@ public sealed class ReusableCancellationTokenSource : IDisposable
     /// </summary>
     public void Cancel()
     {
-        try { _cts?.Cancel(); } catch { }
+        var cts = _cts;
+        try
+        {
+            if (cts != null && !cts.IsCancellationRequested)
+            {
+                cts.Cancel();
+            }
+        }
+        catch { }
+    }
+
+    private static void OnTimeout(object? state)
+    {
+        if (state is not ReusableCancellationTokenSource self)
+            return;
+
+        if (Volatile.Read(ref self._currentVersion) != Volatile.Read(ref self._version))
+            return;
+
+        Volatile.Write(ref self._timeoutStatus, 1);
+
+        var cts = self._cts;
+
+        if (cts != null && !cts.IsCancellationRequested)
+        {
+            try { cts.Cancel(); } catch { }
+        }
     }
 
     public void Dispose()
     {
-        try { _cts?.Cancel(); } catch { }
-        try { _cts?.Dispose(); } catch { }
-        try { _linkedCtsCache?.Dispose(); } catch { }
-        try { _timer?.Dispose(); } catch { }
+        try { _timer.Dispose(); } catch { }
+
+        try
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+        }
+        catch { }
+
+        try { _linkedCtsCache.Dispose(); } catch { }
         GC.SuppressFinalize(this);
     }
 }
-
-
-

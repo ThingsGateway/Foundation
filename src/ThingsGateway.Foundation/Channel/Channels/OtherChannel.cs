@@ -25,7 +25,7 @@ public class OtherChannel : SetupConfigObject, IClientChannel
         this.SafeDispose();
     }
 
-    public WaitLock Lock { get; } = new();
+ 
     private SingleStreamDataHandlingAdapter? m_dataHandlingAdapter;
     public DataHandlingAdapter? ReadOnlyDataHandlingAdapter => m_dataHandlingAdapter;
 

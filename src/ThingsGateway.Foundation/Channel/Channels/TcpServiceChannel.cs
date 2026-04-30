@@ -189,7 +189,7 @@ public class TcpServiceChannel<TClient> : TcpServiceChannelBase<TClient>, IChann
     }
     public override TouchSocketConfig Config => base.Config ?? ChannelOptions.Config;
 
-    public WaitLock Lock { get; } = new();
+ 
     /// <inheritdoc/>
     public ChannelReceivedEventHandler ChannelReceived { get; } = new();
 

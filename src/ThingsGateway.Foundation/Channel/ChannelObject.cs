@@ -8,6 +8,8 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
+using TouchSocket.Core;
+
 namespace ThingsGateway.Foundation;
 
 /// <summary>
@@ -19,14 +21,19 @@ public class ChannelObject
     {
 
     }
+    public WaitLock WaitLock = new();
+
     public ChannelObject(IChannel channel)
     {
         Reset(channel);
     }
     public IChannel? Channel { get; private set; }
-
+    private Lock Lock = new();
     public void Reset(IChannel channel)
     {
-        Channel = channel;
+        lock (Lock)
+        {
+            Channel = channel;
+        }
     }
 }

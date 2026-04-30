@@ -10,46 +10,44 @@
 
 namespace ThingsGateway.Foundation.Common;
 
-public class LinkedCancellationTokenSourceCache : IDisposable
+using System;
+using System.Threading;
+
+public sealed class LinkedCancellationTokenSourceCache : IDisposable
 {
     private CancellationTokenSource? _cachedCts;
+
     private CancellationToken _token1;
     private CancellationToken _token2;
     private CancellationToken _token3;
+
 #if NET9_0_OR_GREATER
-    protected Lock lockThis = new();
+    private readonly Lock _lock = new();
 #else
-    protected object lockThis = new();
+    private readonly object _lock = new();
 #endif
-    ~LinkedCancellationTokenSourceCache()
-    {
-        Dispose();
-    }
 
     /// <summary>
-    /// 获取一个 CancellationTokenSource，它是由两个 token 链接而成的。
-    /// 会尝试复用之前缓存的 CTS，前提是两个 token 仍然相同且未取消。
+    /// 获取（或创建）Linked CTS
     /// </summary>
-    public CancellationTokenSource GetLinkedTokenSource(CancellationToken token1, CancellationToken token2, CancellationToken token3 = default)
+    public CancellationTokenSource GetLinkedTokenSource(
+        CancellationToken token1,
+        CancellationToken token2,
+        CancellationToken token3 = default)
     {
-        lock (lockThis)
+        lock (_lock)
         {
-            // 如果缓存的 CTS 已经取消或 Dispose，或者 token 不同，重新创建
-            if (_cachedCts?.IsCancellationRequested != false ||
-                !_token1.Equals(token1) || !_token2.Equals(token2) || !_token3.Equals(token3))
+            // 是否相同 token
+            bool sameTokens =
+                _token1.Equals(token1) &&
+                _token2.Equals(token2) &&
+                _token3.Equals(token3);
+
+            if (!sameTokens || _cachedCts == null || _cachedCts.IsCancellationRequested)
             {
-#if NET6_0_OR_GREATER
-                if (_cachedCts?.TryReset() != true)
-                {
-                    _cachedCts?.Dispose();
-                    _cachedCts = CancellationTokenSource.CreateLinkedTokenSource(token1, token2, token3);
-                }
-#else
                 _cachedCts?.Dispose();
 
                 _cachedCts = CancellationTokenSource.CreateLinkedTokenSource(token1, token2, token3);
-#endif
-
 
                 _token1 = token1;
                 _token2 = token2;
@@ -62,13 +60,11 @@ public class LinkedCancellationTokenSourceCache : IDisposable
 
     public void Dispose()
     {
-        lock (lockThis)
+        lock (_lock)
         {
             _cachedCts?.Dispose();
-            _cachedCts = null!;
+            _cachedCts = null;
         }
         GC.SuppressFinalize(this);
     }
 }
-
-

@@ -29,7 +29,7 @@ public class TcpClientChannel : TcpClient, IClientChannel
         ResetSign();
     }
 
-    public WaitLock Lock { get; } = new();
+ 
     public override TouchSocketConfig Config => base.Config ?? ChannelOptions.Config;
     public void ResetSign(int minSign = 1, int maxSign = ushort.MaxValue - 1)
     {
