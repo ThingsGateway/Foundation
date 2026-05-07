@@ -109,7 +109,22 @@ public static partial class DeviceExtension
             {
                 return dataType switch
                 {
-                    DataTypeEnum.String => await device.WriteAsync(address, jArray.Deserialize<String[]>().AsMemory(), bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false),
+                    DataTypeEnum.String => await device.WriteAsync(
+                     address,
+                     jArray.Select(x =>
+                     {
+                         if (x is JsonValue jv)
+                         {
+                             if (jv.TryGetValue<string>(out var s))
+                                 return s;
+
+                             return jv.ToJsonString();
+                         }
+
+                         return x?.ToJsonString();
+                     }).ToArray().AsMemory(),
+                     bitConverter,
+                     cancellationToken: cancellationToken).ConfigureAwait(false),
                     DataTypeEnum.Boolean => await device.WriteAsync(address, jArray.Deserialize<Boolean[]>().AsMemory(), bitConverter, cancellationToken).ConfigureAwait(false),
                     DataTypeEnum.Byte => await device.WriteAsync(address, jArray.Deserialize<Byte[]>().AsMemory(), dataType, bitConverter, cancellationToken).ConfigureAwait(false),
                     DataTypeEnum.Int16 => await device.WriteAsync(address, jArray.Deserialize<Int16[]>().AsMemory(), bitConverter, cancellationToken: cancellationToken).ConfigureAwait(false),
@@ -128,7 +143,16 @@ public static partial class DeviceExtension
             {
                 return dataType switch
                 {
-                    DataTypeEnum.String => await device.WriteAsync(address, value.Deserialize<String>(), bitConverter, cancellationToken).ConfigureAwait(false),
+                    DataTypeEnum.String => await device.WriteAsync(
+              address,
+              value switch
+              {
+                  JsonValue jv when jv.TryGetValue<string>(out var s) => s,
+                  JsonValue jv => jv.ToJsonString(),
+                  _ => value.ToJsonString()
+              },
+              bitConverter,
+              cancellationToken).ConfigureAwait(false),
                     DataTypeEnum.Boolean => await device.WriteAsync(address, value.Deserialize<Boolean>(), bitConverter, cancellationToken).ConfigureAwait(false),
                     DataTypeEnum.Byte => await device.WriteAsync(address, value.Deserialize<Byte>(), bitConverter, cancellationToken).ConfigureAwait(false),
                     DataTypeEnum.Int16 => await device.WriteAsync(address, value.Deserialize<Int16>(), bitConverter, cancellationToken).ConfigureAwait(false),
