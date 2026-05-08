@@ -255,7 +255,7 @@ public abstract class ThingsGatewayBitConverter : IThingsGatewayBitConverter
     /// <inheritdoc/>
     public virtual Memory<byte> GetBytes(string value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value==null)
         {
             return Memory<byte>.Empty;
         }

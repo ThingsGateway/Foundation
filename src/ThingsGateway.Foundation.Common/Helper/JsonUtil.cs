@@ -292,7 +292,7 @@ public static class JsonUtil
     /// </summary>
     public static JsonNode? GetJsonNodeFromString(this string? item)
     {
-        if (string.IsNullOrEmpty(item))
+        if (item==null)
             return null;
 
         try

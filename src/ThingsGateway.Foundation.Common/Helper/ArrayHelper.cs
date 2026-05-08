@@ -424,10 +424,7 @@ public static class ArrayHelper
     /// </summary>
     public static Memory<T> ArrayExpandToLength<T>(this Memory<T> data, int length)
     {
-        if (data.IsEmpty)
-        {
-            return Memory<T>.Empty;
-        }
+
 
         if (data.Length == length)
         {
@@ -444,10 +441,7 @@ public static class ArrayHelper
     /// </summary>
     public static ReadOnlyMemory<T> ArrayExpandToLength<T>(this ReadOnlyMemory<T> data, int length)
     {
-        if (data.IsEmpty)
-        {
-            return ReadOnlyMemory<T>.Empty;
-        }
+
 
         if (data.Length == length)
         {
@@ -464,10 +458,7 @@ public static class ArrayHelper
     /// </summary>
     public static ReadOnlySpan<T> ArrayExpandToLength<T>(this ReadOnlySpan<T> data, int length)
     {
-        if (data.IsEmpty)
-        {
-            return ReadOnlySpan<T>.Empty;
-        }
+
 
         if (data.Length == length)
         {
@@ -485,10 +476,7 @@ public static class ArrayHelper
     /// </summary>
     public static Span<T> ArrayExpandToLength<T>(this Span<T> data, int length)
     {
-        if (data.IsEmpty)
-        {
-            return Span<T>.Empty;
-        }
+
 
         if (data.Length == length)
         {
@@ -517,10 +505,7 @@ public static class ArrayHelper
     /// </summary>
     public static ReadOnlyMemory<T> ArrayExpandToLengthEven<T>(this ReadOnlyMemory<T> data)
     {
-        if (data.IsEmpty)
-        {
-            return Array.Empty<T>();
-        }
+
 
         return data.Length % 2 == 1 ? data.ArrayExpandToLength(data.Length + 1) : data;
     }
@@ -531,10 +516,7 @@ public static class ArrayHelper
     /// </summary>
     public static Memory<T> ArrayExpandToLengthEven<T>(this Memory<T> data)
     {
-        if (data.IsEmpty)
-        {
-            return Array.Empty<T>();
-        }
+
 
         return data.Length % 2 == 1 ? data.ArrayExpandToLength(data.Length + 1) : data;
     }
