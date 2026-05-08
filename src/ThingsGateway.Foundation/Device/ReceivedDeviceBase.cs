@@ -382,7 +382,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     await @this.BeforeSendAsync(channelResult.Content, cancellationToken).ConfigureAwait(false);
 
                     cancellationToken.ThrowIfCancellationRequested();
-                    await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+                    await waitLock.WaitAsync(default).ConfigureAwait(false);
                     cancellationToken.ThrowIfCancellationRequested();
                     channelResult.Content.SetDataHandlingAdapterLogger(@this.Logger);
 
@@ -418,7 +418,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+                    await waitLock.WaitAsync(default).ConfigureAwait(false);
                     cancellationToken.ThrowIfCancellationRequested();
 
                     channel.SetDataHandlingAdapterLogger(@this.Logger);
@@ -583,11 +583,18 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 if (!beforeSendVT.IsCompletedSuccessfully)
                     await beforeSendVT.ConfigureAwait(false);
 
+                if (clientChannel.DisposedValue)
+                {
+                    // BeforeSendAsync 内部可能重置 channel（异常状态重建）
+#pragma warning disable CA2000 // 丢失范围之前释放对象
+                        return new DeviceMessage(new Exception("通道失效，需重试"));
+#pragma warning restore CA2000 // 丢失范围之前释放对象
+                }
+
                 waitLock = @this.GetWaitLock(clientChannel);
 
-
-
-                await waitLock.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+                await waitLock.WaitAsync(default).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 waitData = clientChannel.WaitHandlePool.GetWaitDataAsync(out var sign);
                 command.Sign = sign;
@@ -619,7 +626,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
                     try
                     {
-
+                        ctsToken.ThrowIfCancellationRequested();
                         var waitVT = waitData.WaitAsync(ctsToken);
                         if (!waitVT.IsCompletedSuccessfully)
                             await waitVT.ConfigureAwait(false);

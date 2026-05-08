@@ -190,9 +190,16 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
             {
                 if (m_isCompleted != 0) return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
 
+                // 如果 token 已经取消，直接同步取消，避免进锁后 Register 同步回调导致死锁
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    TokenCancel();
+                    return new ValueTask<WaitDataStatus>(this, this.m_core.Version);
+                }
+
+                bool needRegister = false;
                 lock (_lock)
                 {
-
 #pragma warning disable CA1508 // 避免死条件代码
                     if (m_isCompleted == 0)
                     {
@@ -204,19 +211,34 @@ public sealed class AsyncWaitData<T> : IValueTaskSource<WaitDataStatus>, IDispos
 #pragma warning disable CA1849 // 当在异步方法中时，调用异步方法
                                 old_registration = this.m_registration;
 #pragma warning restore CA1849 // 当在异步方法中时，调用异步方法
+                                this.m_registration = default;
                             }
                             _currentToken = cancellationToken;
-                            this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
+                            needRegister = true;
                         }
 #else
                         if (this.m_registration != default)
                         {
                             this.m_registration.Dispose();
+                            this.m_registration = default;
                         }
-                        this.m_registration = cancellationToken.Register(static s => ((AsyncWaitData<T>)s).TokenCancel(), this);
+                        needRegister = true;
 #endif
                     }
 #pragma warning restore CA1508 // 避免死条件代码
+                }
+
+                // 在锁外执行 Register，避免已取消的 token 同步回调时重入 _lock 死锁
+                if (needRegister)
+                {
+                    var reg = cancellationToken.Register(static s => ((AsyncWaitData<T>)s!).TokenCancel(), this);
+                    lock (_lock)
+                    {
+                        if (m_isCompleted == 0)
+                            this.m_registration = reg;
+                        else
+                            reg.Dispose();
+                    }
                 }
             }
             else

@@ -41,18 +41,15 @@ public sealed class ReusableCancellationTokenSource : IDisposable
         var newCts = _linkedCtsCache.GetLinkedTokenSource(external1, external2, external3);
 
         CancellationToken token;
+        CancellationTokenSource? oldCtsToDispose = null;
         lock (_lock)
         {
             Volatile.Write(ref _timeoutStatus, 0);
 
             if (!ReferenceEquals(newCts, _cts))
             {
-                var oldCts = _cts;
+                oldCtsToDispose = _cts;
                 _cts = newCts;
-                // 先在锁内更新 _cts，再在锁外取消旧 CTS（避免 Cancel 回调死锁）
-                // 旧 CTS 的取消放到锁外，见下方
-                try { oldCts?.Cancel(); } catch { }
-                try { oldCts?.Dispose(); } catch { }
             }
 
             // 版本递增
@@ -62,6 +59,13 @@ public sealed class ReusableCancellationTokenSource : IDisposable
             _timer.Change(timeout, Timeout.Infinite);
 
             token = _cts!.Token;
+        }
+
+        // 在锁外取消并释放旧 CTS，避免 Cancel 同步回调尝试获取 _lock 导致死锁
+        if (oldCtsToDispose != null)
+        {
+            try { oldCtsToDispose.Cancel(); } catch { }
+            try { oldCtsToDispose.Dispose(); } catch { }
         }
 
         return token;
@@ -115,14 +119,15 @@ public sealed class ReusableCancellationTokenSource : IDisposable
         {
             versionAtCapture = Volatile.Read(ref self._version);
             cts = self._cts;
-            // 再次确认版本未被更新（Set/Cancel/GetTokenSource 均在锁内递增版本）
-            if (versionAtCapture != Volatile.Read(ref self._version))
-                return;
-
-            Volatile.Write(ref self._timeoutStatus, 1);
         }
 
-        try { cts.Cancel(); } catch { }
+        // 锁外取消，避免 Cancel 同步回调尝试获取 _lock 导致死锁
+        // 取消前验证版本号，防止 Set/GetTokenSource 已经更新
+        if (versionAtCapture != Volatile.Read(ref self._version))
+            return;
+
+        Volatile.Write(ref self._timeoutStatus, 1);
+        try { cts?.Cancel(); } catch { }
     }
 
     public void Dispose()
