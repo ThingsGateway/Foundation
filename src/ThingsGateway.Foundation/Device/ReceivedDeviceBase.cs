@@ -333,17 +333,17 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     if (@this.AutoConnect && @this.Channel != null && (@this.Channel.Online != true || @this.Channel.ClosedToken.IsCancellationRequested == true))
                     {
                         TouchSocketConfig? config = null;
-                        //网络异常有几率导致socket对象被释放，ts框架无法感知
-                        if (@this.Channel.Online == true && @this.Channel.ClosedToken.IsCancellationRequested == true)
-                        {
-                            @this.Logger?.LogDebug("The channel is in an abnormal state, resetting the channel.");
-                            var oldChannel = @this.Channel;
-                            //直接重置通道
-                            config = oldChannel.Config.CloneAndDispose();
-                            oldChannel.SafeDispose();
-                            @this.ChannelObject.Reset(@this.CreateChannel(config, @this.Channel.ChannelOptions));
-                            @this.InitChannel(@this.ChannelObject, @this._deviceLogger);
-                        }
+                        ////网络异常有几率导致socket对象被释放，ts框架无法感知
+                        //if (@this.Channel.Online == true && @this.Channel.ClosedToken.IsCancellationRequested == true)
+                        //{
+                        //    @this.Logger?.LogDebug("The channel is in an abnormal state, resetting the channel.");
+                        //    var oldChannel = @this.Channel;
+                        //    //直接重置通道
+                        //    config = oldChannel.Config.CloneAndDispose();
+                        //    oldChannel.SafeDispose();
+                        //    @this.ChannelObject.Reset(@this.CreateChannel(config, @this.Channel.ChannelOptions));
+                        //    @this.InitChannel(@this.ChannelObject, @this._deviceLogger);
+                        //}
 
                         if (@this.Channel!.PluginManager == null)
                             await @this.Channel.SetupAsync(config ?? @this.Channel.Config.CloneAndDispose()).ConfigureAwait(false);
