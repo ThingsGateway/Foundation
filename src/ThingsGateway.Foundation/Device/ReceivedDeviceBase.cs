@@ -334,16 +334,16 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                     {
                         TouchSocketConfig? config = null;
                         ////网络异常有几率导致socket对象被释放，ts框架无法感知
-                        //if (@this.Channel.Online == true && @this.Channel.ClosedToken.IsCancellationRequested == true)
-                        //{
-                        //    @this.Logger?.LogDebug("The channel is in an abnormal state, resetting the channel.");
-                        //    var oldChannel = @this.Channel;
-                        //    //直接重置通道
-                        //    config = oldChannel.Config.CloneAndDispose();
-                        //    oldChannel.SafeDispose();
-                        //    @this.ChannelObject.Reset(@this.CreateChannel(config, @this.Channel.ChannelOptions));
-                        //    @this.InitChannel(@this.ChannelObject, @this._deviceLogger);
-                        //}
+                        if (@this.Channel.Online == true && @this.Channel.ClosedToken.IsCancellationRequested == true)
+                        {
+                            @this.Logger?.LogDebug("The channel is in an abnormal state, resetting the channel.");
+                            var oldChannel = @this.Channel;
+                            //直接重置通道
+                            config = oldChannel.Config.CloneAndDispose();
+                            oldChannel.SafeDispose();
+                            @this.ChannelObject.Reset(@this.CreateChannel(config, @this.Channel.ChannelOptions));
+                            @this.InitChannel(@this.ChannelObject, @this._deviceLogger);
+                        }
 
                         if (@this.Channel!.PluginManager == null)
                             await @this.Channel.SetupAsync(config ?? @this.Channel.Config.CloneAndDispose()).ConfigureAwait(false);
@@ -559,8 +559,6 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
         return GetResponsedDataAsync(command, clientChannel, Timeout, cancellationToken);
     }
 
-    private DisposeObjectPool<ReusableCancellationTokenSource> _reusableTimeouts = new();
-
     /// <summary>
     /// 发送并等待数据
     /// </summary>
@@ -587,7 +585,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 {
                     // BeforeSendAsync 内部可能重置 channel（异常状态重建）
 #pragma warning disable CA2000 // 丢失范围之前释放对象
-                        return new DeviceMessage(new Exception("通道失效，需重试"));
+                    return new DeviceMessage(new Exception("通道失效，需重试"));
 #pragma warning restore CA2000 // 丢失范围之前释放对象
                 }
 
@@ -600,20 +598,12 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 command.Sign = sign;
 
                 clientChannel.SetDataHandlingAdapterLogger(@this.Logger);
-
-
-#pragma warning disable CA2000 // 丢失范围之前释放对象
-                var reusableTimeout = @this._reusableTimeouts.Get();
-                if (reusableTimeout == null)
-                    reusableTimeout = new ReusableCancellationTokenSource();
-#pragma warning restore CA2000 // 丢失范围之前释放对象
-
+                using var ctsTime = new CancellationTokenSource(timeout);
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ctsTime.Token, cancellationToken, @this.Channel?.ClosedToken ?? default);
                 try
                 {
 
-
-
-                    var ctsToken = reusableTimeout.GetTokenSource(timeout, cancellationToken, @this.Channel?.ClosedToken ?? default);
+                    var ctsToken = cts.Token;
                     ctsToken.ThrowIfCancellationRequested();
 
                     var sendVT = @this.SendAsync(command, clientChannel, ctsToken);
@@ -639,7 +629,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 #pragma warning disable CA2000 // 丢失范围之前释放对象
                             return new DeviceMessage(new Exception("The channel is closed."));
                         }
-                        return reusableTimeout.TimeoutStatus
+                        return ctsTime.IsCancellationRequested
                             ? new DeviceMessage(new TimeoutException($"Timeout, sign: {sign}", ex))
                             : new DeviceMessage(ex);
                     }
@@ -651,8 +641,8 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 }
                 finally
                 {
-                    reusableTimeout.Set();
-                    @this._reusableTimeouts.Return(reusableTimeout);
+
+
                 }
 
                 if (waitData.Status == WaitDataStatus.Success)
@@ -661,7 +651,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 }
                 else
                 {
-                    var operResult = waitData.Check(reusableTimeout.TimeoutStatus);
+                    var operResult = waitData.Check(ctsTime.IsCancellationRequested);
                     if (waitData.CompletedData != null)
                     {
                         waitData.CompletedData.ErrorMessage = $"{operResult.ErrorMessage}, sign: {sign}";
@@ -760,7 +750,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
 
             }
         }
-        _reusableTimeouts?.SafeDispose();
+
         _deviceLogger?.TryDispose();
         base.Dispose(disposing);
     }
@@ -823,7 +813,7 @@ public abstract class ReceivedDeviceBase : AsyncAndSyncDisposableObject, IReceiv
                 ChannelObject.WaitLock.Release();
             }
         }
-        _reusableTimeouts?.SafeDispose();
+
         _deviceLogger?.TryDispose();
         base.Dispose(disposing);
     }
