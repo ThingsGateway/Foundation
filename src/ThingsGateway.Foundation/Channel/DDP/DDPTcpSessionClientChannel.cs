@@ -74,7 +74,7 @@ public class DDPTcpSessionClientChannel : TcpSessionClientChannel
                 var byteBlock = new ByteBlock(1024);
                 var ddpSend = SendPool.Get().SetData(memory, Id, true);
                 ddpSend.Build(ref byteBlock);
-                var newMemory = byteBlock.Memory;
+                var newMemory = byteBlock.Sequence;
                 var writer = new PipeBytesWriter(transport.Writer);
                 adapter.SendInput(ref writer, in newMemory);
                 await writer.FlushAsync(token).ConfigureAwait(false);

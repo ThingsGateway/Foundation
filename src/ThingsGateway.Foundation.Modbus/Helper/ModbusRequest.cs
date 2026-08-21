@@ -28,7 +28,7 @@ public class ModbusRequest : IDeviceAddress
     /// <summary>
     /// 当前关联的写入字节数组（Slave端使用）
     /// </summary>
-    internal ReadOnlySequence<byte> SlaveWriteDatas { get; set; }
+    public ReadOnlySequence<byte> SlaveWriteDatas { get; set; }
 
     /// <summary>
     /// 功能码

@@ -8,6 +8,7 @@
 //  QQ群：605534569
 //------------------------------------------------------------------------------
 
+using System.Buffers;
 using System.Text;
 using TouchSocket.Core;
 
@@ -167,12 +168,15 @@ public class DeviceSingleStreamDataHandleAdapter<TRequest> : CustomDataHandlingA
         return Pool.Get();
     }
 
-    public override void SendInput<TWriter>(ref TWriter writer, in ReadOnlyMemory<byte> memory)
+    public override void SendInput<TWriter>(ref TWriter writer, in ReadOnlySequence<byte> sequence)
     {
         if (Logger?.LogLevel <= LogLevel.Debug)
-            Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? memory.Span.ToHexString(' ') : (memory.Span.ToString(Encoding.UTF8)))}");
+            Logger?.Debug($"{ToString()}- Send:{(IsHexLog ? sequence.ToHexString(' ') : (sequence.ToString(Encoding.UTF8)))}");
 
-        writer.Write(memory.Span);
+        foreach (var memory in sequence)
+        {
+            writer.Write(memory.Span);
+        }
     }
 
     public override void SendInput<TWriter>(ref TWriter writer, IRequestInfo requestInfo)

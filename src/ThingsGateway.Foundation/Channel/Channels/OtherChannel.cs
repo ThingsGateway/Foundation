@@ -9,6 +9,7 @@
 //------------------------------------------------------------------------------
 
 
+using System.Buffers;
 using TouchSocket.Core;
 using TouchSocket.SerialPorts;
 using TouchSocket.Sockets;
@@ -141,7 +142,7 @@ public class OtherChannel : SetupConfigObject, IClientChannel
     /// <param name="memory">待发送的字节数据内存。</param>
     /// <param name="cancellationToken">cancellationToken</param>
     /// <returns>异步任务。</returns>
-    protected Task ProtectedDefaultSendAsync(ReadOnlyMemory<byte> memory, CancellationToken cancellationToken)
+    protected Task ProtectedDefaultSendAsync(ReadOnlySequence<byte> memory, CancellationToken cancellationToken)
     {
         LastSentTime = DateTime.UtcNow;
         return Task.CompletedTask;
@@ -190,16 +191,16 @@ public class OtherChannel : SetupConfigObject, IClientChannel
         return Task.CompletedTask;
     }
 
-    public Task SendAsync(ReadOnlyMemory<byte> memory, CancellationToken cancellationToken)
+    public Task SendAsync(ReadOnlySequence<byte> sequence, CancellationToken cancellationToken = default)
     {
         if (m_dataHandlingAdapter == null)
         {
-            return ProtectedDefaultSendAsync(memory, cancellationToken);
+            return ProtectedDefaultSendAsync(sequence, cancellationToken);
         }
         else
         {
             var byteBlock = new ByteBlock(1024);
-            m_dataHandlingAdapter.SendInput(ref byteBlock, memory);
+            m_dataHandlingAdapter.SendInput(ref byteBlock, sequence);
 
             byteBlock.SafeDispose();
             return EasyTask.CompletedTask;
